@@ -86,6 +86,24 @@ class PygameRenderer(Renderer):
             else:
                 pygame.draw.rect(self.screen, color.to_rgb(), rect, 2)
 
+    def draw_circle(
+        self, x: int, y: int, radius: int, color: Color, filled: bool = True
+    ) -> None:
+        """Draw a circle.
+
+        Args:
+            x: X center position
+            y: Y center position
+            radius: Circle radius
+            color: Circle color
+            filled: Whether to fill (True) or just outline (False)
+        """
+        if self.screen:
+            if filled:
+                pygame.draw.circle(self.screen, color.to_rgb(), (x, y), radius)
+            else:
+                pygame.draw.circle(self.screen, color.to_rgb(), (x, y), radius, 2)
+
     def draw_text(
         self,
         text: str,
