@@ -21,6 +21,7 @@ from barebones_rpg.items.item import Item, ItemType, EquipSlot, create_weapon
 from barebones_rpg.combat.combat import Combat
 from barebones_rpg.rendering.pygame_renderer import PygameRenderer
 from barebones_rpg.rendering.renderer import Colors, Color
+from barebones_rpg.dialog.dialog import DialogTree, DialogNode, DialogChoice, DialogSession
 
 
 # Constants
@@ -74,7 +75,13 @@ class TileBasedGame:
         self.combat: Optional[Combat] = None
         self.combat_messages: List[str] = []
 
+        # Dialog
+        self.in_dialog = False
+        self.dialog_session: Optional[DialogSession] = None
+        self.dialog_trees: Dict[str, DialogTree] = {}
+
         self._populate_world()
+        self._create_dialogs()
 
     def _create_world(self) -> Location:
         """Create the game world with walls."""
@@ -141,6 +148,79 @@ class TileBasedGame:
         )
         self.location.add_entity(self.enemy, 15, 10)
 
+    def _create_dialogs(self):
+        """Create dialog trees for NPCs."""
+        # Villager dialog tree
+        villager_tree = DialogTree(name="Villager Dialog")
+
+        # Greeting node
+        greeting = DialogNode(
+            id="greeting",
+            speaker="Villager",
+            text="Hello there, traveler! It's good to see a friendly face in these parts.",
+            choices=[
+                DialogChoice(text="How are you doing?", next_node_id="how_are_you"),
+                DialogChoice(text="What's happening around here?", next_node_id="whats_happening"),
+                DialogChoice(text="Can you tell me about yourself?", next_node_id="about_you"),
+                DialogChoice(text="Goodbye", next_node_id=None)
+            ]
+        )
+
+        # How are you response
+        how_are_you = DialogNode(
+            id="how_are_you",
+            speaker="Villager",
+            text="I'm doing well, thank you for asking! Just trying to stay safe with those goblins about.",
+            choices=[
+                DialogChoice(text="Tell me more", next_node_id="whats_happening"),
+                DialogChoice(text="Take care!", next_node_id=None)
+            ]
+        )
+
+        # What's happening response
+        whats_happening = DialogNode(
+            id="whats_happening",
+            speaker="Villager",
+            text="There's a goblin that's been causing trouble lately. Be careful if you see it!",
+            choices=[
+                DialogChoice(text="I'll deal with it", next_node_id="deal_with_it"),
+                DialogChoice(text="Thanks for the warning", next_node_id=None)
+            ]
+        )
+
+        # Deal with it response
+        deal_with_it = DialogNode(
+            id="deal_with_it",
+            speaker="Villager",
+            text="You're brave! The goblin is somewhere to the east. Good luck, and thank you!",
+            choices=[
+                DialogChoice(text="I'll be back", next_node_id=None),
+                DialogChoice(text="Anything else I should know?", next_node_id="about_you")
+            ]
+        )
+
+        # About you response
+        about_you = DialogNode(
+            id="about_you",
+            speaker="Villager",
+            text="I'm just a simple villager trying to make a living here. Not much to tell, really.",
+            choices=[
+                DialogChoice(text="What about the goblin?", next_node_id="whats_happening"),
+                DialogChoice(text="I see. Take care!", next_node_id=None)
+            ]
+        )
+
+        # Add all nodes to tree
+        villager_tree.add_node(greeting)
+        villager_tree.add_node(how_are_you)
+        villager_tree.add_node(whats_happening)
+        villager_tree.add_node(deal_with_it)
+        villager_tree.add_node(about_you)
+        villager_tree.set_start_node("greeting")
+
+        # Store dialog tree
+        self.dialog_trees["villager"] = villager_tree
+
     def run(self):
         """Main game loop."""
         self.renderer.initialize()
@@ -161,6 +241,8 @@ class TileBasedGame:
                     if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                         if self.in_combat:
                             self._handle_combat_input(event)
+                        elif self.in_dialog:
+                            pass  # Dialog uses mouse clicks for choices
                         else:
                             self._end_turn()
 
@@ -172,6 +254,8 @@ class TileBasedGame:
             self.renderer.clear(Colors.BLACK)
             if self.in_combat:
                 self._render_combat()
+            elif self.in_dialog:
+                self._render_dialog()
             else:
                 self._render_world()
             self.renderer.present()
@@ -180,7 +264,7 @@ class TileBasedGame:
 
     def _handle_mouse_motion(self, event: pygame.event.Event):
         """Handle mouse movement to show hover effects."""
-        if self.in_combat:
+        if self.in_combat or self.in_dialog:
             return
 
         mouse_x, mouse_y = event.pos
@@ -201,6 +285,11 @@ class TileBasedGame:
 
     def _handle_mouse_click(self, event: pygame.event.Event):
         """Handle mouse clicks for movement and interaction."""
+        # Handle dialog choices
+        if self.in_dialog:
+            self._handle_dialog_click(event)
+            return
+
         if not self.player_turn or self.in_combat:
             return
 
@@ -244,7 +333,51 @@ class TileBasedGame:
 
     def _interact_with_npc(self, npc: NPC):
         """Interact with a friendly NPC."""
-        print(f"Talking to {npc.name}: {npc.description}")
+        print(f"Talking to {npc.name}...")
+
+        # Get dialog tree for this NPC (using simple lookup)
+        dialog_tree = self.dialog_trees.get("villager")
+
+        if dialog_tree:
+            self.dialog_session = DialogSession(dialog_tree, context={"player": self.player})
+            self.dialog_session.start()
+            self.in_dialog = True
+        else:
+            print(f"{npc.name}: {npc.description}")
+
+    def _handle_dialog_click(self, event: pygame.event.Event):
+        """Handle mouse clicks during dialog."""
+        if not self.dialog_session or not self.dialog_session.is_active:
+            return
+
+        mouse_x, mouse_y = event.pos
+
+        # Calculate choice button bounds
+        choices = self.dialog_session.get_available_choices()
+        choice_y_start = 300
+        choice_height = 40
+        choice_padding = 10
+
+        for i, choice in enumerate(choices):
+            y = choice_y_start + i * (choice_height + choice_padding)
+            # Choice buttons are centered and 500px wide
+            x = (SCREEN_WIDTH - 500) // 2
+
+            if x <= mouse_x <= x + 500 and y <= mouse_y <= y + choice_height:
+                # Clicked on choice i
+                print(f"Selected: {choice.text}")
+                next_node = self.dialog_session.make_choice(i)
+
+                # Check if dialog ended
+                if not self.dialog_session.is_active:
+                    self._end_dialog()
+                break
+
+    def _end_dialog(self):
+        """End the current dialog session."""
+        print("Dialog ended")
+        self.in_dialog = False
+        self.dialog_session = None
 
     def _move_player(self, target: Tuple[int, int]):
         """Move the player to the target tile."""
@@ -724,6 +857,102 @@ class TileBasedGame:
                 log_y + i * 20,
                 Colors.WHITE,
                 font_size=14
+            )
+
+    def _render_dialog(self):
+        """Render the dialog screen."""
+        # Semi-transparent overlay over world
+        self._render_world()
+
+        # Dark overlay
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill((0, 0, 0))
+        if self.renderer.screen:
+            self.renderer.screen.blit(overlay, (0, 0))
+
+        if not self.dialog_session or not self.dialog_session.is_active:
+            return
+
+        current_node = self.dialog_session.get_current_node()
+        if not current_node:
+            return
+
+        # Dialog box background
+        dialog_box_height = 400
+        dialog_box_y = SCREEN_HEIGHT - dialog_box_height - 20
+        self.renderer.draw_rect(
+            20, dialog_box_y, SCREEN_WIDTH - 40, dialog_box_height,
+            Color(30, 30, 40), filled=True
+        )
+        self.renderer.draw_rect(
+            20, dialog_box_y, SCREEN_WIDTH - 40, dialog_box_height,
+            Colors.WHITE, filled=False
+        )
+
+        # Speaker name
+        if current_node.speaker:
+            self.renderer.draw_text(
+                current_node.speaker,
+                40, dialog_box_y + 20,
+                Colors.YELLOW, font_size=20
+            )
+
+        # Dialog text (word wrap)
+        text_y = dialog_box_y + 60
+        text_x = 40
+        max_width = SCREEN_WIDTH - 100
+
+        # Simple word wrapping
+        words = current_node.text.split()
+        lines = []
+        current_line = []
+        current_width = 0
+
+        for word in words:
+            word_width = len(word) * 8  # Approximate width
+            if current_width + word_width > max_width and current_line:
+                lines.append(" ".join(current_line))
+                current_line = [word]
+                current_width = word_width
+            else:
+                current_line.append(word)
+                current_width += word_width + 8  # Add space width
+
+        if current_line:
+            lines.append(" ".join(current_line))
+
+        for i, line in enumerate(lines):
+            self.renderer.draw_text(
+                line,
+                text_x, text_y + i * 22,
+                Colors.WHITE, font_size=16
+            )
+
+        # Choices
+        choices = self.dialog_session.get_available_choices()
+        choice_y_start = dialog_box_y + 180
+        choice_height = 40
+        choice_padding = 10
+
+        for i, choice in enumerate(choices):
+            y = choice_y_start + i * (choice_height + choice_padding)
+            x = (SCREEN_WIDTH - 500) // 2
+
+            # Get mouse position for hover effect
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            is_hovering = x <= mouse_x <= x + 500 and y <= mouse_y <= y + choice_height
+
+            # Choice button background
+            button_color = Color(80, 80, 120) if is_hovering else Color(50, 50, 70)
+            self.renderer.draw_rect(x, y, 500, choice_height, button_color, filled=True)
+            self.renderer.draw_rect(x, y, 500, choice_height, Colors.WHITE, filled=False)
+
+            # Choice text
+            self.renderer.draw_text(
+                f"{i+1}. {choice.text}",
+                x + 10, y + 12,
+                Colors.WHITE, font_size=16
             )
 
 
