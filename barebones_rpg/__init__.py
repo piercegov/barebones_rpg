@@ -1,0 +1,127 @@
+"""Barebones RPG Framework.
+
+A flexible, code-first RPG framework for building turn-based games with support
+for procedural generation and AI-driven content.
+"""
+
+__version__ = "0.1.0"
+
+# Core exports
+from .core import Game, GameState, GameConfig, Event, EventType, EventManager
+
+# Entity exports
+from .entities import Stats, Entity, Character, NPC, Enemy, StatusEffect
+
+# Item exports
+from .items import (
+    Item,
+    ItemType,
+    EquipSlot,
+    Inventory,
+    Equipment,
+    create_weapon,
+    create_armor,
+    create_consumable,
+    create_quest_item,
+)
+
+# Combat exports
+from .combat import (
+    Combat,
+    CombatState,
+    CombatAction,
+    ActionResult,
+    AttackAction,
+    DefendAction,
+    SkillAction,
+    ItemAction,
+    RunAction,
+    create_attack_action,
+    create_defend_action,
+    create_skill_action,
+    create_heal_skill,
+)
+
+# Dialog exports
+from .dialog import DialogNode, DialogChoice, DialogTree, DialogSession
+
+# World exports
+from .world import Tile, Location, World
+
+# Quest exports
+from .quests import Quest, QuestObjective, QuestManager, QuestStatus, ObjectiveType
+
+# Rendering exports
+from .rendering import (
+    Renderer,
+    PygameRenderer,
+    PygameGameLoop,
+    Color,
+    Colors,
+    UIElement,
+    TextBox,
+)
+
+__all__ = [
+    # Core
+    "Game",
+    "GameState",
+    "GameConfig",
+    "Event",
+    "EventType",
+    "EventManager",
+    # Entities
+    "Stats",
+    "Entity",
+    "Character",
+    "NPC",
+    "Enemy",
+    "StatusEffect",
+    # Items
+    "Item",
+    "ItemType",
+    "EquipSlot",
+    "Inventory",
+    "Equipment",
+    "create_weapon",
+    "create_armor",
+    "create_consumable",
+    "create_quest_item",
+    # Combat
+    "Combat",
+    "CombatState",
+    "CombatAction",
+    "ActionResult",
+    "AttackAction",
+    "DefendAction",
+    "SkillAction",
+    "ItemAction",
+    "RunAction",
+    "create_attack_action",
+    "create_defend_action",
+    "create_skill_action",
+    "create_heal_skill",
+    # Dialog
+    "DialogNode",
+    "DialogChoice",
+    "DialogTree",
+    "DialogSession",
+    # World
+    "Tile",
+    "Location",
+    "World",
+    # Quests
+    "Quest",
+    "QuestObjective",
+    "QuestManager",
+    "QuestStatus",
+    "ObjectiveType",
+    # Rendering
+    "Renderer",
+    "PygameRenderer",
+    "PygameGameLoop",
+    "Color",
+    "Colors",
+    "UIElement",
+    "TextBox",
+]

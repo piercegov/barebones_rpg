@@ -1,0 +1,29 @@
+[project]
+name = "barebones-rpg"
+version = "0.1.0"
+description = "A flexible, code-first RPG framework for building turn-based games with support for procedural generation and AI-driven content"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pygame>=2.5.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]
