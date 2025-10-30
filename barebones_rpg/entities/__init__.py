@@ -2,6 +2,7 @@
 
 from .stats import Stats, StatusEffect, StatsManager
 from .entity import Entity, Character, NPC, Enemy
+from .ai import SimplePathfindingAI, TacticalAI, AIController
 
 __all__ = [
     "Stats",
@@ -11,4 +12,7 @@ __all__ = [
     "Character",
     "NPC",
     "Enemy",
+    "SimplePathfindingAI",
+    "TacticalAI",
+    "AIController",
 ]

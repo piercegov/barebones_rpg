@@ -10,7 +10,17 @@ __version__ = "0.1.0"
 from .core import Game, GameState, GameConfig, Event, EventType, EventManager
 
 # Entity exports
-from .entities import Stats, Entity, Character, NPC, Enemy, StatusEffect
+from .entities import (
+    Stats, 
+    Entity, 
+    Character, 
+    NPC, 
+    Enemy, 
+    StatusEffect,
+    SimplePathfindingAI,
+    TacticalAI,
+    AIController,
+)
 
 # Item exports
 from .items import (
@@ -44,10 +54,10 @@ from .combat import (
 )
 
 # Dialog exports
-from .dialog import DialogNode, DialogChoice, DialogTree, DialogSession
+from .dialog import DialogNode, DialogChoice, DialogTree, DialogSession, DialogRenderer
 
 # World exports
-from .world import Tile, Location, World
+from .world import Tile, Location, World, TilemapPathfinder, APManager
 
 # Quest exports
 from .quests import Quest, QuestObjective, QuestManager, QuestStatus, ObjectiveType
@@ -61,6 +71,10 @@ from .rendering import (
     Colors,
     UIElement,
     TextBox,
+    TileRenderer,
+    ClickToMoveHandler,
+    TileInteractionHandler,
+    UIComponents,
 )
 
 __all__ = [
@@ -78,6 +92,9 @@ __all__ = [
     "NPC",
     "Enemy",
     "StatusEffect",
+    "SimplePathfindingAI",
+    "TacticalAI",
+    "AIController",
     # Items
     "Item",
     "ItemType",
@@ -108,10 +125,13 @@ __all__ = [
     "DialogChoice",
     "DialogTree",
     "DialogSession",
+    "DialogRenderer",
     # World
     "Tile",
     "Location",
     "World",
+    "TilemapPathfinder",
+    "APManager",
     # Quests
     "Quest",
     "QuestObjective",
@@ -126,4 +146,8 @@ __all__ = [
     "Colors",
     "UIElement",
     "TextBox",
+    "TileRenderer",
+    "ClickToMoveHandler",
+    "TileInteractionHandler",
+    "UIComponents",
 ]

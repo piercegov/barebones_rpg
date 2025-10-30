@@ -247,6 +247,198 @@ class Location(BaseModel):
             Location ID or None
         """
         return self.connections.get(direction)
+    
+    def create_border_walls(self, tile_type: str = "wall") -> None:
+        """Create walls around the border of the location.
+        
+        This is a helper method for quickly creating enclosed areas.
+        
+        Args:
+            tile_type: Type of tile to use for walls (default: "wall")
+        """
+        # Top and bottom borders
+        for x in range(self.width):
+            self.set_tile(x, 0, Tile(x=x, y=0, tile_type=tile_type, walkable=False))
+            self.set_tile(
+                x, self.height - 1,
+                Tile(x=x, y=self.height - 1, tile_type=tile_type, walkable=False)
+            )
+        
+        # Left and right borders
+        for y in range(self.height):
+            self.set_tile(0, y, Tile(x=0, y=y, tile_type=tile_type, walkable=False))
+            self.set_tile(
+                self.width - 1, y,
+                Tile(x=self.width - 1, y=y, tile_type=tile_type, walkable=False)
+            )
+    
+    def create_room(
+        self,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        wall_type: str = "wall",
+        floor_type: Optional[str] = None,
+        fill_interior: bool = False
+    ) -> None:
+        """Create a rectangular room with walls.
+        
+        Args:
+            x: Top-left X coordinate
+            y: Top-left Y coordinate
+            width: Width of the room
+            height: Height of the room
+            wall_type: Type of tile to use for walls (default: "wall")
+            floor_type: Type of tile to use for interior floor (optional)
+            fill_interior: Whether to fill the interior with floor tiles
+        """
+        # Create walls
+        for i in range(width):
+            # Top wall
+            wx, wy = x + i, y
+            if 0 <= wx < self.width and 0 <= wy < self.height:
+                self.set_tile(wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False))
+            
+            # Bottom wall
+            wx, wy = x + i, y + height - 1
+            if 0 <= wx < self.width and 0 <= wy < self.height:
+                self.set_tile(wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False))
+        
+        for i in range(height):
+            # Left wall
+            wx, wy = x, y + i
+            if 0 <= wx < self.width and 0 <= wy < self.height:
+                self.set_tile(wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False))
+            
+            # Right wall
+            wx, wy = x + width - 1, y + i
+            if 0 <= wx < self.width and 0 <= wy < self.height:
+                self.set_tile(wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False))
+        
+        # Fill interior if requested
+        if fill_interior and floor_type:
+            for fy in range(1, height - 1):
+                for fx in range(1, width - 1):
+                    tile_x, tile_y = x + fx, y + fy
+                    if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
+                        self.set_tile(
+                            tile_x, tile_y,
+                            Tile(x=tile_x, y=tile_y, tile_type=floor_type, walkable=True)
+                        )
+    
+    def create_horizontal_wall(
+        self,
+        start_x: int,
+        end_x: int,
+        y: int,
+        tile_type: str = "wall"
+    ) -> None:
+        """Create a horizontal wall segment.
+        
+        Args:
+            start_x: Starting X coordinate
+            end_x: Ending X coordinate (inclusive)
+            y: Y coordinate
+            tile_type: Type of tile to use for walls (default: "wall")
+        """
+        for x in range(start_x, end_x + 1):
+            if 0 <= x < self.width and 0 <= y < self.height:
+                self.set_tile(x, y, Tile(x=x, y=y, tile_type=tile_type, walkable=False))
+    
+    def create_vertical_wall(
+        self,
+        x: int,
+        start_y: int,
+        end_y: int,
+        tile_type: str = "wall"
+    ) -> None:
+        """Create a vertical wall segment.
+        
+        Args:
+            x: X coordinate
+            start_y: Starting Y coordinate
+            end_y: Ending Y coordinate (inclusive)
+            tile_type: Type of tile to use for walls (default: "wall")
+        """
+        for y in range(start_y, end_y + 1):
+            if 0 <= x < self.width and 0 <= y < self.height:
+                self.set_tile(x, y, Tile(x=x, y=y, tile_type=tile_type, walkable=False))
+    
+    def create_corridor(
+        self,
+        start: Tuple[int, int],
+        end: Tuple[int, int],
+        width: int = 1,
+        floor_type: Optional[str] = None
+    ) -> None:
+        """Create a corridor between two points.
+        
+        Creates an L-shaped corridor (horizontal then vertical).
+        
+        Args:
+            start: Starting position (x, y)
+            end: Ending position (x, y)
+            width: Width of the corridor (default: 1)
+            floor_type: Type of tile to use for corridor floor (optional)
+        """
+        start_x, start_y = start
+        end_x, end_y = end
+        
+        # Horizontal segment
+        min_x = min(start_x, end_x)
+        max_x = max(start_x, end_x)
+        for x in range(min_x, max_x + 1):
+            for w in range(width):
+                tile_x = x
+                tile_y = start_y + w
+                if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
+                    tile_type = floor_type if floor_type else self.default_tile_type
+                    self.set_tile(
+                        tile_x, tile_y,
+                        Tile(x=tile_x, y=tile_y, tile_type=tile_type, walkable=True)
+                    )
+        
+        # Vertical segment
+        min_y = min(start_y, end_y)
+        max_y = max(start_y, end_y)
+        for y in range(min_y, max_y + 1):
+            for w in range(width):
+                tile_x = end_x + w
+                tile_y = y
+                if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
+                    tile_type = floor_type if floor_type else self.default_tile_type
+                    self.set_tile(
+                        tile_x, tile_y,
+                        Tile(x=tile_x, y=tile_y, tile_type=tile_type, walkable=True)
+                    )
+    
+    def fill_rect(
+        self,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        tile_type: str,
+        walkable: bool = True
+    ) -> None:
+        """Fill a rectangular area with a specific tile type.
+        
+        Args:
+            x: Top-left X coordinate
+            y: Top-left Y coordinate
+            width: Width of the area
+            height: Height of the area
+            tile_type: Type of tile to fill with
+            walkable: Whether the tiles should be walkable
+        """
+        for ty in range(y, y + height):
+            for tx in range(x, x + width):
+                if 0 <= tx < self.width and 0 <= ty < self.height:
+                    self.set_tile(
+                        tx, ty,
+                        Tile(x=tx, y=ty, tile_type=tile_type, walkable=walkable)
+                    )
 
 
 class World(BaseModel):
