@@ -8,6 +8,7 @@ from .dialog import (
     DialogConditions,
     create_linear_dialog,
 )
+from .dialog_renderer import DialogRenderer
 
 __all__ = [
     "DialogChoice",
@@ -16,4 +17,5 @@ __all__ = [
     "DialogSession",
     "DialogConditions",
     "create_linear_dialog",
+    "DialogRenderer",
 ]
