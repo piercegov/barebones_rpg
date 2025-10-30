@@ -28,6 +28,7 @@ uv run python main.py
 # Run specific examples
 uv run python -m barebones_rpg.examples.simple_combat_example
 uv run python -m barebones_rpg.examples.mini_rpg
+uv run python -m barebones_rpg.examples.tile_based_example
 ```
 
 ### Testing
