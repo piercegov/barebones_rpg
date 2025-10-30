@@ -9,6 +9,158 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 
+class DialogConditions:
+    """Helper class with common dialog condition factories.
+    
+    This provides reusable condition functions for common dialog scenarios,
+    reducing boilerplate in dialog tree creation.
+    
+    Example:
+        >>> from barebones_rpg.quests.quest import QuestStatus
+        >>> quest_started = DialogConditions.quest_status(quest, QuestStatus.ACTIVE)
+        >>> enemy_dead = DialogConditions.entity_not_in_location(location, "Goblin")
+    """
+    
+    @staticmethod
+    def quest_status(quest, status) -> Callable:
+        """Create a condition that checks if a quest has a specific status.
+        
+        Args:
+            quest: Quest object to check
+            status: QuestStatus to check for
+            
+        Returns:
+            Condition function
+        """
+        def condition(context: Dict[str, Any]) -> bool:
+            return quest.status == status
+        return condition
+    
+    @staticmethod
+    def quest_not_started(quest) -> Callable:
+        """Create a condition that checks if a quest hasn't been started.
+        
+        Args:
+            quest: Quest object to check
+            
+        Returns:
+            Condition function
+        """
+        from ..quests.quest import QuestStatus
+        return DialogConditions.quest_status(quest, QuestStatus.NOT_STARTED)
+    
+    @staticmethod
+    def quest_active(quest) -> Callable:
+        """Create a condition that checks if a quest is active.
+        
+        Args:
+            quest: Quest object to check
+            
+        Returns:
+            Condition function
+        """
+        from ..quests.quest import QuestStatus
+        return DialogConditions.quest_status(quest, QuestStatus.ACTIVE)
+    
+    @staticmethod
+    def quest_completed(quest) -> Callable:
+        """Create a condition that checks if a quest is completed.
+        
+        Args:
+            quest: Quest object to check
+            
+        Returns:
+            Condition function
+        """
+        from ..quests.quest import QuestStatus
+        return DialogConditions.quest_status(quest, QuestStatus.COMPLETED)
+    
+    @staticmethod
+    def entity_in_location(location, entity_name: str) -> Callable:
+        """Create a condition that checks if an entity exists in a location.
+        
+        Args:
+            location: Location object to check
+            entity_name: Name of entity to look for
+            
+        Returns:
+            Condition function
+        """
+        def condition(context: Dict[str, Any]) -> bool:
+            return location.has_entity_named(entity_name)
+        return condition
+    
+    @staticmethod
+    def entity_not_in_location(location, entity_name: str) -> Callable:
+        """Create a condition that checks if an entity does NOT exist in a location.
+        
+        Args:
+            location: Location object to check
+            entity_name: Name of entity to look for
+            
+        Returns:
+            Condition function
+        """
+        def condition(context: Dict[str, Any]) -> bool:
+            return not location.has_entity_named(entity_name)
+        return condition
+    
+    @staticmethod
+    def all_conditions(*conditions: Callable) -> Callable:
+        """Create a condition that requires all sub-conditions to be true.
+        
+        Args:
+            *conditions: Variable number of condition functions
+            
+        Returns:
+            Combined condition function
+        """
+        def condition(context: Dict[str, Any]) -> bool:
+            return all(cond(context) for cond in conditions)
+        return condition
+    
+    @staticmethod
+    def any_condition(*conditions: Callable) -> Callable:
+        """Create a condition that requires any sub-condition to be true.
+        
+        Args:
+            *conditions: Variable number of condition functions
+            
+        Returns:
+            Combined condition function
+        """
+        def condition(context: Dict[str, Any]) -> bool:
+            return any(cond(context) for cond in conditions)
+        return condition
+    
+    @staticmethod
+    def not_condition(condition_func: Callable) -> Callable:
+        """Create a condition that inverts another condition.
+        
+        Args:
+            condition_func: Condition to invert
+            
+        Returns:
+            Inverted condition function
+        """
+        def condition(context: Dict[str, Any]) -> bool:
+            return not condition_func(context)
+        return condition
+    
+    @staticmethod
+    def always() -> Callable:
+        """Create a condition that is always true.
+        
+        Useful as a fallback or when you want an option always available.
+        
+        Returns:
+            Always-true condition function
+        """
+        def condition(context: Dict[str, Any]) -> bool:
+            return True
+        return condition
+
+
 class DialogChoice(BaseModel):
     """A choice in a dialog tree.
 
@@ -16,6 +168,13 @@ class DialogChoice(BaseModel):
         >>> choice = DialogChoice(
         ...     text="Tell me about the quest",
         ...     next_node_id="quest_info"
+        ... )
+        
+        >>> # With quest integration
+        >>> choice = DialogChoice(
+        ...     text="I'll help you!",
+        ...     next_node_id="accepted",
+        ...     quest_to_start=my_quest
         ... )
     """
 
@@ -29,6 +188,16 @@ class DialogChoice(BaseModel):
     on_select: Optional[Callable] = Field(
         default=None, description="Function called when choice is selected"
     )
+    
+    # Quest integration
+    quest_to_start: Optional[Any] = Field(
+        default=None, description="Quest object to start when this choice is selected"
+    )
+    quest_to_update: Optional[tuple] = Field(
+        default=None, 
+        description="Tuple of (quest, objective_type, target, amount) to update when selected"
+    )
+    
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Custom data")
 
     model_config = {"arbitrary_types_allowed": True}
@@ -47,7 +216,7 @@ class DialogChoice(BaseModel):
         return self.condition(context)
 
     def select(self, context: Dict[str, Any]) -> Any:
-        """Execute the choice's on_select callback.
+        """Execute the choice's on_select callback and handle quest actions.
 
         Args:
             context: Game context
@@ -55,8 +224,33 @@ class DialogChoice(BaseModel):
         Returns:
             Result of callback (if any)
         """
+        # Handle quest starting
+        if self.quest_to_start:
+            events = context.get('events')
+            quest_manager = context.get('quest_manager')
+            
+            if quest_manager and events:
+                quest_manager.start_quest(self.quest_to_start.id, events)
+            elif events:
+                # Direct start if no manager in context
+                self.quest_to_start.start(events)
+        
+        # Handle quest updating
+        if self.quest_to_update:
+            from ..quests.quest import ObjectiveType
+            quest, objective_type, target, amount = self.quest_to_update
+            events = context.get('events')
+            quest_manager = context.get('quest_manager')
+            
+            if quest_manager and events:
+                quest_manager.update_objective(
+                    quest.id, objective_type, target, amount, events
+                )
+        
+        # Execute custom callback
         if self.on_select:
             return self.on_select(context)
+        
         return None
 
 

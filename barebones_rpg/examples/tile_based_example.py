@@ -21,7 +21,8 @@ from barebones_rpg.items.item import Item, ItemType, EquipSlot, create_weapon
 from barebones_rpg.combat.combat import Combat
 from barebones_rpg.rendering.pygame_renderer import PygameRenderer
 from barebones_rpg.rendering.renderer import Colors, Color
-from barebones_rpg.dialog.dialog import DialogTree, DialogNode, DialogChoice, DialogSession
+from barebones_rpg.dialog.dialog import DialogTree, DialogNode, DialogChoice, DialogSession, DialogConditions
+from barebones_rpg.quests.quest import Quest, QuestObjective, ObjectiveType, QuestManager, QuestStatus
 
 
 # Constants
@@ -80,7 +81,12 @@ class TileBasedGame:
         self.dialog_session: Optional[DialogSession] = None
         self.dialog_trees: Dict[str, DialogTree] = {}
 
+        # Quest system
+        self.quest_manager = QuestManager()
+        self.goblin_quest: Optional[Quest] = None
+
         self._populate_world()
+        self._create_quests()
         self._create_dialogs()
 
     def _create_world(self) -> Location:
@@ -148,54 +154,164 @@ class TileBasedGame:
         )
         self.location.add_entity(self.enemy, 15, 10)
 
+    def _create_quests(self):
+        """Create quests."""
+        # Create "Kill the Goblin" quest
+        self.goblin_quest = Quest(
+            name="Kill the Goblin",
+            description="The villager needs help dealing with a troublesome goblin.",
+            exp_reward=50,
+            gold_reward=25
+        )
+        
+        # Add objective
+        kill_goblin_objective = QuestObjective(
+            description="Defeat the Goblin",
+            objective_type=ObjectiveType.KILL_ENEMY,
+            target="Goblin",
+            target_count=1
+        )
+        self.goblin_quest.add_objective(kill_goblin_objective)
+        
+        # Add to quest manager
+        self.quest_manager.add_quest(self.goblin_quest)
+
     def _create_dialogs(self):
         """Create dialog trees for NPCs."""
         # Villager dialog tree
         villager_tree = DialogTree(name="Villager Dialog")
 
-        # Greeting node
+        # Create reusable condition helpers using the framework
+        goblin_dead = DialogConditions.entity_not_in_location(self.location, "Goblin")
+        goblin_alive = DialogConditions.entity_in_location(self.location, "Goblin")
+        quest_not_started = DialogConditions.quest_not_started(self.goblin_quest)
+        quest_active = DialogConditions.quest_active(self.goblin_quest)
+        quest_completed = DialogConditions.quest_completed(self.goblin_quest)
+        
+        # Combined conditions
+        quest_ready_to_turn_in = DialogConditions.all_conditions(quest_active, goblin_dead)
+
+        # Greeting node - changes based on quest status
         greeting = DialogNode(
             id="greeting",
             speaker="Villager",
             text="Hello there, traveler! It's good to see a friendly face in these parts.",
             choices=[
+                DialogChoice(
+                    text="Do you need any help?",
+                    next_node_id="quest_offer",
+                    condition=quest_not_started
+                ),
+                DialogChoice(
+                    text="About that goblin...",
+                    next_node_id="quest_in_progress",
+                    condition=quest_active
+                ),
+                DialogChoice(
+                    text="I've dealt with the goblin.",
+                    next_node_id="quest_complete",
+                    condition=quest_ready_to_turn_in
+                ),
+                DialogChoice(
+                    text="Thanks again for the reward!",
+                    next_node_id="quest_already_complete",
+                    condition=quest_completed
+                ),
                 DialogChoice(text="How are you doing?", next_node_id="how_are_you"),
-                DialogChoice(text="What's happening around here?", next_node_id="whats_happening"),
                 DialogChoice(text="Can you tell me about yourself?", next_node_id="about_you"),
                 DialogChoice(text="Goodbye", next_node_id=None)
             ]
         )
+        
+        # Quest offer node
+        quest_offer = DialogNode(
+            id="quest_offer",
+            speaker="Villager",
+            text="Actually, yes! There's a goblin that's been causing trouble lately. It's somewhere to the east. Could you help deal with it? I can offer some gold and my gratitude in return.",
+            choices=[
+                DialogChoice(
+                    text="I'll take care of it.",
+                    next_node_id="quest_accepted_dead",
+                    condition=goblin_dead,
+                    quest_to_start=self.goblin_quest  # Framework handles starting!
+                ),
+                DialogChoice(
+                    text="I'll take care of it.",
+                    next_node_id="quest_accepted",
+                    condition=goblin_alive,
+                    quest_to_start=self.goblin_quest  # Framework handles starting!
+                ),
+                DialogChoice(text="Maybe later.", next_node_id=None)
+            ]
+        )
 
-        # How are you response
+        # Quest accepted node - normal case
+        quest_accepted = DialogNode(
+            id="quest_accepted",
+            speaker="Villager",
+            text="Thank you! The goblin is somewhere to the east. Be careful, and good luck!",
+            choices=[
+                DialogChoice(text="I'll be back!", next_node_id=None)
+            ]
+        )
+        
+        # Quest accepted but goblin already dead - special case
+        quest_accepted_dead = DialogNode(
+            id="quest_accepted_dead",
+            speaker="Villager",
+            text="Wait... you've already killed it? That's incredible! Thank you so much! Here's your reward.",
+            choices=[
+                DialogChoice(text="Happy to help!", next_node_id=None)
+            ]
+        )
+
+        # Quest in progress node
+        quest_in_progress = DialogNode(
+            id="quest_in_progress",
+            speaker="Villager",
+            text="Have you found the goblin yet? It should be somewhere to the east.",
+            choices=[
+                DialogChoice(text="Still looking.", next_node_id=None),
+                DialogChoice(text="I'll find it soon.", next_node_id=None)
+            ]
+        )
+        
+        # Quest complete - turn in (framework already tracked the kill)
+        quest_complete = DialogNode(
+            id="quest_complete",
+            speaker="Villager",
+            text="You have? That's wonderful news! Thank you so much! Here's your reward as promised.",
+            choices=[
+                DialogChoice(text="Glad I could help!", next_node_id=None)
+            ]
+        )
+        
+        # Quest already completed (subsequent conversations)
+        quest_already_complete = DialogNode(
+            id="quest_already_complete",
+            speaker="Villager",
+            text="You've already received your reward, but thank you again! The area is much safer now.",
+            choices=[
+                DialogChoice(text="Happy to help!", next_node_id=None)
+            ]
+        )
+
+        # How are you response - uses condition-based choices for different follow-ups
         how_are_you = DialogNode(
             id="how_are_you",
             speaker="Villager",
-            text="I'm doing well, thank you for asking! Just trying to stay safe with those goblins about.",
+            text="I'm doing well, thank you for asking! Just trying to stay safe with that goblin about.",
             choices=[
-                DialogChoice(text="Tell me more", next_node_id="whats_happening"),
-                DialogChoice(text="Take care!", next_node_id=None)
-            ]
-        )
-
-        # What's happening response
-        whats_happening = DialogNode(
-            id="whats_happening",
-            speaker="Villager",
-            text="There's a goblin that's been causing trouble lately. Be careful if you see it!",
-            choices=[
-                DialogChoice(text="I'll deal with it", next_node_id="deal_with_it"),
-                DialogChoice(text="Thanks for the warning", next_node_id=None)
-            ]
-        )
-
-        # Deal with it response
-        deal_with_it = DialogNode(
-            id="deal_with_it",
-            speaker="Villager",
-            text="You're brave! The goblin is somewhere to the east. Good luck, and thank you!",
-            choices=[
-                DialogChoice(text="I'll be back", next_node_id=None),
-                DialogChoice(text="Anything else I should know?", next_node_id="about_you")
+                DialogChoice(
+                    text="Glad you're safe now!",
+                    next_node_id=None,
+                    condition=goblin_dead
+                ),
+                DialogChoice(
+                    text="Stay safe!",
+                    next_node_id=None,
+                    condition=goblin_alive
+                )
             ]
         )
 
@@ -205,16 +321,19 @@ class TileBasedGame:
             speaker="Villager",
             text="I'm just a simple villager trying to make a living here. Not much to tell, really.",
             choices=[
-                DialogChoice(text="What about the goblin?", next_node_id="whats_happening"),
                 DialogChoice(text="I see. Take care!", next_node_id=None)
             ]
         )
 
         # Add all nodes to tree
         villager_tree.add_node(greeting)
+        villager_tree.add_node(quest_offer)
+        villager_tree.add_node(quest_accepted)
+        villager_tree.add_node(quest_accepted_dead)
+        villager_tree.add_node(quest_in_progress)
+        villager_tree.add_node(quest_complete)
+        villager_tree.add_node(quest_already_complete)
         villager_tree.add_node(how_are_you)
-        villager_tree.add_node(whats_happening)
-        villager_tree.add_node(deal_with_it)
         villager_tree.add_node(about_you)
         villager_tree.set_start_node("greeting")
 
@@ -339,7 +458,14 @@ class TileBasedGame:
         dialog_tree = self.dialog_trees.get("villager")
 
         if dialog_tree:
-            self.dialog_session = DialogSession(dialog_tree, context={"player": self.player})
+            self.dialog_session = DialogSession(
+                dialog_tree, 
+                context={
+                    "player": self.player,
+                    "quest_manager": self.quest_manager,
+                    "events": self.game.events
+                }
+            )
             self.dialog_session.start()
             self.in_dialog = True
         else:
@@ -782,15 +908,45 @@ class TileBasedGame:
         ap_text = f"AP: {self.current_ap}/{PLAYER_AP}"
         self.renderer.draw_text(ap_text, 150, 10, Colors.WHITE, font_size=20)
 
+        # Active quests
+        active_quests = self.quest_manager.get_active_quests()
+        if active_quests:
+            quest_y = 50
+            self.renderer.draw_text(
+                "Active Quests:",
+                10, quest_y,
+                Colors.YELLOW, font_size=16
+            )
+            
+            for quest in active_quests:
+                quest_y += 20
+                self.renderer.draw_text(
+                    f"- {quest.name}",
+                    15, quest_y,
+                    Colors.WHITE, font_size=14
+                )
+                
+                # Show objectives
+                for objective in quest.objectives:
+                    quest_y += 18
+                    status_text = "✓" if objective.is_completed() else f"({objective.get_progress_text()})"
+                    obj_color = Colors.GREEN if objective.is_completed() else Colors.LIGHT_GRAY
+                    self.renderer.draw_text(
+                        f"  {status_text} {objective.description}",
+                        20, quest_y,
+                        obj_color, font_size=12
+                    )
+
         # Instructions
         instructions = [
             "Click tile to move",
             "Click enemy to attack (must be adjacent)",
+            "Click NPC to talk",
             "SPACE to end turn"
         ]
         for i, text in enumerate(instructions):
             self.renderer.draw_text(
-                text, 10, SCREEN_HEIGHT - 60 + i * 15,
+                text, 10, SCREEN_HEIGHT - 75 + i * 15,
                 Colors.LIGHT_GRAY, font_size=12
             )
 

@@ -180,6 +180,53 @@ class Location(BaseModel):
         """
         if entity in self.entities:
             self.entities.remove(entity)
+    
+    def find_entity_by_name(self, name: str) -> Optional[Any]:
+        """Find an entity by name.
+        
+        Args:
+            name: Entity name to search for
+            
+        Returns:
+            First entity with matching name or None
+        """
+        for entity in self.entities:
+            if hasattr(entity, 'name') and entity.name == name:
+                return entity
+        return None
+    
+    def find_entities_by_name(self, name: str) -> List[Any]:
+        """Find all entities with a given name.
+        
+        Args:
+            name: Entity name to search for
+            
+        Returns:
+            List of entities with matching name
+        """
+        return [e for e in self.entities if hasattr(e, 'name') and e.name == name]
+    
+    def find_entities_by_faction(self, faction: str) -> List[Any]:
+        """Find all entities of a given faction.
+        
+        Args:
+            faction: Faction to search for (e.g., "enemy", "player", "neutral")
+            
+        Returns:
+            List of entities with matching faction
+        """
+        return [e for e in self.entities if hasattr(e, 'faction') and e.faction == faction]
+    
+    def has_entity_named(self, name: str) -> bool:
+        """Check if an entity with the given name exists in this location.
+        
+        Args:
+            name: Entity name to check for
+            
+        Returns:
+            True if entity exists
+        """
+        return self.find_entity_by_name(name) is not None
 
     def add_connection(self, direction: str, location_id: str) -> None:
         """Add a connection to another location.

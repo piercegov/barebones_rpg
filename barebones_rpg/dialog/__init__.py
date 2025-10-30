@@ -5,6 +5,7 @@ from .dialog import (
     DialogNode,
     DialogTree,
     DialogSession,
+    DialogConditions,
     create_linear_dialog,
 )
 
@@ -13,5 +14,6 @@ __all__ = [
     "DialogNode",
     "DialogTree",
     "DialogSession",
+    "DialogConditions",
     "create_linear_dialog",
 ]

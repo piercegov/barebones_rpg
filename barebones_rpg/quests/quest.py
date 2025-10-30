@@ -200,6 +200,11 @@ class Quest(BaseModel):
 
             if events:
                 events.publish(Event(EventType.QUEST_STARTED, {"quest": self}))
+                
+                # Auto-register event listeners for objectives
+                for objective in self.objectives:
+                    if objective.objective_type == ObjectiveType.KILL_ENEMY and objective.target:
+                        self._register_kill_listener(objective, events)
 
     def complete(self, events: Optional[EventManager] = None) -> None:
         """Complete the quest.
@@ -285,6 +290,30 @@ class Quest(BaseModel):
 
         completed = sum(1 for obj in self.objectives if obj.is_completed())
         return completed / len(self.objectives)
+    
+    def _register_kill_listener(self, objective: QuestObjective, events: EventManager) -> None:
+        """Register event listener for kill objectives.
+        
+        Args:
+            objective: The objective to track
+            events: Event manager to subscribe to
+        """
+        def on_death(event: Event):
+            """Handle entity death events."""
+            if not self.is_active() or objective.is_completed():
+                return
+            
+            entity = event.data.get('entity')
+            if entity and hasattr(entity, 'name') and entity.name == objective.target:
+                was_completed = objective.increment(1)
+                if was_completed:
+                    events.publish(Event(
+                        EventType.OBJECTIVE_COMPLETED,
+                        {"quest": self, "objective": objective}
+                    ))
+                    self.check_completion(events)
+        
+        events.subscribe(EventType.DEATH, on_death)
 
 
 class QuestManager(BaseModel):
