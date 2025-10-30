@@ -4,11 +4,14 @@ This module provides the main Game class that manages the game loop,
 state, and coordinates all systems.
 """
 
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, TYPE_CHECKING
 from enum import Enum, auto
 from dataclasses import dataclass, field
 
 from .events import EventManager, Event, EventType
+
+if TYPE_CHECKING:
+    from ..quests.quest import QuestManager
 
 
 class GameState(Enum):
@@ -91,6 +94,21 @@ class Game:
             The system instance or None if not found
         """
         return self._systems.get(name)
+    
+    @property
+    def quests(self) -> 'QuestManager':
+        """Access the quest manager singleton.
+        
+        Returns:
+            The QuestManager singleton instance
+            
+        Example:
+            >>> game = Game()
+            >>> quest = Quest(name="Save the Village")
+            >>> game.quests.start_quest(quest.id)
+        """
+        from ..quests.quest import QuestManager
+        return QuestManager.instance()
 
     def start(self) -> None:
         """Start the game and initialize all systems."""

@@ -127,12 +127,15 @@ class QuestObjective(BaseModel):
 
 class Quest(BaseModel):
     """A quest with objectives and rewards.
+    
+    Quests automatically register themselves with the QuestManager singleton
+    when created.
 
     Example:
         >>> quest = Quest(
         ...     name="Save the Village",
         ...     description="The village is under attack by goblins!"
-        ... )
+        ... )  # Automatically registers to QuestManager
         >>> quest.add_objective(QuestObjective(
         ...     description="Defeat goblin chief",
         ...     objective_type=ObjectiveType.KILL_ENEMY,
@@ -177,6 +180,12 @@ class Quest(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Custom data")
 
     model_config = {"arbitrary_types_allowed": True}
+    
+    def __init__(self, **data):
+        """Initialize quest and auto-register to QuestManager."""
+        super().__init__(**data)
+        # Auto-register to singleton QuestManager
+        _get_quest_manager().add_quest(self)
 
     def add_objective(self, objective: QuestObjective) -> None:
         """Add an objective to the quest.
@@ -317,13 +326,16 @@ class Quest(BaseModel):
 
 
 class QuestManager(BaseModel):
-    """Manages all quests in the game.
+    """Manages all quests in the game (Singleton).
+    
+    This is a framework-managed singleton. Access via QuestManager.instance()
+    or through game.quests property.
 
     Example:
-        >>> manager = QuestManager()
-        >>> quest = Quest(name="Tutorial Quest")
-        >>> manager.add_quest(quest)
-        >>> manager.start_quest(quest.id)
+        >>> quest = Quest(name="Tutorial Quest")  # Auto-registers
+        >>> QuestManager.instance().start_quest(quest.id)
+        >>> # Or via game instance:
+        >>> game.quests.start_quest(quest.id)
     """
 
     quests: Dict[str, Quest] = Field(default_factory=dict, description="All quests")
@@ -488,3 +500,39 @@ class QuestManager(BaseModel):
         """
         self.active_quests = data.get("active_quests", [])
         self.completed_quests = data.get("completed_quests", [])
+
+
+# Singleton implementation - stored outside class to avoid Pydantic field conflicts
+_quest_manager_instance: Optional[QuestManager] = None
+
+
+def _get_quest_manager() -> QuestManager:
+    """Get or create the QuestManager singleton instance.
+    
+    Returns:
+        The QuestManager singleton instance
+    """
+    global _quest_manager_instance
+    if _quest_manager_instance is None:
+        _quest_manager_instance = QuestManager()
+    return _quest_manager_instance
+
+
+def _reset_quest_manager() -> None:
+    """Reset the QuestManager singleton instance.
+    
+    Useful for testing or when you need to reset quest state.
+    """
+    global _quest_manager_instance
+    _quest_manager_instance = None
+
+
+# Add class methods to QuestManager after definition
+def _instance_method(cls) -> 'QuestManager':
+    return _get_quest_manager()
+
+def _reset_method(cls) -> None:
+    _reset_quest_manager()
+
+QuestManager.instance = classmethod(_instance_method)
+QuestManager.reset = classmethod(_reset_method)

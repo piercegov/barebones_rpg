@@ -421,27 +421,41 @@ class DialogTree(BaseModel):
 class DialogSession:
     """Active dialog session.
 
-    Manages the state of an ongoing conversation.
+    Manages the state of an ongoing conversation. The framework automatically
+    populates the context with game systems when a game instance is provided.
 
     Example:
         >>> tree = DialogTree(name="Test")
         >>> # ... add nodes ...
-        >>> session = DialogSession(tree)
-        >>> session.start()
-        >>> current = session.get_current_node()
-        >>> choices = session.get_available_choices()
-        >>> session.make_choice(0)  # Select first choice
+        >>> # Simple - just pass game, framework handles context
+        >>> session = DialogSession(tree, game=game)
+        >>> # Or add custom context
+        >>> session = DialogSession(tree, game=game, context={"npc_mood": "happy"})
     """
 
-    def __init__(self, dialog_tree: DialogTree, context: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, 
+        dialog_tree: DialogTree, 
+        game: Optional[Any] = None,
+        context: Optional[Dict[str, Any]] = None
+    ):
         """Initialize a dialog session.
 
         Args:
             dialog_tree: The dialog tree to run
-            context: Game context for evaluating conditions
+            game: Game instance (framework auto-populates context from it)
+            context: Additional custom context data
         """
         self.tree = dialog_tree
         self.context = context or {}
+        
+        # Auto-populate context from game if provided
+        if game:
+            self.context['game'] = game
+            self.context['quest_manager'] = game.quests
+            self.context['events'] = game.events
+            # Note: world property not added yet, can be added when needed
+        
         self.current_node_id: Optional[str] = None
         self.history: List[str] = []  # Node IDs visited
         self.is_active = False

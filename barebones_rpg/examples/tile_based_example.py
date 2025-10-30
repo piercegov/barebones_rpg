@@ -81,8 +81,6 @@ class TileBasedGame:
         self.dialog_session: Optional[DialogSession] = None
         self.dialog_trees: Dict[str, DialogTree] = {}
 
-        # Quest system
-        self.quest_manager = QuestManager()
         self.goblin_quest: Optional[Quest] = None
 
         self._populate_world()
@@ -156,7 +154,6 @@ class TileBasedGame:
 
     def _create_quests(self):
         """Create quests."""
-        # Create "Kill the Goblin" quest
         self.goblin_quest = Quest(
             name="Kill the Goblin",
             description="The villager needs help dealing with a troublesome goblin.",
@@ -172,9 +169,6 @@ class TileBasedGame:
             target_count=1
         )
         self.goblin_quest.add_objective(kill_goblin_objective)
-        
-        # Add to quest manager
-        self.quest_manager.add_quest(self.goblin_quest)
 
     def _create_dialogs(self):
         """Create dialog trees for NPCs."""
@@ -458,14 +452,7 @@ class TileBasedGame:
         dialog_tree = self.dialog_trees.get("villager")
 
         if dialog_tree:
-            self.dialog_session = DialogSession(
-                dialog_tree, 
-                context={
-                    "player": self.player,
-                    "quest_manager": self.quest_manager,
-                    "events": self.game.events
-                }
-            )
+            self.dialog_session = DialogSession(dialog_tree, game=self.game)
             self.dialog_session.start()
             self.in_dialog = True
         else:
@@ -478,9 +465,11 @@ class TileBasedGame:
 
         mouse_x, mouse_y = event.pos
 
-        # Calculate choice button bounds
+        # Calculate choice button bounds (must match rendering calculation)
         choices = self.dialog_session.get_available_choices()
-        choice_y_start = 300
+        dialog_box_height = 400
+        dialog_box_y = SCREEN_HEIGHT - dialog_box_height - 20
+        choice_y_start = dialog_box_y + 180
         choice_height = 40
         choice_padding = 10
 
@@ -908,8 +897,8 @@ class TileBasedGame:
         ap_text = f"AP: {self.current_ap}/{PLAYER_AP}"
         self.renderer.draw_text(ap_text, 150, 10, Colors.WHITE, font_size=20)
 
-        # Active quests
-        active_quests = self.quest_manager.get_active_quests()
+        # Active quests (accessed via game.quests)
+        active_quests = self.game.quests.get_active_quests()
         if active_quests:
             quest_y = 50
             self.renderer.draw_text(
