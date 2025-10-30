@@ -228,12 +228,15 @@ class DialogChoice(BaseModel):
         if self.quest_to_start:
             events = context.get('events')
             quest_manager = context.get('quest_manager')
+            location = context.get('location')
+            world = context.get('world')
             
             if quest_manager and events:
                 quest_manager.start_quest(self.quest_to_start.id, events)
             elif events:
                 # Direct start if no manager in context
-                self.quest_to_start.start(events)
+                # Pass location/world for retroactive progress checking
+                self.quest_to_start.start(events, location=location, world=world)
         
         # Handle quest updating
         if self.quest_to_update:

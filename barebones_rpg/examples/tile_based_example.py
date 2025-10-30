@@ -184,10 +184,11 @@ class TileBasedGame:
             gold_reward=25
         )
         
+        # Use enemy ID for unique target tracking (enables retroactive completion)
         self.goblin_quest.add_objective(QuestObjective(
             description="Defeat the Goblin",
             objective_type=ObjectiveType.KILL_ENEMY,
-            target="Goblin",
+            target=self.enemy.id,
             target_count=1
         ))
         
@@ -476,7 +477,7 @@ class TileBasedGame:
             self.dialog_session = DialogSession(
                 dialog_tree, 
                 game=self.game,
-                context={"player": self.player}
+                context={"player": self.player, "location": self.location}
             )
             self.dialog_session.start()
             self.in_dialog = True

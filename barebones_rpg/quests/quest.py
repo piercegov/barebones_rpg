@@ -195,11 +195,13 @@ class Quest(BaseModel):
         """
         self.objectives.append(objective)
 
-    def start(self, events: Optional[EventManager] = None) -> None:
+    def start(self, events: Optional[EventManager] = None, location: Optional[Any] = None, world: Optional[Any] = None) -> None:
         """Start the quest.
 
         Args:
             events: Event manager for publishing events
+            location: Optional location to check for retroactive progress (e.g., checking if entities still exist)
+            world: Optional world to check for retroactive progress across all locations
         """
         if self.status == QuestStatus.NOT_STARTED:
             self.status = QuestStatus.ACTIVE
@@ -214,6 +216,9 @@ class Quest(BaseModel):
                 for objective in self.objectives:
                     if objective.objective_type == ObjectiveType.KILL_ENEMY and objective.target:
                         self._register_kill_listener(objective, events)
+                
+                # Check for retroactive progress (e.g., if unique enemies are already dead)
+                self.check_retroactive_progress(events, location, world)
 
     def complete(self, events: Optional[EventManager] = None) -> None:
         """Complete the quest.
@@ -300,20 +305,132 @@ class Quest(BaseModel):
         completed = sum(1 for obj in self.objectives if obj.is_completed())
         return completed / len(self.objectives)
     
+    def check_retroactive_progress(self, events: Optional[EventManager] = None, location: Optional[Any] = None, world: Optional[Any] = None) -> None:
+        """Check for retroactive progress on objectives.
+        
+        This method checks if objectives can be completed based on current world state,
+        even if the required actions happened before the quest was started.
+        
+        For example, if a quest requires killing a unique enemy (tracked by ID) and that
+        enemy is already dead when the quest starts, this will mark the objective complete.
+        
+        Objectives with ID-based targets (UUIDs) are considered unique and will be checked
+        retroactively. Name-based targets are considered generic and won't be checked.
+        
+        Args:
+            events: Event manager for publishing events
+            location: Location to check for entity existence (for single-location quests)
+            world: World to check for entity existence (for multi-location quests)
+        """
+        if not self.is_active():
+            return
+        
+        for objective in self.objectives:
+            if objective.is_completed():
+                continue
+            
+            # Only check KILL_ENEMY objectives with ID-based targets
+            if objective.objective_type == ObjectiveType.KILL_ENEMY and objective.target:
+                # Check if target looks like a UUID (ID-based) vs a name (generic)
+                is_uuid = self._is_uuid_format(objective.target)
+                
+                if is_uuid:
+                    # This is a unique target - check if it still exists
+                    entity_exists = False
+                    
+                    if location:
+                        # Check in specific location
+                        entity_exists = any(
+                            hasattr(e, 'id') and e.id == objective.target
+                            for e in location.entities
+                        )
+                    elif world:
+                        # Check in all locations of the world
+                        for loc in world.locations.values():
+                            entity_exists = any(
+                                hasattr(e, 'id') and e.id == objective.target
+                                for e in loc.entities
+                            )
+                            if entity_exists:
+                                break
+                    
+                    # If entity doesn't exist, it was already killed - mark objective complete
+                    if not entity_exists:
+                        was_completed = objective.increment(objective.target_count - objective.current_count)
+                        if was_completed and events:
+                            events.publish(Event(
+                                EventType.OBJECTIVE_COMPLETED,
+                                {"quest": self, "objective": objective}
+                            ))
+        
+        # Check if quest is now complete
+        if events:
+            self.check_completion(events)
+    
+    def _is_uuid_format(self, value: str) -> bool:
+        """Check if a string looks like a UUID.
+        
+        Args:
+            value: String to check
+            
+        Returns:
+            True if string appears to be a UUID
+        """
+        # UUIDs are 36 characters with hyphens in specific positions
+        # Example: "550e8400-e29b-41d4-a716-446655440000"
+        if len(value) != 36:
+            return False
+        
+        parts = value.split('-')
+        if len(parts) != 5:
+            return False
+        
+        # Check part lengths: 8-4-4-4-12
+        expected_lengths = [8, 4, 4, 4, 12]
+        if [len(p) for p in parts] != expected_lengths:
+            return False
+        
+        # Check if all parts are hexadecimal
+        try:
+            for part in parts:
+                int(part, 16)
+            return True
+        except ValueError:
+            return False
+    
     def _register_kill_listener(self, objective: QuestObjective, events: EventManager) -> None:
         """Register event listener for kill objectives.
+        
+        This method handles both name-based (generic) and ID-based (unique) targets:
+        - Name-based: Matches any entity with the target name (e.g., "Goblin")
+        - ID-based: Matches only the specific entity with the target ID (UUID)
         
         Args:
             objective: The objective to track
             events: Event manager to subscribe to
         """
+        # Determine if target is ID-based or name-based
+        is_uuid = self._is_uuid_format(objective.target)
+        
         def on_death(event: Event):
             """Handle entity death events."""
             if not self.is_active() or objective.is_completed():
                 return
             
             entity = event.data.get('entity')
-            if entity and hasattr(entity, 'name') and entity.name == objective.target:
+            if not entity:
+                return
+            
+            # Match based on target type
+            matches = False
+            if is_uuid:
+                # ID-based: match by entity ID
+                matches = hasattr(entity, 'id') and entity.id == objective.target
+            else:
+                # Name-based: match by entity name
+                matches = hasattr(entity, 'name') and entity.name == objective.target
+            
+            if matches:
                 was_completed = objective.increment(1)
                 if was_completed:
                     events.publish(Event(
