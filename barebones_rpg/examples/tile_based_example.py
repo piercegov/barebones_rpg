@@ -86,6 +86,9 @@ class TileBasedGame:
         self._populate_world()
         self._create_quests()
         self._create_dialogs()
+        
+        # Subscribe to quest completion to give rewards
+        self.game.events.subscribe(EventType.QUEST_COMPLETED, self._on_quest_completed)
 
     def _create_world(self) -> Location:
         """Create the game world with walls."""
@@ -161,7 +164,7 @@ class TileBasedGame:
             gold_reward=25
         )
         
-        # Add objective
+        # Add objective to kill goblin
         kill_goblin_objective = QuestObjective(
             description="Defeat the Goblin",
             objective_type=ObjectiveType.KILL_ENEMY,
@@ -169,6 +172,15 @@ class TileBasedGame:
             target_count=1
         )
         self.goblin_quest.add_objective(kill_goblin_objective)
+        
+        # Add objective to turn in quest
+        turn_in_objective = QuestObjective(
+            description="Return to the Villager",
+            objective_type=ObjectiveType.TALK_TO_NPC,
+            target="Villager",
+            target_count=1
+        )
+        self.goblin_quest.add_objective(turn_in_objective)
 
     def _create_dialogs(self):
         """Create dialog trees for NPCs."""
@@ -270,13 +282,27 @@ class TileBasedGame:
             ]
         )
         
-        # Quest complete - turn in (framework already tracked the kill)
+        # Quest complete - turn in (mark turn-in objective complete)
         quest_complete = DialogNode(
             id="quest_complete",
             speaker="Villager",
             text="You have? That's wonderful news! Thank you so much! Here's your reward as promised.",
             choices=[
-                DialogChoice(text="Glad I could help!", next_node_id=None)
+                DialogChoice(
+                    text="Glad I could help!",
+                    next_node_id="quest_thank_you",
+                    quest_to_update=(self.goblin_quest, ObjectiveType.TALK_TO_NPC, "Villager", 1)
+                )
+            ]
+        )
+        
+        # Thank you node after receiving reward
+        quest_thank_you = DialogNode(
+            id="quest_thank_you",
+            speaker="Villager",
+            text="The area is much safer now. Thanks again for your help!",
+            choices=[
+                DialogChoice(text="Happy to help!", next_node_id=None)
             ]
         )
         
@@ -326,6 +352,7 @@ class TileBasedGame:
         villager_tree.add_node(quest_accepted_dead)
         villager_tree.add_node(quest_in_progress)
         villager_tree.add_node(quest_complete)
+        villager_tree.add_node(quest_thank_you)
         villager_tree.add_node(quest_already_complete)
         villager_tree.add_node(how_are_you)
         villager_tree.add_node(about_you)
@@ -452,7 +479,12 @@ class TileBasedGame:
         dialog_tree = self.dialog_trees.get("villager")
 
         if dialog_tree:
-            self.dialog_session = DialogSession(dialog_tree, game=self.game)
+            # Add player to dialog context so rewards can be given
+            self.dialog_session = DialogSession(
+                dialog_tree, 
+                game=self.game,
+                context={"player": self.player}
+            )
             self.dialog_session.start()
             self.in_dialog = True
         else:
@@ -709,6 +741,20 @@ class TileBasedGame:
         self.combat_messages.append(msg)
         print(msg)
 
+    def _on_quest_completed(self, event: Event):
+        """Handle quest completion event to give rewards."""
+        quest = event.data.get('quest')
+        if quest and quest == self.goblin_quest:
+            # Give experience
+            if quest.exp_reward > 0:
+                self.player.gain_exp(quest.exp_reward, self.game.events)
+                print(f"\n✨ Gained {quest.exp_reward} EXP!")
+            
+            # Give gold
+            if quest.gold_reward > 0 and self.player.inventory:
+                self.player.inventory.add_gold(quest.gold_reward)
+                print(f"✨ Gained {quest.gold_reward} gold!")
+    
     def _on_combat_end(self, event: Event):
         """Handle combat end event."""
         result = event.data.get('result', 'UNKNOWN')
