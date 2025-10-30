@@ -51,6 +51,14 @@ class DialogRenderer:
         self.choice_height = 40
         self.choice_padding = 10
         self.choice_width = 500
+        self.choice_y_start_offset = 180
+        self.text_y_offset = 60
+        self.text_line_spacing = 22
+        
+        # Font sizes
+        self.speaker_font_size = 20
+        self.text_font_size = 16
+        self.choice_font_size = 16
         
         # Colors
         self.bg_color = Color(30, 30, 40)
@@ -117,7 +125,7 @@ class DialogRenderer:
         dialog_x, dialog_y, dialog_width, dialog_height = self.get_dialog_box_bounds()
         
         # Choices start below the text area
-        choice_y_start = dialog_y + 180
+        choice_y_start = dialog_y + self.choice_y_start_offset
         y = choice_y_start + choice_index * (self.choice_height + self.choice_padding)
         x = (self.screen_width - self.choice_width) // 2
         
@@ -194,7 +202,7 @@ class DialogRenderer:
             x + self.dialog_box_padding,
             y + self.dialog_box_padding,
             self.speaker_color,
-            font_size=20
+            font_size=self.speaker_font_size
         )
     
     def render_text(self, text: str):
@@ -206,20 +214,23 @@ class DialogRenderer:
         x, y, width, _ = self.get_dialog_box_bounds()
         
         text_x = x + self.dialog_box_padding
-        text_y = y + 60
+        text_y = y + self.text_y_offset
         max_width = width - self.dialog_box_padding * 2
         
+        # Scale char_width based on font size (rough approximation: font_size / 2)
+        char_width = self.text_font_size // 2
+        
         # Wrap text
-        lines = self.wrap_text(text, max_width)
+        lines = self.wrap_text(text, max_width, char_width=char_width)
         
         # Render each line
         for i, line in enumerate(lines):
             self.renderer.draw_text(
                 line,
                 text_x,
-                text_y + i * 22,
+                text_y + i * self.text_line_spacing,
                 self.text_color,
-                font_size=16
+                font_size=self.text_font_size
             )
     
     def render_choices(self, session: DialogSession):
@@ -247,10 +258,10 @@ class DialogRenderer:
             # Choice text
             self.renderer.draw_text(
                 f"{i+1}. {choice.text}",
-                x + 10,
-                y + 12,
+                x + self.choice_padding,
+                y + self.choice_padding,
                 self.text_color,
-                font_size=16
+                font_size=self.choice_font_size
             )
     
     def render_session(self, session: DialogSession):
@@ -312,7 +323,13 @@ class DialogRenderer:
         choice_height: Optional[int] = None,
         choice_width: Optional[int] = None,
         bg_color: Optional[Color] = None,
-        speaker_color: Optional[Color] = None
+        speaker_color: Optional[Color] = None,
+        speaker_font_size: Optional[int] = None,
+        text_font_size: Optional[int] = None,
+        choice_font_size: Optional[int] = None,
+        choice_y_start_offset: Optional[int] = None,
+        text_y_offset: Optional[int] = None,
+        text_line_spacing: Optional[int] = None
     ):
         """Configure dialog renderer appearance.
         
@@ -336,4 +353,16 @@ class DialogRenderer:
             self.bg_color = bg_color
         if speaker_color is not None:
             self.speaker_color = speaker_color
+        if speaker_font_size is not None:
+            self.speaker_font_size = speaker_font_size
+        if text_font_size is not None:
+            self.text_font_size = text_font_size
+        if choice_font_size is not None:
+            self.choice_font_size = choice_font_size
+        if choice_y_start_offset is not None:
+            self.choice_y_start_offset = choice_y_start_offset
+        if text_y_offset is not None:
+            self.text_y_offset = text_y_offset
+        if text_line_spacing is not None:
+            self.text_line_spacing = text_line_spacing
 

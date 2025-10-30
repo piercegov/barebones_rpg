@@ -33,7 +33,7 @@ from barebones_rpg.quests.quest import Quest, QuestObjective, ObjectiveType
 
 
 # Constants
-TILE_SIZE = 32
+TILE_SIZE = 64  # Scaled 2x from 32
 GRID_WIDTH = 20
 GRID_HEIGHT = 15
 SCREEN_WIDTH = GRID_WIDTH * TILE_SIZE
@@ -72,6 +72,22 @@ class TileBasedGame:
         self.click_handler = ClickToMoveHandler(TILE_SIZE, GRID_WIDTH, GRID_HEIGHT, self.pathfinder)
         self.ui_components = UIComponents(self.renderer)
         self.dialog_renderer = DialogRenderer(self.renderer, SCREEN_WIDTH, SCREEN_HEIGHT)
+        # Scale dialog renderer dimensions 2x
+        self.dialog_renderer.configure(
+            dialog_box_height=800,
+            dialog_box_margin=40,
+            choice_height=80,
+            choice_width=1000,
+            speaker_font_size=40,
+            text_font_size=32,
+            choice_font_size=32,
+            choice_y_start_offset=360,
+            text_y_offset=120,
+            text_line_spacing=44
+        )
+        # Update internal padding values
+        self.dialog_renderer.dialog_box_padding = 40
+        self.dialog_renderer.choice_padding = 20
         self.ai_controller = SimplePathfindingAI(self.pathfinder)
 
         # Game state
@@ -627,19 +643,24 @@ class TileBasedGame:
         # Use framework's UI components
         self.ui_components.render_turn_indicator(
             self.player_turn,
-            (10, 10)
+            (20, 20),
+            font_size=40
         )
         
         self.ui_components.render_resource_bar(
             "AP",
             self.ap_manager.get_remaining_ap(self.player),
             PLAYER_AP,
-            (150, 10)
+            (300, 20),
+            font_size=40
         )
 
         self.ui_components.render_quest_list(
             self.game.quests,
-            (10, 50)
+            (20, 100),
+            title_font_size=32,
+            quest_font_size=28,
+            objective_font_size=24
         )
 
         instructions = [
@@ -650,7 +671,8 @@ class TileBasedGame:
         ]
         self.ui_components.render_instructions(
             instructions,
-            (10, SCREEN_HEIGHT - 75)
+            (20, SCREEN_HEIGHT - 150),
+            font_size=24
         )
 
     def _render_combat(self):
@@ -661,23 +683,37 @@ class TileBasedGame:
 
         self.renderer.draw_text(
             "=== COMBAT ===",
-            SCREEN_WIDTH // 2 - 80,
-            50,
+            SCREEN_WIDTH // 2 - 160,
+            100,
             Colors.RED,
-            font_size=24
+            font_size=48
         )
 
         # Use framework's stat panel
-        self.ui_components.render_stat_panel(self.player, (50, 100))
+        self.ui_components.render_stat_panel(
+            self.player, 
+            (100, 200),
+            name_font_size=40,
+            stat_font_size=32,
+            line_spacing=40
+        )
 
         if self.combat and self.combat.enemies.members:
             enemy = self.combat.enemies.members[0]
-            self.ui_components.render_stat_panel(enemy, (SCREEN_WIDTH - 150, 100))
+            self.ui_components.render_stat_panel(
+                enemy, 
+                (SCREEN_WIDTH - 300, 200),
+                name_font_size=40,
+                stat_font_size=32,
+                line_spacing=40
+            )
 
         # Use framework's message log
         self.ui_components.render_message_log(
             self.combat_messages,
-            (50, 200)
+            (100, 400),
+            font_size=28,
+            line_spacing=40
         )
 
     def _render_dialog(self):
