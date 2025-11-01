@@ -356,17 +356,22 @@ class DialogTree(BaseModel):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    def add_node(self, node: DialogNode) -> None:
+    def add_node(self, node: DialogNode) -> bool:
         """Add a node to the tree.
 
         Args:
             node: Node to add
+
+        Returns:
+            True if node was added successfully
         """
         self.nodes[node.id] = node
 
         # Auto-set start node if this is the first node
         if self.start_node_id is None:
             self.start_node_id = node.id
+        
+        return True
 
     def get_node(self, node_id: str) -> Optional[DialogNode]:
         """Get a node by ID.
@@ -389,13 +394,19 @@ class DialogTree(BaseModel):
             return self.nodes.get(self.start_node_id)
         return None
 
-    def set_start_node(self, node_id: str) -> None:
+    def set_start_node(self, node_id: str) -> bool:
         """Set the starting node.
 
         Args:
             node_id: ID of the start node
+
+        Returns:
+            True if node exists and was set as start node
         """
-        self.start_node_id = node_id
+        if node_id in self.nodes:
+            self.start_node_id = node_id
+            return True
+        return False
 
     def validate(self) -> List[str]:
         """Validate the dialog tree.

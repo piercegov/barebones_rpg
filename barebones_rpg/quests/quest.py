@@ -187,13 +187,17 @@ class Quest(BaseModel):
         # Auto-register to singleton QuestManager
         _get_quest_manager().add_quest(self)
 
-    def add_objective(self, objective: QuestObjective) -> None:
+    def add_objective(self, objective: QuestObjective) -> bool:
         """Add an objective to the quest.
 
         Args:
             objective: Objective to add
+
+        Returns:
+            True if objective was added successfully
         """
         self.objectives.append(objective)
+        return True
 
     def start(self, events: Optional[EventManager] = None, location: Optional[Any] = None, world: Optional[Any] = None) -> None:
         """Start the quest.
@@ -461,13 +465,17 @@ class QuestManager(BaseModel):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    def add_quest(self, quest: Quest) -> None:
+    def add_quest(self, quest: Quest) -> bool:
         """Add a quest to the manager.
 
         Args:
             quest: Quest to add
+
+        Returns:
+            True if quest was added successfully
         """
         self.quests[quest.id] = quest
+        return True
 
     def get_quest(self, quest_id: str) -> Optional[Quest]:
         """Get a quest by ID.

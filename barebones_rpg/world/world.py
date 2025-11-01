@@ -119,16 +119,21 @@ class Location(BaseModel):
             return self.tiles.get((x, y))
         return None
 
-    def set_tile(self, x: int, y: int, tile: Tile) -> None:
+    def set_tile(self, x: int, y: int, tile: Tile) -> bool:
         """Set a tile at coordinates.
 
         Args:
             x: X coordinate
             y: Y coordinate
             tile: Tile to set
+
+        Returns:
+            True if tile was set successfully (within bounds)
         """
         if 0 <= x < self.width and 0 <= y < self.height:
             self.tiles[(x, y)] = tile
+            return True
+        return False
 
     def is_walkable(self, x: int, y: int) -> bool:
         """Check if a position is walkable.
@@ -158,28 +163,38 @@ class Location(BaseModel):
                 return entity
         return None
 
-    def add_entity(self, entity: Any, x: Optional[int] = None, y: Optional[int] = None) -> None:
+    def add_entity(self, entity: Any, x: Optional[int] = None, y: Optional[int] = None) -> bool:
         """Add an entity to the location.
 
         Args:
             entity: Entity to add
             x: X coordinate (uses entity's position if None)
             y: Y coordinate (uses entity's position if None)
+
+        Returns:
+            True if entity was added successfully
         """
         if x is not None and y is not None:
             entity.position = (x, y)
 
         if entity not in self.entities:
             self.entities.append(entity)
+            return True
+        return False
 
-    def remove_entity(self, entity: Any) -> None:
+    def remove_entity(self, entity: Any) -> bool:
         """Remove an entity from the location.
 
         Args:
             entity: Entity to remove
+
+        Returns:
+            True if entity was found and removed
         """
         if entity in self.entities:
             self.entities.remove(entity)
+            return True
+        return False
     
     def find_entity_by_name(self, name: str) -> Optional[Any]:
         """Find an entity by name.
@@ -468,17 +483,22 @@ class World(BaseModel):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    def add_location(self, location: Location) -> None:
+    def add_location(self, location: Location) -> bool:
         """Add a location to the world.
 
         Args:
             location: Location to add
+
+        Returns:
+            True if location was added successfully
         """
         self.locations[location.id] = location
 
         # Set as current location if none set
         if self.current_location_id is None:
             self.current_location_id = location.id
+        
+        return True
 
     def get_location(self, location_id: str) -> Optional[Location]:
         """Get a location by ID.

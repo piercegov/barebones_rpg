@@ -49,22 +49,31 @@ class CombatantGroup(BaseModel):
         """
         return len(self.get_alive_members()) == 0
 
-    def add_member(self, member: Any) -> None:
+    def add_member(self, member: Any) -> bool:
         """Add a member to the group.
 
         Args:
             member: Entity to add
+
+        Returns:
+            True if member was added successfully
         """
         self.members.append(member)
+        return True
 
-    def remove_member(self, member: Any) -> None:
+    def remove_member(self, member: Any) -> bool:
         """Remove a member from the group.
 
         Args:
             member: Entity to remove
+
+        Returns:
+            True if member was found and removed
         """
         if member in self.members:
             self.members.remove(member)
+            return True
+        return False
 
 
 class TurnOrder(BaseModel):

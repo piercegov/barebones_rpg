@@ -66,17 +66,21 @@ class Stats(BaseModel):
         else:
             self.custom[stat_name] = amount
 
-    def set_stat(self, stat_name: str, value: int) -> None:
+    def set_stat(self, stat_name: str, value: int) -> bool:
         """Set a stat to a specific value.
 
         Args:
             stat_name: Name of the stat to set
             value: New value
+
+        Returns:
+            True if stat was set successfully
         """
         if hasattr(self, stat_name):
             setattr(self, stat_name, value)
         else:
             self.custom[stat_name] = value
+        return True
 
     def get_stat(self, stat_name: str, default: int = 0) -> int:
         """Get a stat value.
@@ -208,13 +212,17 @@ class StatsManager:
 
         return base_value
 
-    def add_status_effect(self, effect: StatusEffect) -> None:
+    def add_status_effect(self, effect: StatusEffect) -> bool:
         """Add a status effect.
 
         Args:
             effect: The status effect to add
+
+        Returns:
+            True if status effect was added successfully
         """
         self.status_effects.append(effect)
+        return True
 
     def remove_status_effect(self, effect_name: str) -> bool:
         """Remove a status effect by name.

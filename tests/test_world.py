@@ -29,10 +29,11 @@ def test_set_tile_out_of_bounds_handled_gracefully():
     
     tile = Tile(x=20, y=20, tile_type="wall", walkable=False)
     
-    location.set_tile(20, 20, tile)
+    result = location.set_tile(20, 20, tile)
     
-    result = location.get_tile(20, 20)
-    assert result is None
+    # Out of bounds, so tile not set and returns False
+    assert result is False
+    assert location.get_tile(20, 20) is None
 
 
 def test_entity_position_tracking():
@@ -124,8 +125,10 @@ def test_tile_walkability_checks():
     location = Location(name="Test", width=10, height=10)
     
     wall = Tile(x=5, y=5, tile_type="wall", walkable=False)
-    location.set_tile(5, 5, wall)
+    result = location.set_tile(5, 5, wall)
     
+    # Tile set successfully
+    assert result is True
     assert location.is_walkable(5, 5) is False
     assert location.is_walkable(6, 6) is True
 
@@ -199,9 +202,15 @@ def test_location_remove_entity():
     
     assert entity in location.entities
     
-    location.remove_entity(entity)
+    result = location.remove_entity(entity)
     
+    # Entity removed successfully
+    assert result is True
     assert entity not in location.entities
+    
+    # Trying to remove again should return False
+    result2 = location.remove_entity(entity)
+    assert result2 is False
 
 
 def test_tile_can_enter():
