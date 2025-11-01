@@ -483,7 +483,7 @@ class TileBasedGame:
         weapon_range = weapon.metadata.get('range', 1) if weapon else 1
 
         if distance <= weapon_range:
-            self._start_combat(enemy)
+            self._start_combat(self.player, enemy)
         else:
             print(f"Enemy is too far! Need to be within {weapon_range} tile(s).")
 
@@ -554,8 +554,19 @@ class TileBasedGame:
             if attacked:
                 return  # Combat started, stop processing
 
-    def _start_combat(self, enemy: Enemy):
-        """Start combat with an enemy."""
+    def _start_combat(self, attacker, target):
+        """Start combat between attacker and target.
+        
+        Args:
+            attacker: The entity initiating combat
+            target: The entity being attacked
+        """
+        # Determine which is the enemy (could be initiated by player or enemy)
+        if attacker.faction == "enemy":
+            enemy = attacker
+        else:
+            enemy = target
+            
         print(f"\n=== Combat Started: {self.player.name} vs {enemy.name} ===")
         self.in_combat = True
         self.combat_messages = [

@@ -380,7 +380,7 @@ class UIComponents:
         
         if show_atk:
             self.renderer.draw_text(
-                f"ATK: {entity.stats.atk}",
+                f"STR: {entity.stats.strength}",
                 x,
                 current_y,
                 Colors.WHITE,
@@ -390,7 +390,7 @@ class UIComponents:
         
         if show_def:
             self.renderer.draw_text(
-                f"DEF: {entity.stats.defense}",
+                f"DEF: {entity.stats.physical_defense}",
                 x,
                 current_y,
                 Colors.WHITE,
