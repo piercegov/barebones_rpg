@@ -27,7 +27,7 @@ class ActionResult(BaseModel):
     Contains information about what happened when an action was performed.
     """
 
-    success: bool = Field(default=True, description="Whether action succeeded")
+    success: bool = Field(default=True, description="Whether action executed validly (False = invalid/cannot execute)")
     damage: int = Field(default=0, description="Damage dealt")
     healing: int = Field(default=0, description="Healing done")
     message: str = Field(default="", description="Result message")
@@ -284,7 +284,7 @@ class RunAction(CombatAction):
             )
         else:
             return ActionResult(
-                success=False,
+                success=True,
                 message=f"{source.name} couldn't get away!",
                 metadata={"fled": False}
             )
