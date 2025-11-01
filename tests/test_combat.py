@@ -147,20 +147,6 @@ def test_combat_end_event_published(combat_setup):
     assert end_events[0].data["result"] == "VICTORY"
 
 
-def test_defending_status_cleared_between_turns(combat_setup):
-    """Defending status should be cleared at the start of each new turn."""
-    combat, hero, enemy1, enemy2, events = combat_setup
-    combat.start()
-    
-    combat.defending.add(hero.id)
-    
-    assert hero.id in combat.defending
-    
-    combat._start_next_turn()
-    
-    assert hero.id not in combat.defending
-
-
 def test_status_effects_processed_each_turn():
     """Status effects should be processed for all combatants each turn."""
     from barebones_rpg.entities.stats import StatusEffect

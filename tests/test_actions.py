@@ -2,7 +2,7 @@
 import pytest
 import random
 from barebones_rpg.combat.actions import (
-    AttackAction, DefendAction, SkillAction, RunAction,
+    AttackAction, SkillAction, RunAction,
     ActionResult
 )
 from barebones_rpg.combat.combat import Combat
@@ -164,18 +164,6 @@ def test_run_action_fails(monkeypatch):
     assert result.metadata.get("fled") is False
 
 
-def test_defend_action_marks_entity_defending():
-    """DefendAction should mark the entity in the combat defending set."""
-    defender = Character(name="Tank", stats=Stats(hp=100))
-    combat = Combat([defender], [Enemy(name="Enemy", stats=Stats())], EventManager())
-    
-    action = DefendAction()
-    result = action.execute(defender, None, {"combat_state": combat})
-    
-    assert result.success is True
-    assert defender.id in combat.defending
-
-
 def test_skill_can_execute_checks_mp():
     """Skill can_execute should check MP availability."""
     low_mp_caster = Character(name="Tired Mage", stats=Stats(mp=5))
@@ -210,16 +198,6 @@ def test_attack_action_calculates_damage_correctly_atk_lower():
     result = action.execute(attacker, target, {})
     
     assert result.damage == 1
-
-
-def test_defend_action_message():
-    """DefendAction should return appropriate message."""
-    defender = Character(name="Tank", stats=Stats())
-    action = DefendAction()
-    
-    result = action.execute(defender, None, {})
-    
-    assert "defensive stance" in result.message.lower()
 
 
 def test_skill_action_deducts_mp_cost():

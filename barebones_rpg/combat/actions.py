@@ -14,7 +14,6 @@ class ActionType(Enum):
     """Types of combat actions."""
 
     ATTACK = auto()
-    DEFEND = auto()
     SKILL = auto()
     ITEM = auto()
     RUN = auto()
@@ -125,36 +124,6 @@ class AttackAction(CombatAction):
             damage=actual_damage,
             critical=is_critical,
             message=message
-        )
-
-
-class DefendAction(CombatAction):
-    """Defensive action that reduces incoming damage."""
-
-    def __init__(self):
-        super().__init__(ActionType.DEFEND)
-        self.name = "Defend"
-        self.defense_multiplier = 2.0
-
-    def execute(self, source: Any, target: Optional[Any], context: Dict[str, Any]) -> ActionResult:
-        """Execute defend action.
-
-        Args:
-            source: Entity defending
-            target: Not used
-            context: Combat context
-
-        Returns:
-            Defend result
-        """
-        # Mark entity as defending in combat state
-        combat_state = context.get("combat_state")
-        if combat_state:
-            combat_state.defending.add(source.id)
-
-        return ActionResult(
-            success=True,
-            message=f"{source.name} takes a defensive stance!"
         )
 
 
@@ -295,11 +264,6 @@ class RunAction(CombatAction):
 def create_attack_action() -> AttackAction:
     """Create a basic attack action."""
     return AttackAction()
-
-
-def create_defend_action() -> DefendAction:
-    """Create a defend action."""
-    return DefendAction()
 
 
 def create_skill_action(

@@ -174,7 +174,6 @@ class Combat:
         self.turn_number = 0
 
         # Combat state tracking
-        self.defending: set[str] = set()  # IDs of entities defending
         self.action_history: List[Dict[str, Any]] = []
 
         # Callbacks
@@ -202,9 +201,6 @@ class Combat:
 
     def _start_next_turn(self) -> None:
         """Start the next turn."""
-        # Clear defending status from previous turn
-        self.defending.clear()
-
         # Process status effects for all combatants
         for combatant in self.turn_order.get_alive_combatants():
             if hasattr(combatant, "stats_manager"):
@@ -253,11 +249,6 @@ class Combat:
                 success=False,
                 message=f"{source.name} can't perform {action.name}!"
             )
-
-        # Modify damage if target is defending
-        if target and target.id in self.defending:
-            # This will be handled in the action execution
-            pass
 
         # Execute the action
         result = action.execute(source, target, {"combat_state": self})
