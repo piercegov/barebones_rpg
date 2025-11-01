@@ -1,4 +1,4 @@
-"""Item and inventory system."""
+"""Item and inventory system with loot drops."""
 
 from .item import (
     Item,
@@ -10,6 +10,8 @@ from .item import (
     create_quest_item,
 )
 from .inventory import Inventory, Equipment
+from .loot_registry import LootRegistry
+from .loot import LootDrop, roll_loot_table, create_loot_entry
 
 __all__ = [
     "Item",
@@ -21,4 +23,8 @@ __all__ = [
     "create_quest_item",
     "Inventory",
     "Equipment",
+    "LootRegistry",
+    "LootDrop",
+    "roll_loot_table",
+    "create_loot_entry",
 ]

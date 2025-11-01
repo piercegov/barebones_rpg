@@ -324,13 +324,37 @@ class Enemy(Entity):
     """Enemy character class.
 
     Enemies have AI behavior and drop items/exp when defeated.
+    
+    The loot_table supports both string references (looked up in LootRegistry)
+    and direct Item objects for procedural generation:
+    
+    Example:
+        >>> from barebones_rpg.items import create_material
+        >>> 
+        >>> # Using string references (requires LootRegistry setup)
+        >>> goblin = Enemy(
+        ...     name="Goblin",
+        ...     loot_table=[
+        ...         {"item": "Goblin Bone", "chance": 0.3},
+        ...         {"item": "Health Potion", "chance": 0.1}
+        ...     ]
+        ... )
+        >>> 
+        >>> # Using direct Item objects (code-first)
+        >>> goblin = Enemy(
+        ...     name="Goblin",
+        ...     loot_table=[
+        ...         {"item": create_material("Bone", value=5), "chance": 0.3}
+        ...     ]
+        ... )
     """
 
     faction: str = Field(default="enemy", description="Enemy faction")
     ai_type: str = Field(default="aggressive", description="AI behavior type")
     exp_reward: int = Field(default=10, description="Experience reward on defeat")
     gold_reward: int = Field(default=5, description="Gold reward on defeat")
-    loot_table: List[str] = Field(
-        default_factory=list, description="Possible item drops"
+    loot_table: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description='Loot drops as [{"item": "Name" or Item, "chance": 0.0-1.0}]',
     )
     aggro_range: int = Field(default=5, description="Range at which enemy attacks")

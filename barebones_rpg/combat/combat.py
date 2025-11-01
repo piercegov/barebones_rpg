@@ -204,6 +204,7 @@ class Combat:
 
         # Combat state tracking
         self.action_history: List[Dict[str, Any]] = []
+        self.dropped_loot: List[Any] = []  # LootDrop objects
 
         # Callbacks
         self._on_victory: List[Callable] = []
@@ -315,6 +316,9 @@ class Combat:
             self.events.publish(
                 Event(EventType.DEATH, {"entity": target, "killer": source})
             )
+            
+            # Handle loot drops from enemies
+            self._handle_loot_drops(target)
 
         # Check if combat should end
         if result.metadata.get("fled"):
@@ -462,3 +466,43 @@ class Combat:
             CombatState.DEFEAT,
             CombatState.FLED,
         ]
+
+    def _handle_loot_drops(self, entity: Any) -> None:
+        """Handle loot drops from a defeated entity.
+
+        Args:
+            entity: The entity that was defeated
+        """
+        # Check if entity has a loot table
+        if not hasattr(entity, "loot_table") or not entity.loot_table:
+            return
+
+        # Import here to avoid circular dependency
+        from ..items.loot import roll_loot_table
+
+        # Roll for loot
+        drops = roll_loot_table(entity.loot_table, source=entity)
+
+        # Store and publish events for each drop
+        for drop in drops:
+            self.dropped_loot.append(drop)
+            self.events.publish(
+                Event(
+                    EventType.ITEM_DROPPED,
+                    {"loot_drop": drop, "item": drop.item, "source": entity},
+                )
+            )
+
+    def get_dropped_loot(self) -> List[Any]:
+        """Get all loot dropped during this combat.
+
+        Returns:
+            List of LootDrop objects
+
+        Example:
+            >>> combat = Combat(...)
+            >>> # ... combat happens ...
+            >>> for drop in combat.get_dropped_loot():
+            ...     player.inventory.add_item(drop.item)
+        """
+        return self.dropped_loot

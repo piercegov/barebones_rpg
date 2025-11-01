@@ -58,7 +58,7 @@ The framework uses an **event-driven architecture** with a central `EventManager
 - **core/**: Event system (`EventManager`) and game engine (`Game`, `GameState`, `GameConfig`)
 - **entities/**: Entity base classes (`Entity`, `Character`, `NPC`, `Enemy`) with stats and leveling systems
 - **combat/**: Turn-based combat system with action framework (`Combat`, `CombatAction`, `AttackAction`)
-- **items/**: Item system with inventory and equipment (`Item`, `Inventory`, `Equipment`, `EquipSlot`)
+- **items/**: Item system with inventory, equipment, and loot drops (`Item`, `Inventory`, `Equipment`, `LootRegistry`, `LootDrop`)
 - **quests/**: Quest tracking with objectives (`Quest`, `QuestObjective`, `QuestManager`)
 - **dialog/**: Conversation trees with choices (`DialogTree`, `DialogNode`, `DialogSession`)
 - **world/**: World/map management (`World`, `Location`, `Tile`)
@@ -96,6 +96,16 @@ Combat is turn-based with these phases:
 
 ### Rendering Abstraction
 Game logic is completely separate from rendering. The `Renderer` abstract class defines the interface. Pygame is the default implementation, but any renderer can be swapped in without modifying game code.
+
+### Loot System
+The loot system supports hybrid data-driven and code-first approaches:
+- **LootRegistry**: Global registry for mapping item names to templates or factory functions
+- **Hybrid Support**: Loot tables can reference items by string name (registry lookup) or use Item objects directly
+- **Automatic Drops**: Combat system automatically rolls loot tables when enemies die and publishes `ITEM_DROPPED` events
+- **Unique Items**: Items with `unique=True` only drop once per game (tracked by LootRegistry)
+- **Manual Collection**: Framework handles drop generation, but users must subscribe to events or call `combat.get_dropped_loot()` to add items to player inventory
+
+Enemy loot table format: `[{"item": "Name" or Item, "chance": 0.0-1.0, "quantity": N}]`
 
 ## Project Requirements
 

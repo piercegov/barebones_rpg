@@ -54,6 +54,12 @@ class Item(BaseModel):
         ...     item_type=ItemType.CONSUMABLE,
         ...     on_use=lambda entity: entity.heal(50)
         ... )
+        >>> legendary = Item(
+        ...     name="Legendary Sword",
+        ...     item_type=ItemType.WEAPON,
+        ...     unique=True,
+        ...     base_damage=50
+        ... )
     """
 
     # Identity
@@ -68,6 +74,9 @@ class Item(BaseModel):
     stackable: bool = Field(default=False, description="Can stack multiple items")
     max_stack: int = Field(default=1, description="Maximum stack size")
     quantity: int = Field(default=1, description="Current quantity in stack")
+    unique: bool = Field(
+        default=False, description="Item can only drop once in the game world"
+    )
 
     # Equipment properties
     equip_slot: Optional[EquipSlot] = Field(default=None, description="Equipment slot")
