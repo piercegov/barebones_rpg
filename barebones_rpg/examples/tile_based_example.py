@@ -454,7 +454,7 @@ class TileBasedGame:
 
     def _handle_mouse_motion(self, event: pygame.event.Event):
         """Handle mouse movement to show hover effects."""
-        if self.in_combat or self.in_dialog or not self.player_turn:
+        if self.in_combat or self.in_dialog or not self.player_turn or not self.player:
             return
 
         valid_moves = self.ap_manager.calculate_valid_moves(
@@ -469,12 +469,14 @@ class TileBasedGame:
         """Handle mouse clicks for movement and interaction."""
         # Handle dialog choices
         if self.in_dialog:
-            if self.dialog_renderer.handle_click(event, self.dialog_session):
+            if self.dialog_session and self.dialog_renderer.handle_click(
+                event, self.dialog_session
+            ):
                 if not self.dialog_session.is_active:
                     self._end_dialog()
             return
 
-        if not self.player_turn or self.in_combat:
+        if not self.player_turn or self.in_combat or not self.player:
             return
 
         tile_pos = self.click_handler.screen_to_tile(event.pos[0], event.pos[1])
@@ -496,11 +498,18 @@ class TileBasedGame:
 
     def _try_attack_enemy(self, enemy: Enemy):
         """Try to attack an enemy (must be in weapon range)."""
+        if not self.player:
+            return
+
         distance = self.pathfinder.get_manhattan_distance(
             self.player.position, enemy.position
         )
 
-        weapon = self.player.equipment.get_equipped(EquipSlot.WEAPON)
+        weapon = (
+            self.player.equipment.get_equipped(EquipSlot.WEAPON)
+            if self.player.equipment
+            else None
+        )
         weapon_range = weapon.metadata.get("range", 1) if weapon else 1
 
         if distance <= weapon_range:
@@ -601,18 +610,25 @@ class TileBasedGame:
 
     def _on_damage_dealt(self, event: Event):
         """Handle damage dealt event."""
+        if not event.data:
+            return
+
         source = event.data.get("source")
         target = event.data.get("target")
         damage = event.data.get("damage", 0)
 
-        msg = f"{source.name} deals {damage} damage to {target.name}!"
-        self.combat_messages.append(msg)
-        print(msg)
+        if source and target:
+            msg = f"{source.name} deals {damage} damage to {target.name}!"
+            self.combat_messages.append(msg)
+            print(msg)
 
     def _on_quest_completed(self, event: Event):
         """Handle quest completion event to give rewards."""
+        if not event.data:
+            return
+
         quest = event.data.get("quest")
-        if quest and quest == self.goblin_quest:
+        if quest and quest == self.goblin_quest and self.player:
             # Give experience
             if quest.exp_reward > 0:
                 self.player.gain_exp(quest.exp_reward, self.game.events)
@@ -625,6 +641,9 @@ class TileBasedGame:
 
     def _on_combat_end(self, event: Event):
         """Handle combat end event."""
+        if not event.data:
+            return
+
         result = event.data.get("result", "UNKNOWN")
         victory = result == "VICTORY"
 
@@ -686,7 +705,7 @@ class TileBasedGame:
             self.ap_manager.calculate_valid_moves(
                 self.player, self.location, self.pathfinder
             )
-            if self.player_turn
+            if self.player_turn and self.player
             else set()
         )
 
@@ -696,7 +715,7 @@ class TileBasedGame:
             valid_moves=valid_moves,
             path_preview=self.click_handler.get_path_preview(),
             hover_tile=self.click_handler.get_hover_tile(),
-            current_entity_position=self.player.position,
+            current_entity_position=self.player.position if self.player else None,
         )
 
         # Use framework's UI components

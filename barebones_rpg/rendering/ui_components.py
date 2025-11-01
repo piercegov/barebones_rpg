@@ -4,7 +4,7 @@ This module provides reusable UI components like resource bars,
 turn indicators, quest displays, and instruction panels.
 """
 
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 from barebones_rpg.rendering.renderer import Renderer, Colors, Color
 from barebones_rpg.quests.quest import QuestManager, Quest
 
@@ -274,7 +274,7 @@ class UIComponents:
 
     def render_stat_panel(
         self,
-        entity: any,
+        entity: Any,
         position: Tuple[int, int],
         show_name: bool = True,
         show_hp: bool = True,

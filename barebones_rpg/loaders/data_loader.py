@@ -5,7 +5,7 @@ supporting the hybrid code/data approach.
 """
 
 import json
-import yaml
+import yaml  # type: ignore[import-untyped]
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
@@ -134,7 +134,7 @@ class ItemLoader:
             if item_type == "weapon":
                 item = create_weapon(
                     name=item_data["name"],
-                    atk=item_data.get("atk", 0),
+                    base_damage=item_data.get("atk", 0),
                     description=item_data.get("description", ""),
                     value=item_data.get("value", 0),
                 )

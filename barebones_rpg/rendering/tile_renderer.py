@@ -66,7 +66,7 @@ class TileRenderer:
                 screen_y = y * self.tile_size
 
                 # Tile background
-                color = walkable_color if tile.walkable else wall_color
+                color = walkable_color if tile and tile.walkable else wall_color
                 self.renderer.draw_rect(
                     screen_x,
                     screen_y,

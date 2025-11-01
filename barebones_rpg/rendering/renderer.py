@@ -124,6 +124,21 @@ class Renderer(ABC):
         pass
 
     @abstractmethod
+    def draw_circle(
+        self, x: int, y: int, radius: int, color: Color, filled: bool = True
+    ) -> None:
+        """Draw a circle.
+
+        Args:
+            x: Center X position
+            y: Center Y position
+            radius: Circle radius
+            color: Circle color
+            filled: Whether to fill the circle
+        """
+        pass
+
+    @abstractmethod
     def draw_sprite(
         self,
         sprite_id: str,

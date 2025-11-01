@@ -75,8 +75,8 @@ class DialogRenderer:
             List of wrapped lines
         """
         words = text.split()
-        lines = []
-        current_line = []
+        lines: list[str] = []
+        current_line: list[str] = []
         current_width = 0
 
         for word in words:

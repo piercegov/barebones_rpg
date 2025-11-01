@@ -65,7 +65,7 @@ class Event:
     """Base event class that carries event data."""
 
     event_type: EventType | str
-    data: Dict[str, Any] = None
+    data: Dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.data is None:

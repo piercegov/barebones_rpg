@@ -4,7 +4,7 @@ This module provides an input handler for click-based movement on tile maps,
 including hover effects, path previews, and click handling.
 """
 
-from typing import Optional, Set, Tuple, List, Callable
+from typing import Optional, Set, Tuple, List, Callable, Any
 import pygame
 
 from barebones_rpg.world.tilemap_pathfinding import TilemapPathfinder
@@ -51,7 +51,7 @@ class ClickToMoveHandler:
 
         # Callbacks
         self.on_tile_clicked: Optional[Callable[[Tuple[int, int]], None]] = None
-        self.on_entity_clicked: Optional[Callable[[any], None]] = None
+        self.on_entity_clicked: Optional[Callable[[Any], None]] = None
 
     def set_pathfinder(self, pathfinder: TilemapPathfinder):
         """Set or update the pathfinder for path previews.
@@ -116,7 +116,7 @@ class ClickToMoveHandler:
     def handle_mouse_click(
         self,
         event: pygame.event.Event,
-        get_entity_at: Optional[Callable[[int, int], any]] = None,
+        get_entity_at: Optional[Callable[[int, int], Any]] = None,
     ) -> Optional[Tuple[int, int]]:
         """Handle mouse click events.
 
@@ -188,14 +188,14 @@ class TileInteractionHandler:
 
         # Interaction callbacks
         self.on_move: Optional[Callable[[Tuple[int, int]], None]] = None
-        self.on_attack_enemy: Optional[Callable[[any], None]] = None
-        self.on_interact_npc: Optional[Callable[[any], None]] = None
-        self.on_interact_item: Optional[Callable[[any], None]] = None
+        self.on_attack_enemy: Optional[Callable[[Any], None]] = None
+        self.on_interact_npc: Optional[Callable[[Any], None]] = None
+        self.on_interact_item: Optional[Callable[[Any], None]] = None
 
     def handle_tile_click(
         self,
         tile_pos: Tuple[int, int],
-        entity_at_tile: Optional[any],
+        entity_at_tile: Optional[Any],
         valid_moves: Set[Tuple[int, int]],
     ):
         """Handle a tile click with interaction logic.
@@ -222,9 +222,9 @@ class TileInteractionHandler:
     def set_callbacks(
         self,
         on_move: Optional[Callable[[Tuple[int, int]], None]] = None,
-        on_attack_enemy: Optional[Callable[[any], None]] = None,
-        on_interact_npc: Optional[Callable[[any], None]] = None,
-        on_interact_item: Optional[Callable[[any], None]] = None,
+        on_attack_enemy: Optional[Callable[[Any], None]] = None,
+        on_interact_npc: Optional[Callable[[Any], None]] = None,
+        on_interact_item: Optional[Callable[[Any], None]] = None,
     ):
         """Set interaction callbacks.
 

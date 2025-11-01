@@ -233,7 +233,7 @@ class Equipment(BaseModel):
     """
 
     slots: Dict[str, Optional[Item]] = Field(
-        default_factory=lambda: {slot.value: None for slot in EquipSlot},
+        default_factory=lambda: {slot.value: None for slot in EquipSlot},  # type: ignore[arg-type]
         description="Equipment slots",
     )
 

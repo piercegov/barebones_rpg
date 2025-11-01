@@ -253,7 +253,7 @@ class AIController:
         """
         self.pathfinder = pathfinder
         self.default_ai_type = default_ai_type
-        self.ai_instances = {}
+        self.ai_instances: dict[str, SimplePathfindingAI | TacticalAI] = {}
 
     def get_ai_for_entity(self, entity: Entity):
         """Get or create AI instance for an entity.

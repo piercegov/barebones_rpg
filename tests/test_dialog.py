@@ -13,7 +13,7 @@ def test_dialog_tree_validation_catches_missing_start_node():
     """DialogTree validation should catch missing start nodes."""
     tree = DialogTree(name="Test Tree")
 
-    errors = tree.validate()
+    errors = tree.validate_tree()
 
     assert len(errors) > 0
     assert any("start node" in error.lower() for error in errors)
@@ -31,7 +31,7 @@ def test_dialog_tree_validation_catches_missing_referenced_nodes():
     tree.add_node(node)
     tree.set_start_node("start")
 
-    errors = tree.validate()
+    errors = tree.validate_tree()
 
     assert len(errors) > 0
     assert any("nonexistent" in error for error in errors)
@@ -52,7 +52,7 @@ def test_dialog_tree_validation_passes_for_valid_tree():
     tree.add_node(end_node)
     tree.set_start_node("start")
 
-    errors = tree.validate()
+    errors = tree.validate_tree()
 
     assert len(errors) == 0
 

@@ -426,7 +426,7 @@ class DialogTree(BaseModel):
             return True
         return False
 
-    def validate(self) -> List[str]:
+    def validate_tree(self) -> List[str]:
         """Validate the dialog tree.
 
         Returns:

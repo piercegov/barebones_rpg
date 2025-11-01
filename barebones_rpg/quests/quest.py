@@ -4,7 +4,7 @@ This module provides a flexible quest system for tracking player progress,
 objectives, and rewards.
 """
 
-from typing import Optional, List, Dict, Any, Callable
+from typing import Optional, List, Dict, Any, Callable, TYPE_CHECKING
 from enum import Enum, auto
 from uuid import uuid4
 from pydantic import BaseModel, Field
@@ -397,7 +397,7 @@ class Quest(BaseModel):
         if events:
             self.check_completion(events)
 
-    def _is_uuid_format(self, value: str) -> bool:
+    def _is_uuid_format(self, value: str | None) -> bool:
         """Check if a string looks like a UUID.
 
         Args:
@@ -406,6 +406,9 @@ class Quest(BaseModel):
         Returns:
             True if string appears to be a UUID
         """
+        if value is None:
+            return False
+
         # UUIDs are 36 characters with hyphens in specific positions
         # Example: "550e8400-e29b-41d4-a716-446655440000"
         if len(value) != 36:
@@ -447,6 +450,9 @@ class Quest(BaseModel):
         def on_death(event: Event):
             """Handle entity death events."""
             if not self.is_active() or objective.is_completed():
+                return
+
+            if not event.data:
                 return
 
             entity = event.data.get("entity")
@@ -498,6 +504,15 @@ class QuestManager(BaseModel):
     )
 
     model_config = {"arbitrary_types_allowed": True}
+
+    # Type hints for dynamically added class methods
+    if TYPE_CHECKING:
+
+        @classmethod
+        def instance(cls) -> "QuestManager": ...
+
+        @classmethod
+        def reset(cls) -> None: ...
 
     def add_quest(self, quest: Quest) -> bool:
         """Add a quest to the manager.
@@ -699,5 +714,7 @@ def _reset_method(cls) -> None:
     _reset_quest_manager()
 
 
-QuestManager.instance = classmethod(_instance_method)
-QuestManager.reset = classmethod(_reset_method)
+if not TYPE_CHECKING:
+    # These are added dynamically at runtime but are defined as stubs for type checking
+    QuestManager.instance = classmethod(_instance_method)  # type: ignore[method-assign]
+    QuestManager.reset = classmethod(_reset_method)  # type: ignore[method-assign]
