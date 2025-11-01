@@ -32,9 +32,13 @@ class Stats(BaseModel):
 
     # Primary Attributes
     strength: int = Field(default=10, description="Strength (physical damage)")
-    constitution: int = Field(default=10, description="Constitution (HP, physical defense)")
+    constitution: int = Field(
+        default=10, description="Constitution (HP, physical defense)"
+    )
     intelligence: int = Field(default=10, description="Intelligence (magic damage, MP)")
-    dexterity: int = Field(default=10, description="Dexterity (speed, accuracy, evasion)")
+    dexterity: int = Field(
+        default=10, description="Dexterity (speed, accuracy, evasion)"
+    )
     charisma: int = Field(default=10, description="Charisma (dialog, persuasion)")
 
     # HP/MP (still direct values for current state)
@@ -44,16 +48,26 @@ class Stats(BaseModel):
     # Derived Substat Base Values (before attribute bonuses)
     base_max_hp: int = Field(default=50, description="Base max HP before CON bonus")
     base_max_mp: int = Field(default=20, description="Base max MP before INT bonus")
-    base_physical_defense: int = Field(default=0, description="Base physical defense before CON bonus")
-    base_magic_defense: int = Field(default=0, description="Base magic defense before INT bonus")
+    base_physical_defense: int = Field(
+        default=0, description="Base physical defense before CON bonus"
+    )
+    base_magic_defense: int = Field(
+        default=0, description="Base magic defense before INT bonus"
+    )
     base_speed: int = Field(default=5, description="Base speed before DEX bonus")
     base_accuracy: int = Field(default=80, description="Base accuracy before DEX bonus")
     base_evasion: int = Field(default=5, description="Base evasion before DEX bonus")
-    base_critical: int = Field(default=5, description="Base critical chance before DEX bonus")
+    base_critical: int = Field(
+        default=5, description="Base critical chance before DEX bonus"
+    )
 
     # Training bonuses (independent improvements to substats)
-    training_physical_defense: int = Field(default=0, description="Trained physical defense bonus")
-    training_magic_defense: int = Field(default=0, description="Trained magic defense bonus")
+    training_physical_defense: int = Field(
+        default=0, description="Trained physical defense bonus"
+    )
+    training_magic_defense: int = Field(
+        default=0, description="Trained magic defense bonus"
+    )
     training_speed: int = Field(default=0, description="Trained speed bonus")
     training_accuracy: int = Field(default=0, description="Trained accuracy bonus")
     training_evasion: int = Field(default=0, description="Trained evasion bonus")
@@ -62,17 +76,25 @@ class Stats(BaseModel):
     # Attribute -> Substat multipliers (how much each attribute point contributes)
     hp_per_con: int = Field(default=5, description="HP gained per CON point")
     mp_per_int: int = Field(default=3, description="MP gained per INT point")
-    defense_per_con: float = Field(default=0.5, description="Physical defense per CON point")
-    magic_def_per_int: float = Field(default=0.5, description="Magic defense per INT point")
+    defense_per_con: float = Field(
+        default=0.5, description="Physical defense per CON point"
+    )
+    magic_def_per_int: float = Field(
+        default=0.5, description="Magic defense per INT point"
+    )
     speed_per_dex: float = Field(default=0.5, description="Speed per DEX point")
     accuracy_per_dex: float = Field(default=0.5, description="Accuracy per DEX point")
     evasion_per_dex: float = Field(default=0.3, description="Evasion per DEX point")
-    critical_per_dex: float = Field(default=0.3, description="Critical chance per DEX point")
+    critical_per_dex: float = Field(
+        default=0.3, description="Critical chance per DEX point"
+    )
 
     # Level/Experience
     level: int = Field(default=1, description="Character level")
     exp: int = Field(default=0, description="Experience points")
-    exp_to_next: int = Field(default=100, description="Experience needed for next level")
+    exp_to_next: int = Field(
+        default=100, description="Experience needed for next level"
+    )
     stat_points: int = Field(default=0, description="Unallocated stat points")
 
     # Custom stats (for extensibility - proficiencies, etc.)
@@ -97,27 +119,51 @@ class Stats(BaseModel):
 
     def get_physical_defense(self) -> int:
         """Calculate effective physical defense."""
-        return int(self.base_physical_defense + (self.constitution * self.defense_per_con) + self.training_physical_defense)
+        return int(
+            self.base_physical_defense
+            + (self.constitution * self.defense_per_con)
+            + self.training_physical_defense
+        )
 
     def get_magic_defense(self) -> int:
         """Calculate effective magic defense."""
-        return int(self.base_magic_defense + (self.intelligence * self.magic_def_per_int) + self.training_magic_defense)
+        return int(
+            self.base_magic_defense
+            + (self.intelligence * self.magic_def_per_int)
+            + self.training_magic_defense
+        )
 
     def get_speed(self) -> int:
         """Calculate effective speed."""
-        return int(self.base_speed + (self.dexterity * self.speed_per_dex) + self.training_speed)
+        return int(
+            self.base_speed
+            + (self.dexterity * self.speed_per_dex)
+            + self.training_speed
+        )
 
     def get_accuracy(self) -> int:
         """Calculate effective accuracy."""
-        return int(self.base_accuracy + (self.dexterity * self.accuracy_per_dex) + self.training_accuracy)
+        return int(
+            self.base_accuracy
+            + (self.dexterity * self.accuracy_per_dex)
+            + self.training_accuracy
+        )
 
     def get_evasion(self) -> int:
         """Calculate effective evasion."""
-        return int(self.base_evasion + (self.dexterity * self.evasion_per_dex) + self.training_evasion)
+        return int(
+            self.base_evasion
+            + (self.dexterity * self.evasion_per_dex)
+            + self.training_evasion
+        )
 
     def get_critical(self) -> int:
         """Calculate effective critical chance."""
-        return int(self.base_critical + (self.dexterity * self.critical_per_dex) + self.training_critical)
+        return int(
+            self.base_critical
+            + (self.dexterity * self.critical_per_dex)
+            + self.training_critical
+        )
 
     # Convenience properties for backward compatibility
     @property
@@ -206,7 +252,9 @@ class Stats(BaseModel):
             return self.get_max_hp()
         elif stat_name == "max_mp":
             return self.get_max_mp()
-        elif stat_name == "physical_defense" or stat_name == "defense":  # "defense" for backward compat
+        elif (
+            stat_name == "physical_defense" or stat_name == "defense"
+        ):  # "defense" for backward compat
             return self.get_physical_defense()
         elif stat_name == "magic_defense":
             return self.get_magic_defense()
@@ -218,7 +266,7 @@ class Stats(BaseModel):
             return self.get_evasion()
         elif stat_name == "critical":
             return self.get_critical()
-        
+
         # Regular stats
         if hasattr(self, stat_name):
             return getattr(self, stat_name)

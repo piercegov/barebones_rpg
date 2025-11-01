@@ -110,7 +110,7 @@ class PygameRenderer(Renderer):
         x: int,
         y: int,
         color: Color = Colors.WHITE,
-        font_size: int = 16
+        font_size: int = 16,
     ) -> None:
         """Draw text.
 
@@ -127,7 +127,12 @@ class PygameRenderer(Renderer):
             self.screen.blit(text_surface, (x, y))
 
     def draw_sprite(
-        self, sprite_id: str, x: int, y: int, width: Optional[int] = None, height: Optional[int] = None
+        self,
+        sprite_id: str,
+        x: int,
+        y: int,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
     ) -> None:
         """Draw a sprite.
 
@@ -238,9 +243,7 @@ class PygameGameLoop:
         """
         self.game = game
         self.renderer = renderer or PygameRenderer(
-            game.config.screen_width,
-            game.config.screen_height,
-            game.config.title
+            game.config.screen_width, game.config.screen_height, game.config.title
         )
 
     def run(self) -> None:
@@ -273,12 +276,9 @@ class PygameGameLoop:
         # This would render the current game state
         # For now, just draw a simple message
         self.renderer.draw_text(
-            f"Game State: {self.game.state.name}",
-            10, 10,
-            Colors.WHITE,
-            24
+            f"Game State: {self.game.state.name}", 10, 10, Colors.WHITE, 24
         )
 
         # Render based on game state
-        if hasattr(self.game, 'custom_render'):
+        if hasattr(self.game, "custom_render"):
             self.game.custom_render(self.renderer)

@@ -29,7 +29,9 @@ class Entity(BaseModel):
     """
 
     # Identity
-    id: str = Field(default_factory=lambda: str(uuid4()), description="Unique entity ID")
+    id: str = Field(
+        default_factory=lambda: str(uuid4()), description="Unique entity ID"
+    )
     name: str = Field(description="Entity name")
     description: str = Field(default="", description="Entity description")
 
@@ -41,15 +43,20 @@ class Entity(BaseModel):
     inventory: Optional[Any] = Field(default=None, description="Inventory instance")
     equipment: Optional[Any] = Field(default=None, description="Equipment instance")
     equipped_items: Dict[str, str] = Field(
-        default_factory=dict, description="Equipped items by slot (deprecated, use equipment)"
+        default_factory=dict,
+        description="Equipped items by slot (deprecated, use equipment)",
     )
 
     # Combat
-    faction: str = Field(default="neutral", description="Entity faction (player, enemy, etc.)")
+    faction: str = Field(
+        default="neutral", description="Entity faction (player, enemy, etc.)"
+    )
     can_act: bool = Field(default=True, description="Whether entity can take actions")
 
     # Position (will be used by world system)
-    position: tuple[int, int] = Field(default=(0, 0), description="World position (x, y)")
+    position: tuple[int, int] = Field(
+        default=(0, 0), description="World position (x, y)"
+    )
 
     # Metadata
     metadata: Dict[str, Any] = Field(
@@ -76,7 +83,12 @@ class Entity(BaseModel):
         """Check if entity is dead."""
         return self.stats.is_dead()
 
-    def take_damage(self, amount: int, source: Optional["Entity"] = None, damage_type: str = "physical") -> int:
+    def take_damage(
+        self,
+        amount: int,
+        source: Optional["Entity"] = None,
+        damage_type: str = "physical",
+    ) -> int:
         """Take damage from an attack.
 
         Args:
@@ -92,7 +104,7 @@ class Entity(BaseModel):
             defense = self.stats.get_stat("magic_defense", 0)
         else:  # physical or any other type uses physical defense
             defense = self.stats.get_stat("physical_defense", 0)
-        
+
         # Apply defense reduction (minimum 1 damage)
         actual_damage = max(1, amount - defense)
         self.stats.take_damage(actual_damage)
@@ -139,6 +151,7 @@ class Entity(BaseModel):
             The created Inventory instance
         """
         from ..items import Inventory
+
         if self.inventory is None:
             self.inventory = Inventory(max_slots=max_slots or self.inventory_slots)
         return self.inventory
@@ -150,6 +163,7 @@ class Entity(BaseModel):
             The created Equipment instance
         """
         from ..items import Equipment
+
         if self.equipment is None:
             self.equipment = Equipment()
         return self.equipment
@@ -252,10 +266,10 @@ class Character(Entity):
         """
         self.stats.level += 1
         self.stats.exp_to_next = int(self.stats.exp_to_next * 1.5)
-        
+
         # Give stat points for player/game to allocate
         self.stats.stat_points += stat_points_per_level
-        
+
         # Restore HP/MP to new max values
         self.stats.hp = self.stats.get_max_hp()
         self.stats.mp = self.stats.get_max_mp()
@@ -279,13 +293,13 @@ class Character(Entity):
         """
         if self.stats.stat_points < amount:
             return False
-        
+
         # Spend the points
         self.stats.stat_points -= amount
-        
+
         # Increase the stat
         self.stats.modify(stat_name, amount)
-        
+
         return True
 
 
@@ -297,7 +311,9 @@ class NPC(Entity):
 
     faction: str = Field(default="neutral", description="NPC faction")
     dialog_tree_id: Optional[str] = Field(default=None, description="ID of dialog tree")
-    quest_ids: List[str] = Field(default_factory=list, description="Quest IDs this NPC offers")
+    quest_ids: List[str] = Field(
+        default_factory=list, description="Quest IDs this NPC offers"
+    )
     is_merchant: bool = Field(default=False, description="Whether NPC is a merchant")
     merchant_inventory: List[str] = Field(
         default_factory=list, description="Items for sale"
@@ -314,5 +330,7 @@ class Enemy(Entity):
     ai_type: str = Field(default="aggressive", description="AI behavior type")
     exp_reward: int = Field(default=10, description="Experience reward on defeat")
     gold_reward: int = Field(default=5, description="Gold reward on defeat")
-    loot_table: List[str] = Field(default_factory=list, description="Possible item drops")
+    loot_table: List[str] = Field(
+        default_factory=list, description="Possible item drops"
+    )
     aggro_range: int = Field(default=5, description="Range at which enemy attacks")

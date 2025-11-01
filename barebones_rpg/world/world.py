@@ -19,9 +19,13 @@ class Tile(BaseModel):
 
     x: int = Field(description="X coordinate")
     y: int = Field(description="Y coordinate")
-    tile_type: str = Field(default="grass", description="Type of tile (grass, wall, water, etc.)")
+    tile_type: str = Field(
+        default="grass", description="Type of tile (grass, wall, water, etc.)"
+    )
     walkable: bool = Field(default=True, description="Can be walked on")
-    sprite_id: Optional[str] = Field(default=None, description="Sprite/texture ID for rendering")
+    sprite_id: Optional[str] = Field(
+        default=None, description="Sprite/texture ID for rendering"
+    )
     on_enter: Optional[Callable] = Field(
         default=None, description="Function called when entity enters tile"
     )
@@ -57,7 +61,9 @@ class Location(BaseModel):
         ...     location.set_tile(x, 0, Tile(x=x, y=0, tile_type="wall", walkable=False))
     """
 
-    id: str = Field(default_factory=lambda: str(uuid4()), description="Unique location ID")
+    id: str = Field(
+        default_factory=lambda: str(uuid4()), description="Unique location ID"
+    )
     name: str = Field(description="Location name")
     description: str = Field(default="", description="Location description")
 
@@ -72,11 +78,14 @@ class Location(BaseModel):
     default_tile_type: str = Field(default="grass", description="Default tile type")
 
     # Entities in this location
-    entities: List[Any] = Field(default_factory=list, description="Entities in location")
+    entities: List[Any] = Field(
+        default_factory=list, description="Entities in location"
+    )
 
     # Connections to other locations
     connections: Dict[str, str] = Field(
-        default_factory=dict, description="Connections to other locations (direction -> location_id)"
+        default_factory=dict,
+        description="Connections to other locations (direction -> location_id)",
     )
 
     # Events
@@ -163,7 +172,9 @@ class Location(BaseModel):
                 return entity
         return None
 
-    def add_entity(self, entity: Any, x: Optional[int] = None, y: Optional[int] = None) -> bool:
+    def add_entity(
+        self, entity: Any, x: Optional[int] = None, y: Optional[int] = None
+    ) -> bool:
         """Add an entity to the location.
 
         Args:
@@ -195,49 +206,51 @@ class Location(BaseModel):
             self.entities.remove(entity)
             return True
         return False
-    
+
     def find_entity_by_name(self, name: str) -> Optional[Any]:
         """Find an entity by name.
-        
+
         Args:
             name: Entity name to search for
-            
+
         Returns:
             First entity with matching name or None
         """
         for entity in self.entities:
-            if hasattr(entity, 'name') and entity.name == name:
+            if hasattr(entity, "name") and entity.name == name:
                 return entity
         return None
-    
+
     def find_entities_by_name(self, name: str) -> List[Any]:
         """Find all entities with a given name.
-        
+
         Args:
             name: Entity name to search for
-            
+
         Returns:
             List of entities with matching name
         """
-        return [e for e in self.entities if hasattr(e, 'name') and e.name == name]
-    
+        return [e for e in self.entities if hasattr(e, "name") and e.name == name]
+
     def find_entities_by_faction(self, faction: str) -> List[Any]:
         """Find all entities of a given faction.
-        
+
         Args:
             faction: Faction to search for (e.g., "enemy", "player", "neutral")
-            
+
         Returns:
             List of entities with matching faction
         """
-        return [e for e in self.entities if hasattr(e, 'faction') and e.faction == faction]
-    
+        return [
+            e for e in self.entities if hasattr(e, "faction") and e.faction == faction
+        ]
+
     def has_entity_named(self, name: str) -> bool:
         """Check if an entity with the given name exists in this location.
-        
+
         Args:
             name: Entity name to check for
-            
+
         Returns:
             True if entity exists
         """
@@ -262,12 +275,12 @@ class Location(BaseModel):
             Location ID or None
         """
         return self.connections.get(direction)
-    
+
     def create_border_walls(self, tile_type: str = "wall") -> None:
         """Create walls around the border of the location.
-        
+
         This is a helper method for quickly creating enclosed areas.
-        
+
         Args:
             tile_type: Type of tile to use for walls (default: "wall")
         """
@@ -275,18 +288,20 @@ class Location(BaseModel):
         for x in range(self.width):
             self.set_tile(x, 0, Tile(x=x, y=0, tile_type=tile_type, walkable=False))
             self.set_tile(
-                x, self.height - 1,
-                Tile(x=x, y=self.height - 1, tile_type=tile_type, walkable=False)
+                x,
+                self.height - 1,
+                Tile(x=x, y=self.height - 1, tile_type=tile_type, walkable=False),
             )
-        
+
         # Left and right borders
         for y in range(self.height):
             self.set_tile(0, y, Tile(x=0, y=y, tile_type=tile_type, walkable=False))
             self.set_tile(
-                self.width - 1, y,
-                Tile(x=self.width - 1, y=y, tile_type=tile_type, walkable=False)
+                self.width - 1,
+                y,
+                Tile(x=self.width - 1, y=y, tile_type=tile_type, walkable=False),
             )
-    
+
     def create_room(
         self,
         x: int,
@@ -295,10 +310,10 @@ class Location(BaseModel):
         height: int,
         wall_type: str = "wall",
         floor_type: Optional[str] = None,
-        fill_interior: bool = False
+        fill_interior: bool = False,
     ) -> None:
         """Create a rectangular room with walls.
-        
+
         Args:
             x: Top-left X coordinate
             y: Top-left Y coordinate
@@ -313,24 +328,32 @@ class Location(BaseModel):
             # Top wall
             wx, wy = x + i, y
             if 0 <= wx < self.width and 0 <= wy < self.height:
-                self.set_tile(wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False))
-            
+                self.set_tile(
+                    wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False)
+                )
+
             # Bottom wall
             wx, wy = x + i, y + height - 1
             if 0 <= wx < self.width and 0 <= wy < self.height:
-                self.set_tile(wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False))
-        
+                self.set_tile(
+                    wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False)
+                )
+
         for i in range(height):
             # Left wall
             wx, wy = x, y + i
             if 0 <= wx < self.width and 0 <= wy < self.height:
-                self.set_tile(wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False))
-            
+                self.set_tile(
+                    wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False)
+                )
+
             # Right wall
             wx, wy = x + width - 1, y + i
             if 0 <= wx < self.width and 0 <= wy < self.height:
-                self.set_tile(wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False))
-        
+                self.set_tile(
+                    wx, wy, Tile(x=wx, y=wy, tile_type=wall_type, walkable=False)
+                )
+
         # Fill interior if requested
         if fill_interior and floor_type:
             for fy in range(1, height - 1):
@@ -338,19 +361,18 @@ class Location(BaseModel):
                     tile_x, tile_y = x + fx, y + fy
                     if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
                         self.set_tile(
-                            tile_x, tile_y,
-                            Tile(x=tile_x, y=tile_y, tile_type=floor_type, walkable=True)
+                            tile_x,
+                            tile_y,
+                            Tile(
+                                x=tile_x, y=tile_y, tile_type=floor_type, walkable=True
+                            ),
                         )
-    
+
     def create_horizontal_wall(
-        self,
-        start_x: int,
-        end_x: int,
-        y: int,
-        tile_type: str = "wall"
+        self, start_x: int, end_x: int, y: int, tile_type: str = "wall"
     ) -> None:
         """Create a horizontal wall segment.
-        
+
         Args:
             start_x: Starting X coordinate
             end_x: Ending X coordinate (inclusive)
@@ -360,16 +382,12 @@ class Location(BaseModel):
         for x in range(start_x, end_x + 1):
             if 0 <= x < self.width and 0 <= y < self.height:
                 self.set_tile(x, y, Tile(x=x, y=y, tile_type=tile_type, walkable=False))
-    
+
     def create_vertical_wall(
-        self,
-        x: int,
-        start_y: int,
-        end_y: int,
-        tile_type: str = "wall"
+        self, x: int, start_y: int, end_y: int, tile_type: str = "wall"
     ) -> None:
         """Create a vertical wall segment.
-        
+
         Args:
             x: X coordinate
             start_y: Starting Y coordinate
@@ -379,18 +397,18 @@ class Location(BaseModel):
         for y in range(start_y, end_y + 1):
             if 0 <= x < self.width and 0 <= y < self.height:
                 self.set_tile(x, y, Tile(x=x, y=y, tile_type=tile_type, walkable=False))
-    
+
     def create_corridor(
         self,
         start: Tuple[int, int],
         end: Tuple[int, int],
         width: int = 1,
-        floor_type: Optional[str] = None
+        floor_type: Optional[str] = None,
     ) -> None:
         """Create a corridor between two points.
-        
+
         Creates an L-shaped corridor (horizontal then vertical).
-        
+
         Args:
             start: Starting position (x, y)
             end: Ending position (x, y)
@@ -399,7 +417,7 @@ class Location(BaseModel):
         """
         start_x, start_y = start
         end_x, end_y = end
-        
+
         # Horizontal segment
         min_x = min(start_x, end_x)
         max_x = max(start_x, end_x)
@@ -410,10 +428,11 @@ class Location(BaseModel):
                 if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
                     tile_type = floor_type if floor_type else self.default_tile_type
                     self.set_tile(
-                        tile_x, tile_y,
-                        Tile(x=tile_x, y=tile_y, tile_type=tile_type, walkable=True)
+                        tile_x,
+                        tile_y,
+                        Tile(x=tile_x, y=tile_y, tile_type=tile_type, walkable=True),
                     )
-        
+
         # Vertical segment
         min_y = min(start_y, end_y)
         max_y = max(start_y, end_y)
@@ -424,10 +443,11 @@ class Location(BaseModel):
                 if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
                     tile_type = floor_type if floor_type else self.default_tile_type
                     self.set_tile(
-                        tile_x, tile_y,
-                        Tile(x=tile_x, y=tile_y, tile_type=tile_type, walkable=True)
+                        tile_x,
+                        tile_y,
+                        Tile(x=tile_x, y=tile_y, tile_type=tile_type, walkable=True),
                     )
-    
+
     def fill_rect(
         self,
         x: int,
@@ -435,10 +455,10 @@ class Location(BaseModel):
         width: int,
         height: int,
         tile_type: str,
-        walkable: bool = True
+        walkable: bool = True,
     ) -> None:
         """Fill a rectangular area with a specific tile type.
-        
+
         Args:
             x: Top-left X coordinate
             y: Top-left Y coordinate
@@ -451,8 +471,7 @@ class Location(BaseModel):
             for tx in range(x, x + width):
                 if 0 <= tx < self.width and 0 <= ty < self.height:
                     self.set_tile(
-                        tx, ty,
-                        Tile(x=tx, y=ty, tile_type=tile_type, walkable=walkable)
+                        tx, ty, Tile(x=tx, y=ty, tile_type=tile_type, walkable=walkable)
                     )
 
 
@@ -497,7 +516,7 @@ class World(BaseModel):
         # Set as current location if none set
         if self.current_location_id is None:
             self.current_location_id = location.id
-        
+
         return True
 
     def get_location(self, location_id: str) -> Optional[Location]:
@@ -535,7 +554,9 @@ class World(BaseModel):
             return self.locations.get(self.current_location_id)
         return None
 
-    def set_current_location(self, location_id: str, events: Optional[EventManager] = None) -> bool:
+    def set_current_location(
+        self, location_id: str, events: Optional[EventManager] = None
+    ) -> bool:
         """Set the current location.
 
         Args:
@@ -562,7 +583,9 @@ class World(BaseModel):
             new_location.on_enter(new_location)
 
         if events and new_location:
-            events.publish(Event(EventType.LOCATION_ENTERED, {"location": new_location}))
+            events.publish(
+                Event(EventType.LOCATION_ENTERED, {"location": new_location})
+            )
 
         return True
 
@@ -571,7 +594,7 @@ class World(BaseModel):
         from_location_id: str,
         direction: str,
         to_location_id: str,
-        bidirectional: bool = False
+        bidirectional: bool = False,
     ) -> None:
         """Connect two locations.
 
@@ -616,7 +639,7 @@ class World(BaseModel):
         entity: Any,
         to_location_id: str,
         x: Optional[int] = None,
-        y: Optional[int] = None
+        y: Optional[int] = None,
     ) -> bool:
         """Move an entity to a different location.
 

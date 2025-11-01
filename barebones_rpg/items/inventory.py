@@ -25,7 +25,9 @@ class Inventory(BaseModel):
     max_slots: int = Field(default=20, description="Maximum number of item slots")
     max_weight: float = Field(default=-1, description="Max weight (-1 = unlimited)")
     items: List[Item] = Field(default_factory=list, description="Items in inventory")
-    auto_stack: bool = Field(default=True, description="Automatically stack stackable items")
+    auto_stack: bool = Field(
+        default=True, description="Automatically stack stackable items"
+    )
     gold: int = Field(default=0, description="Gold/currency")
 
     model_config = {"arbitrary_types_allowed": True}
@@ -232,7 +234,7 @@ class Equipment(BaseModel):
 
     slots: Dict[str, Optional[Item]] = Field(
         default_factory=lambda: {slot.value: None for slot in EquipSlot},
-        description="Equipment slots"
+        description="Equipment slots",
     )
 
     model_config = {"arbitrary_types_allowed": True}
@@ -332,6 +334,5 @@ class Equipment(BaseModel):
             Dictionary representation
         """
         return {
-            slot: item.to_dict() if item else None
-            for slot, item in self.slots.items()
+            slot: item.to_dict() if item else None for slot, item in self.slots.items()
         }

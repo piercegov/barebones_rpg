@@ -1,9 +1,16 @@
 """Shared fixtures for tests."""
+
 import pytest
 from barebones_rpg.core.events import EventManager, Event, EventType
 from barebones_rpg.entities.stats import Stats, StatusEffect, StatsManager
 from barebones_rpg.entities.entity import Entity, Character, Enemy
-from barebones_rpg.items.item import Item, ItemType, EquipSlot, create_weapon, create_consumable
+from barebones_rpg.items.item import (
+    Item,
+    ItemType,
+    EquipSlot,
+    create_weapon,
+    create_consumable,
+)
 from barebones_rpg.items.inventory import Inventory, Equipment
 
 
@@ -25,7 +32,7 @@ def basic_stats():
         base_max_hp=50,
         base_max_mp=20,
         hp=100,
-        mp=50
+        mp=50,
     )
 
 
@@ -50,7 +57,7 @@ def basic_character():
         mp=50,
         level=1,
         exp=0,
-        exp_to_next=100
+        exp_to_next=100,
     )
     return Character(name="Hero", stats=stats)
 
@@ -67,7 +74,7 @@ def basic_enemy():
         base_max_hp=30,
         base_max_mp=0,
         hp=50,
-        mp=0
+        mp=0,
     )
     return Enemy(name="Goblin", stats=stats, exp_reward=25, gold_reward=10)
 
@@ -93,8 +100,10 @@ def sample_weapon():
 @pytest.fixture
 def sample_consumable():
     """Create a sample consumable item."""
+
     def heal_effect(target, context):
         return target.heal(30)
-    
-    return create_consumable("Health Potion", on_use=heal_effect, value=50, stackable=True, max_stack=99)
 
+    return create_consumable(
+        "Health Potion", on_use=heal_effect, value=50, stackable=True, max_stack=99
+    )

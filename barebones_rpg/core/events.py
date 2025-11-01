@@ -93,7 +93,9 @@ class EventManager:
         self._event_history: List[Event] = []
         self._record_history = False
 
-    def subscribe(self, event_type: EventType | str, callback: Callable[[Event], None]) -> None:
+    def subscribe(
+        self, event_type: EventType | str, callback: Callable[[Event], None]
+    ) -> None:
         """Subscribe a callback function to an event type.
 
         Args:
@@ -104,7 +106,9 @@ class EventManager:
             self._subscribers[event_type] = []
         self._subscribers[event_type].append(callback)
 
-    def unsubscribe(self, event_type: EventType | str, callback: Callable[[Event], None]) -> None:
+    def unsubscribe(
+        self, event_type: EventType | str, callback: Callable[[Event], None]
+    ) -> None:
         """Unsubscribe a callback from an event type.
 
         Args:

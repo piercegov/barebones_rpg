@@ -26,13 +26,18 @@ class ActionResult(BaseModel):
     Contains information about what happened when an action was performed.
     """
 
-    success: bool = Field(default=True, description="Whether action executed validly (False = invalid/cannot execute)")
+    success: bool = Field(
+        default=True,
+        description="Whether action executed validly (False = invalid/cannot execute)",
+    )
     damage: int = Field(default=0, description="Damage dealt")
     healing: int = Field(default=0, description="Healing done")
     message: str = Field(default="", description="Result message")
     critical: bool = Field(default=False, description="Was a critical hit")
     missed: bool = Field(default=False, description="Did the action miss")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional data")
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional data"
+    )
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -48,7 +53,9 @@ class CombatAction(ABC):
         self.name = self.__class__.__name__
 
     @abstractmethod
-    def execute(self, source: Any, target: Optional[Any], context: Dict[str, Any]) -> ActionResult:
+    def execute(
+        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+    ) -> ActionResult:
         """Execute the action.
 
         Args:
@@ -81,39 +88,47 @@ class AttackAction(CombatAction):
         super().__init__(ActionType.ATTACK)
         self.name = "Attack"
 
-    def calculate_damage(self, source: Any, target: Optional[Any], weapon: Optional[Any], context: Dict[str, Any]) -> tuple[int, str]:
+    def calculate_damage(
+        self,
+        source: Any,
+        target: Optional[Any],
+        weapon: Optional[Any],
+        context: Dict[str, Any],
+    ) -> tuple[int, str]:
         """Calculate base damage before crits and defense.
-        
+
         Override this method to add proficiency systems or other damage modifiers.
-        
+
         Args:
             source: Attacker
             target: Defender
             weapon: Equipped weapon (or None for unarmed)
             context: Combat context
-            
+
         Returns:
             Tuple of (damage_amount, damage_type)
         """
         if weapon is None:
             # Unarmed attack - just use strength
             return source.stats.get_stat("strength", 10), "physical"
-        
+
         # Get damage type from weapon
         damage_type = weapon.damage_type
-        
+
         # Select appropriate attribute based on damage type
         if damage_type == "magic":
             stat_value = source.stats.get_stat("intelligence", 10)
         else:  # physical or any other type defaults to strength
             stat_value = source.stats.get_stat("strength", 10)
-        
+
         # Calculate total damage
         total_damage = stat_value + weapon.base_damage
-        
+
         return total_damage, damage_type
 
-    def execute(self, source: Any, target: Optional[Any], context: Dict[str, Any]) -> ActionResult:
+    def execute(
+        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+    ) -> ActionResult:
         """Execute a physical attack.
 
         Args:
@@ -129,21 +144,26 @@ class AttackAction(CombatAction):
 
         # Get equipped weapon
         weapon = None
-        if hasattr(source, 'equipment') and source.equipment is not None:
+        if hasattr(source, "equipment") and source.equipment is not None:
             from ..items.item import EquipSlot
+
             weapon = source.equipment.get_equipped(EquipSlot.WEAPON)
 
         # Calculate hit chance
-        hit_chance = source.stats.get_stat("accuracy", 90) - target.stats.get_stat("evasion", 5)
+        hit_chance = source.stats.get_stat("accuracy", 90) - target.stats.get_stat(
+            "evasion", 5
+        )
         if random.randint(1, 100) > hit_chance:
             return ActionResult(
                 success=True,
                 missed=True,
-                message=f"{source.name} attacks {target.name} but misses!"
+                message=f"{source.name} attacks {target.name} but misses!",
             )
 
         # Calculate damage using the hookable method
-        base_damage, damage_type = self.calculate_damage(source, target, weapon, context)
+        base_damage, damage_type = self.calculate_damage(
+            source, target, weapon, context
+        )
 
         # Check for critical hit
         is_critical = random.randint(1, 100) <= source.stats.get_stat("critical", 5)
@@ -162,7 +182,7 @@ class AttackAction(CombatAction):
             damage=actual_damage,
             critical=is_critical,
             message=message,
-            metadata={"damage_type": damage_type}
+            metadata={"damage_type": damage_type},
         )
 
 
@@ -173,11 +193,7 @@ class SkillAction(CombatAction):
     """
 
     def __init__(
-        self,
-        name: str,
-        mp_cost: int,
-        effect: Callable,
-        targets_enemy: bool = True
+        self, name: str, mp_cost: int, effect: Callable, targets_enemy: bool = True
     ):
         super().__init__(ActionType.SKILL)
         self.name = name
@@ -195,12 +211,11 @@ class SkillAction(CombatAction):
         Returns:
             True if skill can be used
         """
-        return (
-            super().can_execute(source, context)
-            and source.stats.mp >= self.mp_cost
-        )
+        return super().can_execute(source, context) and source.stats.mp >= self.mp_cost
 
-    def execute(self, source: Any, target: Optional[Any], context: Dict[str, Any]) -> ActionResult:
+    def execute(
+        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+    ) -> ActionResult:
         """Execute the skill.
 
         Args:
@@ -213,8 +228,7 @@ class SkillAction(CombatAction):
         """
         if not self.can_execute(source, context):
             return ActionResult(
-                success=False,
-                message=f"{source.name} doesn't have enough MP!"
+                success=False, message=f"{source.name} doesn't have enough MP!"
             )
 
         # Deduct MP cost
@@ -234,7 +248,9 @@ class ItemAction(CombatAction):
         self.item = item
         self.name = f"Use {item.name}"
 
-    def execute(self, source: Any, target: Optional[Any], context: Dict[str, Any]) -> ActionResult:
+    def execute(
+        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+    ) -> ActionResult:
         """Use an item.
 
         Args:
@@ -251,9 +267,7 @@ class ItemAction(CombatAction):
         message = f"{source.name} uses {self.item.name}!"
 
         return ActionResult(
-            success=True,
-            message=message,
-            metadata={"item_result": result}
+            success=True, message=message, metadata={"item_result": result}
         )
 
 
@@ -265,7 +279,9 @@ class RunAction(CombatAction):
         self.name = "Run"
         self.base_success_rate = 50
 
-    def execute(self, source: Any, target: Optional[Any], context: Dict[str, Any]) -> ActionResult:
+    def execute(
+        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+    ) -> ActionResult:
         """Attempt to run from combat.
 
         Args:
@@ -288,17 +304,18 @@ class RunAction(CombatAction):
             return ActionResult(
                 success=True,
                 message=f"{source.name} successfully ran away!",
-                metadata={"fled": True}
+                metadata={"fled": True},
             )
         else:
             return ActionResult(
                 success=True,
                 message=f"{source.name} couldn't get away!",
-                metadata={"fled": False}
+                metadata={"fled": False},
             )
 
 
 # Factory for creating common actions
+
 
 def create_attack_action() -> AttackAction:
     """Create a basic attack action."""
@@ -310,7 +327,7 @@ def create_skill_action(
     mp_cost: int,
     damage_multiplier: float = 1.5,
     damage_type: str = "physical",
-    targets_enemy: bool = True
+    targets_enemy: bool = True,
 ) -> SkillAction:
     """Create a damage skill.
 
@@ -324,6 +341,7 @@ def create_skill_action(
     Returns:
         Skill action
     """
+
     def effect(source, target, context):
         if target is None:
             return ActionResult(success=False, message="No target selected")
@@ -340,7 +358,7 @@ def create_skill_action(
         return ActionResult(
             success=True,
             damage=actual_damage,
-            message=f"{source.name} uses {name} on {target.name} for {actual_damage} damage!"
+            message=f"{source.name} uses {name} on {target.name} for {actual_damage} damage!",
         )
 
     return SkillAction(name, mp_cost, effect, targets_enemy)
@@ -357,12 +375,13 @@ def create_heal_skill(name: str, mp_cost: int, heal_amount: int) -> SkillAction:
     Returns:
         Healing skill action
     """
+
     def effect(source, target, context):
         actual_heal = target.heal(heal_amount)
         return ActionResult(
             success=True,
             healing=actual_heal,
-            message=f"{source.name} uses {name} on {target.name} for {actual_heal} HP!"
+            message=f"{source.name} uses {name} on {target.name} for {actual_heal} HP!",
         )
 
     return SkillAction(name, mp_cost, effect, targets_enemy=False)

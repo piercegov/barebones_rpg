@@ -40,7 +40,7 @@ def create_game_world():
         name="Peaceful Village",
         description="A quiet village surrounded by forests",
         width=30,
-        height=30
+        height=30,
     )
 
     # Create forest
@@ -48,7 +48,7 @@ def create_game_world():
         name="Dark Forest",
         description="A dangerous forest full of monsters",
         width=40,
-        height=40
+        height=40,
     )
 
     # Connect locations
@@ -70,7 +70,7 @@ def create_elder_dialog():
         choices=[
             DialogChoice(text="What's wrong?", next_node_id="problem"),
             DialogChoice(text="I'm just passing through", next_node_id="goodbye"),
-        ]
+        ],
     )
 
     problem = DialogNode(
@@ -80,7 +80,7 @@ def create_elder_dialog():
         choices=[
             DialogChoice(text="I'll help!", next_node_id="accept_quest"),
             DialogChoice(text="Sorry, I can't", next_node_id="goodbye"),
-        ]
+        ],
     )
 
     accept_quest = DialogNode(
@@ -89,14 +89,14 @@ def create_elder_dialog():
         text="Thank you! Please defeat the goblin chief in the Dark Forest. Take this sword!",
         choices=[
             DialogChoice(text="I won't let you down!", next_node_id=None),
-        ]
+        ],
     )
 
     goodbye = DialogNode(
         id="goodbye",
         speaker="Village Elder",
         text="Safe travels, adventurer.",
-        choices=[]
+        choices=[],
     )
 
     tree.add_node(greeting)
@@ -131,14 +131,18 @@ def main():
             base_max_hp=50,
             base_max_mp=15,
             hp=100,
-            mp=30
-        )
+            mp=30,
+        ),
     )
     hero.init_inventory(max_slots=20)
 
     print(f"You are {hero.name}, a brave adventurer")
-    print(f"Stats: STR={hero.stats.strength} CON={hero.stats.constitution} DEX={hero.stats.dexterity}")
-    print(f"HP={hero.stats.hp}/{hero.stats.get_max_hp()} MP={hero.stats.mp}/{hero.stats.get_max_mp()}\n")
+    print(
+        f"Stats: STR={hero.stats.strength} CON={hero.stats.constitution} DEX={hero.stats.dexterity}"
+    )
+    print(
+        f"HP={hero.stats.hp}/{hero.stats.get_max_hp()} MP={hero.stats.mp}/{hero.stats.get_max_mp()}\n"
+    )
 
     # Create world
     world, village, forest = create_game_world()
@@ -152,7 +156,9 @@ def main():
     elder = NPC(
         name="Village Elder",
         description="A wise old man who leads the village",
-        stats=Stats(strength=5, constitution=8, intelligence=12, dexterity=6, charisma=15, hp=50)
+        stats=Stats(
+            strength=5, constitution=8, intelligence=12, dexterity=6, charisma=15, hp=50
+        ),
     )
     village.add_entity(elder, 15, 15)
 
@@ -170,7 +176,7 @@ def main():
     for choice_idx in choices_made:
         current_node = session.get_current_node()
         if current_node:
-            print(f"\n{current_node.speaker}: \"{current_node.text}\"")
+            print(f'\n{current_node.speaker}: "{current_node.text}"')
 
             choices = session.get_available_choices()
             if choices:
@@ -187,7 +193,7 @@ def main():
                         sword = create_weapon("Steel Sword", atk=8, value=100)
                         hero.inventory.add_item(sword)
                         print(f"\n✨ Received: {sword.name}!")
-                        hero.stats.atk += sword.stat_modifiers['atk']
+                        hero.stats.atk += sword.stat_modifiers["atk"]
 
                     session.make_choice(choice_idx)
 
@@ -198,14 +204,16 @@ def main():
         name="Goblin Threat",
         description="Defeat the goblin chief in the Dark Forest",
         exp_reward=100,
-        gold_reward=50
+        gold_reward=50,
     )
-    quest.add_objective(QuestObjective(
-        description="Defeat the Goblin Chief",
-        objective_type=ObjectiveType.KILL_ENEMY,
-        target="Goblin Chief",
-        target_count=1
-    ))
+    quest.add_objective(
+        QuestObjective(
+            description="Defeat the Goblin Chief",
+            objective_type=ObjectiveType.KILL_ENEMY,
+            target="Goblin Chief",
+            target_count=1,
+        )
+    )
 
     quest_manager = QuestManager()
     quest_manager.add_quest(quest)
@@ -222,9 +230,7 @@ def main():
 
     # Add a health potion
     potion = create_consumable(
-        "Health Potion",
-        on_use=lambda entity, ctx: entity.heal(30),
-        value=20
+        "Health Potion", on_use=lambda entity, ctx: entity.heal(30), value=20
     )
     hero.inventory.add_item(potion)
     print(f"✨ Found: {potion.name}\n")
@@ -245,10 +251,10 @@ def main():
             dexterity=12,
             charisma=8,
             base_max_hp=30,
-            hp=50
+            hp=50,
         ),
         exp_reward=100,
-        gold_reward=50
+        gold_reward=50,
     )
 
     print(f"⚔️  Encountered: {goblin_chief.name}!")
@@ -264,7 +270,9 @@ def main():
         damage = max(1, hero.stats.atk - goblin_chief.stats.defense)
         goblin_chief.take_damage(damage)
         print(f"  ⚔️  {hero.name} attacks for {damage} damage!")
-        print(f"     {goblin_chief.name} HP: {goblin_chief.stats.hp}/{goblin_chief.stats.max_hp}")
+        print(
+            f"     {goblin_chief.name} HP: {goblin_chief.stats.hp}/{goblin_chief.stats.max_hp}"
+        )
 
         if goblin_chief.is_dead():
             break
@@ -291,11 +299,7 @@ def main():
 
         # Complete quest
         quest_manager.update_objective(
-            quest.id,
-            ObjectiveType.KILL_ENEMY,
-            "Goblin Chief",
-            1,
-            game.events
+            quest.id, ObjectiveType.KILL_ENEMY, "Goblin Chief", 1, game.events
         )
 
         if quest.is_completed():

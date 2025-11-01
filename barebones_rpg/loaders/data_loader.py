@@ -10,7 +10,14 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 
 from ..entities import Stats, Character, NPC, Enemy
-from ..items import Item, ItemType, EquipSlot, create_weapon, create_armor, create_consumable
+from ..items import (
+    Item,
+    ItemType,
+    EquipSlot,
+    create_weapon,
+    create_armor,
+    create_consumable,
+)
 from ..dialog import DialogNode, DialogChoice, DialogTree
 from ..quests import Quest, QuestObjective, ObjectiveType
 
@@ -34,7 +41,7 @@ class DataLoader:
         Returns:
             Parsed JSON data
         """
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             return json.load(f)
 
     @staticmethod
@@ -47,7 +54,7 @@ class DataLoader:
         Returns:
             Parsed YAML data
         """
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             return yaml.safe_load(f)
 
     @staticmethod
@@ -61,9 +68,9 @@ class DataLoader:
             Parsed data
         """
         path = Path(file_path)
-        if path.suffix.lower() in ['.yaml', '.yml']:
+        if path.suffix.lower() in [".yaml", ".yml"]:
             return DataLoader.load_yaml(file_path)
-        elif path.suffix.lower() == '.json':
+        elif path.suffix.lower() == ".json":
             return DataLoader.load_json(file_path)
         else:
             raise ValueError(f"Unsupported file format: {path.suffix}")
@@ -77,7 +84,7 @@ class DataLoader:
             file_path: Output file path
             indent: JSON indentation
         """
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             json.dump(data, f, indent=indent)
 
     @staticmethod
@@ -88,7 +95,7 @@ class DataLoader:
             data: Data to save
             file_path: Output file path
         """
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             yaml.dump(data, f, default_flow_style=False)
 
 
@@ -121,45 +128,49 @@ class ItemLoader:
         data = DataLoader.load_file(file_path)
         items = []
 
-        for item_data in data.get('items', []):
-            item_type = item_data.get('type', 'misc').lower()
+        for item_data in data.get("items", []):
+            item_type = item_data.get("type", "misc").lower()
 
-            if item_type == 'weapon':
+            if item_type == "weapon":
                 item = create_weapon(
-                    name=item_data['name'],
-                    atk=item_data.get('atk', 0),
-                    description=item_data.get('description', ''),
-                    value=item_data.get('value', 0)
+                    name=item_data["name"],
+                    atk=item_data.get("atk", 0),
+                    description=item_data.get("description", ""),
+                    value=item_data.get("value", 0),
                 )
-            elif item_type == 'armor':
-                slot_name = item_data.get('slot', 'body')
+            elif item_type == "armor":
+                slot_name = item_data.get("slot", "body")
                 slot = EquipSlot[slot_name.upper()]
                 item = create_armor(
-                    name=item_data['name'],
-                    defense=item_data.get('defense', 0),
+                    name=item_data["name"],
+                    defense=item_data.get("defense", 0),
                     slot=slot,
-                    description=item_data.get('description', ''),
-                    value=item_data.get('value', 0)
+                    description=item_data.get("description", ""),
+                    value=item_data.get("value", 0),
                 )
-            elif item_type == 'consumable':
+            elif item_type == "consumable":
                 # For consumables, we can't load the on_use function from data
                 # So we create a basic item and let the user set the function
                 item = Item(
-                    name=item_data['name'],
-                    description=item_data.get('description', ''),
+                    name=item_data["name"],
+                    description=item_data.get("description", ""),
                     item_type=ItemType.CONSUMABLE,
                     consumable=True,
-                    value=item_data.get('value', 0),
-                    stackable=item_data.get('stackable', True),
-                    max_stack=item_data.get('max_stack', 99)
+                    value=item_data.get("value", 0),
+                    stackable=item_data.get("stackable", True),
+                    max_stack=item_data.get("max_stack", 99),
                 )
             else:
                 # Generic item
                 item = Item(
-                    name=item_data['name'],
-                    description=item_data.get('description', ''),
-                    item_type=ItemType[item_type.upper()] if hasattr(ItemType, item_type.upper()) else ItemType.MISC,
-                    value=item_data.get('value', 0)
+                    name=item_data["name"],
+                    description=item_data.get("description", ""),
+                    item_type=(
+                        ItemType[item_type.upper()]
+                        if hasattr(ItemType, item_type.upper())
+                        else ItemType.MISC
+                    ),
+                    value=item_data.get("value", 0),
                 )
 
             items.append(item)
@@ -192,17 +203,17 @@ class EntityLoader:
         data = DataLoader.load_file(file_path)
         npcs = []
 
-        for npc_data in data.get('npcs', []):
-            stats_data = npc_data.get('stats', {})
+        for npc_data in data.get("npcs", []):
+            stats_data = npc_data.get("stats", {})
             stats = Stats(**stats_data)
 
             npc = NPC(
-                name=npc_data['name'],
-                description=npc_data.get('description', ''),
+                name=npc_data["name"],
+                description=npc_data.get("description", ""),
                 stats=stats,
-                dialog_tree_id=npc_data.get('dialog_tree_id'),
-                quest_ids=npc_data.get('quest_ids', []),
-                is_merchant=npc_data.get('is_merchant', False)
+                dialog_tree_id=npc_data.get("dialog_tree_id"),
+                quest_ids=npc_data.get("quest_ids", []),
+                is_merchant=npc_data.get("is_merchant", False),
             )
 
             npcs.append(npc)
@@ -222,18 +233,18 @@ class EntityLoader:
         data = DataLoader.load_file(file_path)
         enemies = []
 
-        for enemy_data in data.get('enemies', []):
-            stats_data = enemy_data.get('stats', {})
+        for enemy_data in data.get("enemies", []):
+            stats_data = enemy_data.get("stats", {})
             stats = Stats(**stats_data)
 
             enemy = Enemy(
-                name=enemy_data['name'],
-                description=enemy_data.get('description', ''),
+                name=enemy_data["name"],
+                description=enemy_data.get("description", ""),
                 stats=stats,
-                ai_type=enemy_data.get('ai_type', 'aggressive'),
-                exp_reward=enemy_data.get('exp_reward', 10),
-                gold_reward=enemy_data.get('gold_reward', 5),
-                loot_table=enemy_data.get('loot_table', [])
+                ai_type=enemy_data.get("ai_type", "aggressive"),
+                exp_reward=enemy_data.get("exp_reward", 10),
+                gold_reward=enemy_data.get("gold_reward", 5),
+                loot_table=enemy_data.get("loot_table", []),
             )
 
             enemies.append(enemy)
@@ -275,25 +286,21 @@ class DialogLoader:
         """
         data = DataLoader.load_file(file_path)
 
-        tree = DialogTree(
-            name=data['name'],
-            start_node_id=data.get('start_node')
-        )
+        tree = DialogTree(name=data["name"], start_node_id=data.get("start_node"))
 
-        for node_data in data.get('nodes', []):
+        for node_data in data.get("nodes", []):
             choices = []
-            for choice_data in node_data.get('choices', []):
+            for choice_data in node_data.get("choices", []):
                 choice = DialogChoice(
-                    text=choice_data['text'],
-                    next_node_id=choice_data.get('next_node')
+                    text=choice_data["text"], next_node_id=choice_data.get("next_node")
                 )
                 choices.append(choice)
 
             node = DialogNode(
-                id=node_data['id'],
-                speaker=node_data.get('speaker'),
-                text=node_data['text'],
-                choices=choices
+                id=node_data["id"],
+                speaker=node_data.get("speaker"),
+                text=node_data["text"],
+                choices=choices,
             )
 
             tree.add_node(node)
@@ -337,25 +344,29 @@ class QuestLoader:
         data = DataLoader.load_file(file_path)
         quests = []
 
-        for quest_data in data.get('quests', []):
+        for quest_data in data.get("quests", []):
             quest = Quest(
-                name=quest_data['name'],
-                description=quest_data.get('description', ''),
-                exp_reward=quest_data.get('exp_reward', 0),
-                gold_reward=quest_data.get('gold_reward', 0),
-                item_rewards=quest_data.get('item_rewards', []),
-                required_level=quest_data.get('required_level', 1)
+                name=quest_data["name"],
+                description=quest_data.get("description", ""),
+                exp_reward=quest_data.get("exp_reward", 0),
+                gold_reward=quest_data.get("gold_reward", 0),
+                item_rewards=quest_data.get("item_rewards", []),
+                required_level=quest_data.get("required_level", 1),
             )
 
-            for obj_data in quest_data.get('objectives', []):
-                obj_type_str = obj_data.get('type', 'custom').upper()
-                obj_type = ObjectiveType[obj_type_str] if hasattr(ObjectiveType, obj_type_str) else ObjectiveType.CUSTOM
+            for obj_data in quest_data.get("objectives", []):
+                obj_type_str = obj_data.get("type", "custom").upper()
+                obj_type = (
+                    ObjectiveType[obj_type_str]
+                    if hasattr(ObjectiveType, obj_type_str)
+                    else ObjectiveType.CUSTOM
+                )
 
                 objective = QuestObjective(
-                    description=obj_data['description'],
+                    description=obj_data["description"],
                     objective_type=obj_type,
-                    target=obj_data.get('target'),
-                    target_count=obj_data.get('count', 1)
+                    target=obj_data.get("target"),
+                    target_count=obj_data.get("count", 1),
                 )
 
                 quest.add_objective(objective)

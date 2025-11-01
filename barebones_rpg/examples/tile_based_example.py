@@ -27,7 +27,13 @@ from barebones_rpg.rendering.pygame_renderer import PygameRenderer
 from barebones_rpg.rendering.tile_renderer import TileRenderer
 from barebones_rpg.rendering.click_to_move import ClickToMoveHandler
 from barebones_rpg.rendering.ui_components import UIComponents
-from barebones_rpg.dialog.dialog import DialogTree, DialogNode, DialogChoice, DialogSession, DialogConditions
+from barebones_rpg.dialog.dialog import (
+    DialogTree,
+    DialogNode,
+    DialogChoice,
+    DialogSession,
+    DialogConditions,
+)
 from barebones_rpg.dialog.dialog_renderer import DialogRenderer
 from barebones_rpg.quests.quest import Quest, QuestObjective, ObjectiveType
 
@@ -50,18 +56,18 @@ class TileBasedGame:
     def __init__(self):
         """Initialize the game."""
         # Core game setup
-        self.game = Game(GameConfig(
-            title="Tile-Based RPG Example",
-            screen_width=SCREEN_WIDTH,
-            screen_height=SCREEN_HEIGHT,
-            fps=60
-        ))
+        self.game = Game(
+            GameConfig(
+                title="Tile-Based RPG Example",
+                screen_width=SCREEN_WIDTH,
+                screen_height=SCREEN_HEIGHT,
+                fps=60,
+            )
+        )
 
         # Pygame renderer
         self.renderer = PygameRenderer(
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
-            "Tile-Based RPG Example"
+            SCREEN_WIDTH, SCREEN_HEIGHT, "Tile-Based RPG Example"
         )
 
         # Framework components for tilemaps
@@ -69,9 +75,13 @@ class TileBasedGame:
         self.pathfinder = TilemapPathfinder(self.location)
         self.ap_manager = APManager(player_ap=PLAYER_AP, enemy_ap=ENEMY_AP)
         self.tile_renderer = TileRenderer(self.renderer, tile_size=TILE_SIZE)
-        self.click_handler = ClickToMoveHandler(TILE_SIZE, GRID_WIDTH, GRID_HEIGHT, self.pathfinder)
+        self.click_handler = ClickToMoveHandler(
+            TILE_SIZE, GRID_WIDTH, GRID_HEIGHT, self.pathfinder
+        )
         self.ui_components = UIComponents(self.renderer)
-        self.dialog_renderer = DialogRenderer(self.renderer, SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.dialog_renderer = DialogRenderer(
+            self.renderer, SCREEN_WIDTH, SCREEN_HEIGHT
+        )
         # Scale dialog renderer dimensions 2x
         self.dialog_renderer.configure(
             dialog_box_height=800,
@@ -83,7 +93,7 @@ class TileBasedGame:
             choice_font_size=32,
             choice_y_start_offset=360,
             text_y_offset=120,
-            text_line_spacing=44
+            text_line_spacing=44,
         )
         # Update internal padding values
         self.dialog_renderer.dialog_box_padding = 40
@@ -112,7 +122,7 @@ class TileBasedGame:
         self._populate_world()
         self._create_quests()
         self._create_dialogs()
-        
+
         # Subscribe to events
         self.game.events.subscribe(EventType.QUEST_COMPLETED, self._on_quest_completed)
         self.game.events.subscribe(EventType.COMBAT_END, self._on_combat_end)
@@ -123,11 +133,7 @@ class TileBasedGame:
 
     def _create_world(self) -> Location:
         """Create the game world with walls (using framework helpers)."""
-        location = Location(
-            name="Test Area",
-            width=GRID_WIDTH,
-            height=GRID_HEIGHT
-        )
+        location = Location(name="Test Area", width=GRID_WIDTH, height=GRID_HEIGHT)
 
         # Use framework helper for border walls
         location.create_border_walls()
@@ -152,15 +158,21 @@ class TileBasedGame:
                 base_max_hp=50,
                 base_max_mp=20,
                 hp=100,
-                mp=50
+                mp=50,
             ),
-            faction="player"
+            faction="player",
         )
         self.player.init_inventory(max_slots=20)
         self.player.init_equipment()
 
         # Give player a sword (melee weapon with 1 tile range)
-        sword = create_weapon("Iron Sword", base_damage=10, damage_type="physical", value=100, metadata={"range": 1})
+        sword = create_weapon(
+            "Iron Sword",
+            base_damage=10,
+            damage_type="physical",
+            value=100,
+            metadata={"range": 1},
+        )
         self.player.inventory.add_item(sword)
         self.player.equipment.equip(sword)
 
@@ -170,8 +182,16 @@ class TileBasedGame:
         self.friendly_npc = NPC(
             name="Villager",
             description="A friendly villager who doesn't move much.",
-            stats=Stats(strength=5, constitution=8, intelligence=10, dexterity=8, charisma=12, base_max_hp=30, hp=50),
-            faction="neutral"
+            stats=Stats(
+                strength=5,
+                constitution=8,
+                intelligence=10,
+                dexterity=8,
+                charisma=12,
+                base_max_hp=30,
+                hp=50,
+            ),
+            faction="neutral",
         )
         self.location.add_entity(self.friendly_npc, 5, 5)
 
@@ -185,11 +205,11 @@ class TileBasedGame:
                 dexterity=12,
                 charisma=5,
                 base_max_hp=20,
-                hp=30
+                hp=30,
             ),
             faction="enemy",
             exp_reward=20,
-            gold_reward=10
+            gold_reward=10,
         )
         self.location.add_entity(self.enemy, 15, 10)
 
@@ -199,23 +219,27 @@ class TileBasedGame:
             name="Kill the Goblin",
             description="The villager needs help dealing with a troublesome goblin.",
             exp_reward=50,
-            gold_reward=25
+            gold_reward=25,
         )
-        
+
         # Use enemy ID for unique target tracking (enables retroactive completion)
-        self.goblin_quest.add_objective(QuestObjective(
-            description="Defeat the Goblin",
-            objective_type=ObjectiveType.KILL_ENEMY,
-            target=self.enemy.id,
-            target_count=1
-        ))
-        
-        self.goblin_quest.add_objective(QuestObjective(
-            description="Return to the Villager",
-            objective_type=ObjectiveType.TALK_TO_NPC,
-            target="Villager",
-            target_count=1
-        ))
+        self.goblin_quest.add_objective(
+            QuestObjective(
+                description="Defeat the Goblin",
+                objective_type=ObjectiveType.KILL_ENEMY,
+                target=self.enemy.id,
+                target_count=1,
+            )
+        )
+
+        self.goblin_quest.add_objective(
+            QuestObjective(
+                description="Return to the Villager",
+                objective_type=ObjectiveType.TALK_TO_NPC,
+                target="Villager",
+                target_count=1,
+            )
+        )
 
     def _create_dialogs(self):
         """Create dialog trees for NPCs."""
@@ -227,9 +251,11 @@ class TileBasedGame:
         quest_not_started = DialogConditions.quest_not_started(self.goblin_quest)
         quest_active = DialogConditions.quest_active(self.goblin_quest)
         quest_completed = DialogConditions.quest_completed(self.goblin_quest)
-        
+
         # Combined conditions
-        quest_ready_to_turn_in = DialogConditions.all_conditions(quest_active, goblin_dead)
+        quest_ready_to_turn_in = DialogConditions.all_conditions(
+            quest_active, goblin_dead
+        )
 
         # Greeting node - changes based on quest status
         greeting = DialogNode(
@@ -240,29 +266,31 @@ class TileBasedGame:
                 DialogChoice(
                     text="Do you need any help?",
                     next_node_id="quest_offer",
-                    condition=quest_not_started
+                    condition=quest_not_started,
                 ),
                 DialogChoice(
                     text="About that goblin...",
                     next_node_id="quest_in_progress",
-                    condition=quest_active
+                    condition=quest_active,
                 ),
                 DialogChoice(
                     text="I've dealt with the goblin.",
                     next_node_id="quest_complete",
-                    condition=quest_ready_to_turn_in
+                    condition=quest_ready_to_turn_in,
                 ),
                 DialogChoice(
                     text="Thanks again for the reward!",
                     next_node_id="quest_already_complete",
-                    condition=quest_completed
+                    condition=quest_completed,
                 ),
                 DialogChoice(text="How are you doing?", next_node_id="how_are_you"),
-                DialogChoice(text="Can you tell me about yourself?", next_node_id="about_you"),
-                DialogChoice(text="Goodbye", next_node_id=None)
-            ]
+                DialogChoice(
+                    text="Can you tell me about yourself?", next_node_id="about_you"
+                ),
+                DialogChoice(text="Goodbye", next_node_id=None),
+            ],
         )
-        
+
         # Quest offer node
         quest_offer = DialogNode(
             id="quest_offer",
@@ -273,16 +301,16 @@ class TileBasedGame:
                     text="I'll take care of it.",
                     next_node_id="quest_accepted_dead",
                     condition=goblin_dead,
-                    quest_to_start=self.goblin_quest
+                    quest_to_start=self.goblin_quest,
                 ),
                 DialogChoice(
                     text="I'll take care of it.",
                     next_node_id="quest_accepted",
                     condition=goblin_alive,
-                    quest_to_start=self.goblin_quest
+                    quest_to_start=self.goblin_quest,
                 ),
-                DialogChoice(text="Maybe later.", next_node_id=None)
-            ]
+                DialogChoice(text="Maybe later.", next_node_id=None),
+            ],
         )
 
         # Quest accepted node - normal case
@@ -290,19 +318,15 @@ class TileBasedGame:
             id="quest_accepted",
             speaker="Villager",
             text="Thank you! The goblin is somewhere to the east. Be careful, and good luck!",
-            choices=[
-                DialogChoice(text="I'll be back!", next_node_id=None)
-            ]
+            choices=[DialogChoice(text="I'll be back!", next_node_id=None)],
         )
-        
+
         # Quest accepted but goblin already dead - special case
         quest_accepted_dead = DialogNode(
             id="quest_accepted_dead",
             speaker="Villager",
             text="Wait... you've already killed it? That's incredible! Thank you so much! Here's your reward.",
-            choices=[
-                DialogChoice(text="Happy to help!", next_node_id=None)
-            ]
+            choices=[DialogChoice(text="Happy to help!", next_node_id=None)],
         )
 
         # Quest in progress node
@@ -312,10 +336,10 @@ class TileBasedGame:
             text="Have you found the goblin yet? It should be somewhere to the east.",
             choices=[
                 DialogChoice(text="Still looking.", next_node_id=None),
-                DialogChoice(text="I'll find it soon.", next_node_id=None)
-            ]
+                DialogChoice(text="I'll find it soon.", next_node_id=None),
+            ],
         )
-        
+
         # Quest complete - turn in (mark turn-in objective complete)
         quest_complete = DialogNode(
             id="quest_complete",
@@ -325,29 +349,30 @@ class TileBasedGame:
                 DialogChoice(
                     text="Glad I could help!",
                     next_node_id="quest_thank_you",
-                    quest_to_update=(self.goblin_quest, ObjectiveType.TALK_TO_NPC, "Villager", 1)
+                    quest_to_update=(
+                        self.goblin_quest,
+                        ObjectiveType.TALK_TO_NPC,
+                        "Villager",
+                        1,
+                    ),
                 )
-            ]
+            ],
         )
-        
+
         # Thank you node after receiving reward
         quest_thank_you = DialogNode(
             id="quest_thank_you",
             speaker="Villager",
             text="The area is much safer now. Thanks again for your help!",
-            choices=[
-                DialogChoice(text="Happy to help!", next_node_id=None)
-            ]
+            choices=[DialogChoice(text="Happy to help!", next_node_id=None)],
         )
-        
+
         # Quest already completed (subsequent conversations)
         quest_already_complete = DialogNode(
             id="quest_already_complete",
             speaker="Villager",
             text="You've already received your reward, but thank you again! The area is much safer now.",
-            choices=[
-                DialogChoice(text="Happy to help!", next_node_id=None)
-            ]
+            choices=[DialogChoice(text="Happy to help!", next_node_id=None)],
         )
 
         # How are you response - uses condition-based choices for different follow-ups
@@ -359,14 +384,12 @@ class TileBasedGame:
                 DialogChoice(
                     text="Glad you're safe now!",
                     next_node_id=None,
-                    condition=goblin_dead
+                    condition=goblin_dead,
                 ),
                 DialogChoice(
-                    text="Stay safe!",
-                    next_node_id=None,
-                    condition=goblin_alive
-                )
-            ]
+                    text="Stay safe!", next_node_id=None, condition=goblin_alive
+                ),
+            ],
         )
 
         # About you response
@@ -374,9 +397,7 @@ class TileBasedGame:
             id="about_you",
             speaker="Villager",
             text="I'm just a simple villager trying to make a living here. Not much to tell, really.",
-            choices=[
-                DialogChoice(text="I see. Take care!", next_node_id=None)
-            ]
+            choices=[DialogChoice(text="I see. Take care!", next_node_id=None)],
         )
 
         # Add all nodes to tree
@@ -439,11 +460,9 @@ class TileBasedGame:
         valid_moves = self.ap_manager.calculate_valid_moves(
             self.player, self.location, self.pathfinder
         )
-        
+
         self.click_handler.handle_mouse_motion(
-            event,
-            valid_moves=valid_moves,
-            current_position=self.player.position
+            event, valid_moves=valid_moves, current_position=self.player.position
         )
 
     def _handle_mouse_click(self, event: pygame.event.Event):
@@ -477,10 +496,12 @@ class TileBasedGame:
 
     def _try_attack_enemy(self, enemy: Enemy):
         """Try to attack an enemy (must be in weapon range)."""
-        distance = self.pathfinder.get_manhattan_distance(self.player.position, enemy.position)
+        distance = self.pathfinder.get_manhattan_distance(
+            self.player.position, enemy.position
+        )
 
         weapon = self.player.equipment.get_equipped(EquipSlot.WEAPON)
-        weapon_range = weapon.metadata.get('range', 1) if weapon else 1
+        weapon_range = weapon.metadata.get("range", 1) if weapon else 1
 
         if distance <= weapon_range:
             self._start_combat(self.player, enemy)
@@ -493,9 +514,9 @@ class TileBasedGame:
 
         if dialog_tree:
             self.dialog_session = DialogSession(
-                dialog_tree, 
+                dialog_tree,
                 game=self.game,
-                context={"player": self.player, "location": self.location}
+                context={"player": self.player, "location": self.location},
             )
             self.dialog_session.start()
             self.in_dialog = True
@@ -508,10 +529,7 @@ class TileBasedGame:
     def _move_player(self, target):
         """Move the player to the target tile."""
         success = self.ap_manager.process_movement(
-            self.player,
-            self.location,
-            target,
-            self.pathfinder
+            self.player, self.location, target, self.pathfinder
         )
 
         if success:
@@ -549,14 +567,14 @@ class TileBasedGame:
                 self.location,
                 ENEMY_AP,
                 on_attack=self._start_combat,
-                attack_range=1
+                attack_range=1,
             )
             if attacked:
                 return  # Combat started, stop processing
 
     def _start_combat(self, attacker, target):
         """Start combat between attacker and target.
-        
+
         Args:
             attacker: The entity initiating combat
             target: The entity being attacked
@@ -566,28 +584,26 @@ class TileBasedGame:
             enemy = attacker
         else:
             enemy = target
-            
+
         print(f"\n=== Combat Started: {self.player.name} vs {enemy.name} ===")
         self.in_combat = True
         self.combat_messages = [
             f"Combat: {self.player.name} vs {enemy.name}",
             "",
-            "Press SPACE to auto-battle"
+            "Press SPACE to auto-battle",
         ]
 
         self.combat = Combat(
-            player_group=[self.player],
-            enemy_group=[enemy],
-            events=self.game.events
+            player_group=[self.player], enemy_group=[enemy], events=self.game.events
         )
 
         self.combat.start()
 
     def _on_damage_dealt(self, event: Event):
         """Handle damage dealt event."""
-        source = event.data.get('source')
-        target = event.data.get('target')
-        damage = event.data.get('damage', 0)
+        source = event.data.get("source")
+        target = event.data.get("target")
+        damage = event.data.get("damage", 0)
 
         msg = f"{source.name} deals {damage} damage to {target.name}!"
         self.combat_messages.append(msg)
@@ -595,22 +611,22 @@ class TileBasedGame:
 
     def _on_quest_completed(self, event: Event):
         """Handle quest completion event to give rewards."""
-        quest = event.data.get('quest')
+        quest = event.data.get("quest")
         if quest and quest == self.goblin_quest:
             # Give experience
             if quest.exp_reward > 0:
                 self.player.gain_exp(quest.exp_reward, self.game.events)
                 print(f"\n✨ Gained {quest.exp_reward} EXP!")
-            
+
             # Give gold
             if quest.gold_reward > 0 and self.player.inventory:
                 self.player.inventory.add_gold(quest.gold_reward)
                 print(f"✨ Gained {quest.gold_reward} gold!")
-    
+
     def _on_combat_end(self, event: Event):
         """Handle combat end event."""
-        result = event.data.get('result', 'UNKNOWN')
-        victory = result == 'VICTORY'
+        result = event.data.get("result", "UNKNOWN")
+        victory = result == "VICTORY"
 
         if victory:
             msg = "Victory!"
@@ -618,8 +634,11 @@ class TileBasedGame:
             print(msg)
 
             # Remove dead enemies from location
-            enemies_to_remove = [e for e in self.location.entities
-                               if e.faction == "enemy" and e.stats.hp <= 0]
+            enemies_to_remove = [
+                e
+                for e in self.location.entities
+                if e.faction == "enemy" and e.stats.hp <= 0
+            ]
             for enemy in enemies_to_remove:
                 self.location.remove_entity(enemy)
         else:
@@ -643,6 +662,7 @@ class TileBasedGame:
             print("\n=== Returning to exploration ===\n")
         else:
             from barebones_rpg.combat.actions import AttackAction
+
             current_entity = self.combat.get_current_combatant()
 
             if current_entity and current_entity in self.combat.players.members:
@@ -650,16 +670,25 @@ class TileBasedGame:
                 if alive_enemies:
                     action = AttackAction()
                     self.combat.execute_action(action, current_entity, alive_enemies[0])
-                    
+
                     from barebones_rpg.combat.combat import CombatState
-                    if self.combat.state not in [CombatState.VICTORY, CombatState.DEFEAT, CombatState.FLED]:
+
+                    if self.combat.state not in [
+                        CombatState.VICTORY,
+                        CombatState.DEFEAT,
+                        CombatState.FLED,
+                    ]:
                         self.combat.end_turn()
 
     def _render_world(self):
         """Render the world view."""
-        valid_moves = self.ap_manager.calculate_valid_moves(
-            self.player, self.location, self.pathfinder
-        ) if self.player_turn else set()
+        valid_moves = (
+            self.ap_manager.calculate_valid_moves(
+                self.player, self.location, self.pathfinder
+            )
+            if self.player_turn
+            else set()
+        )
 
         # Use framework's tile renderer
         self.tile_renderer.render_location(
@@ -667,22 +696,20 @@ class TileBasedGame:
             valid_moves=valid_moves,
             path_preview=self.click_handler.get_path_preview(),
             hover_tile=self.click_handler.get_hover_tile(),
-            current_entity_position=self.player.position
+            current_entity_position=self.player.position,
         )
 
         # Use framework's UI components
         self.ui_components.render_turn_indicator(
-            self.player_turn,
-            (20, 20),
-            font_size=40
+            self.player_turn, (20, 20), font_size=40
         )
-        
+
         self.ui_components.render_resource_bar(
             "AP",
             self.ap_manager.get_remaining_ap(self.player),
             PLAYER_AP,
             (300, 20),
-            font_size=40
+            font_size=40,
         )
 
         self.ui_components.render_quest_list(
@@ -690,19 +717,17 @@ class TileBasedGame:
             (20, 100),
             title_font_size=32,
             quest_font_size=28,
-            objective_font_size=24
+            objective_font_size=24,
         )
 
         instructions = [
             "Click tile to move",
             "Click enemy to attack",
             "Click NPC to talk",
-            "SPACE to end turn"
+            "SPACE to end turn",
         ]
         self.ui_components.render_instructions(
-            instructions,
-            (20, SCREEN_HEIGHT - 150),
-            font_size=24
+            instructions, (20, SCREEN_HEIGHT - 150), font_size=24
         )
 
     def _render_combat(self):
@@ -712,38 +737,31 @@ class TileBasedGame:
         self.renderer.clear(Color(20, 20, 30))
 
         self.renderer.draw_text(
-            "=== COMBAT ===",
-            SCREEN_WIDTH // 2 - 160,
-            100,
-            Colors.RED,
-            font_size=48
+            "=== COMBAT ===", SCREEN_WIDTH // 2 - 160, 100, Colors.RED, font_size=48
         )
 
         # Use framework's stat panel
         self.ui_components.render_stat_panel(
-            self.player, 
+            self.player,
             (100, 200),
             name_font_size=40,
             stat_font_size=32,
-            line_spacing=40
+            line_spacing=40,
         )
 
         if self.combat and self.combat.enemies.members:
             enemy = self.combat.enemies.members[0]
             self.ui_components.render_stat_panel(
-                enemy, 
+                enemy,
                 (SCREEN_WIDTH - 300, 200),
                 name_font_size=40,
                 stat_font_size=32,
-                line_spacing=40
+                line_spacing=40,
             )
 
         # Use framework's message log
         self.ui_components.render_message_log(
-            self.combat_messages,
-            (100, 400),
-            font_size=28,
-            line_spacing=40
+            self.combat_messages, (100, 400), font_size=28, line_spacing=40
         )
 
     def _render_dialog(self):

@@ -75,10 +75,12 @@ class Item(BaseModel):
         default_factory=dict, description="Stat modifications when equipped"
     )
     required_level: int = Field(default=1, description="Required level to use")
-    
+
     # Weapon properties
     base_damage: int = Field(default=0, description="Base damage for weapons")
-    damage_type: str = Field(default="physical", description="Damage type (physical, magic, or custom)")
+    damage_type: str = Field(
+        default="physical", description="Damage type (physical, magic, or custom)"
+    )
 
     # Consumable properties
     consumable: bool = Field(default=False, description="Item is consumed on use")
@@ -187,7 +189,7 @@ def create_weapon(
     damage_type: str = "physical",
     description: str = "",
     value: int = 0,
-    **kwargs
+    **kwargs,
 ) -> Item:
     """Create a weapon item.
 
@@ -210,7 +212,7 @@ def create_weapon(
         base_damage=base_damage,
         damage_type=damage_type,
         value=value,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -221,7 +223,7 @@ def create_armor(
     slot: EquipSlot = EquipSlot.BODY,
     description: str = "",
     value: int = 0,
-    **kwargs
+    **kwargs,
 ) -> Item:
     """Create an armor item.
 
@@ -242,7 +244,7 @@ def create_armor(
         stat_modifiers["base_physical_defense"] = physical_defense
     if magic_defense > 0:
         stat_modifiers["base_magic_defense"] = magic_defense
-    
+
     return Item(
         name=name,
         description=description,
@@ -250,7 +252,7 @@ def create_armor(
         equip_slot=slot,
         stat_modifiers=stat_modifiers,
         value=value,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -261,7 +263,7 @@ def create_consumable(
     value: int = 0,
     stackable: bool = True,
     max_stack: int = 99,
-    **kwargs
+    **kwargs,
 ) -> Item:
     """Create a consumable item.
 
@@ -286,15 +288,11 @@ def create_consumable(
         stackable=stackable,
         max_stack=max_stack,
         value=value,
-        **kwargs
+        **kwargs,
     )
 
 
-def create_quest_item(
-    name: str,
-    description: str = "",
-    **kwargs
-) -> Item:
+def create_quest_item(name: str, description: str = "", **kwargs) -> Item:
     """Create a quest item.
 
     Args:
@@ -306,9 +304,5 @@ def create_quest_item(
         Quest item
     """
     return Item(
-        name=name,
-        description=description,
-        item_type=ItemType.QUEST,
-        value=0,
-        **kwargs
+        name=name, description=description, item_type=ItemType.QUEST, value=0, **kwargs
     )

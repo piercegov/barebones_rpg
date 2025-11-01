@@ -11,11 +11,11 @@ from .core import Game, GameState, GameConfig, Event, EventType, EventManager
 
 # Entity exports
 from .entities import (
-    Stats, 
-    Entity, 
-    Character, 
-    NPC, 
-    Enemy, 
+    Stats,
+    Entity,
+    Character,
+    NPC,
+    Enemy,
     StatusEffect,
     SimplePathfindingAI,
     TacticalAI,

@@ -31,12 +31,12 @@ def main():
 
     # Subscribe to combat events
     def on_damage(event):
-        result = event.data.get('result')
+        result = event.data.get("result")
         if result and result.damage > 0:
             print(f"  💥 {result.message}")
 
     def on_death(event):
-        entity = event.data.get('entity')
+        entity = event.data.get("entity")
         print(f"  ⚰️  {entity.name} has been defeated!")
 
     game.events.subscribe(EventType.ATTACK, on_damage)
@@ -54,15 +54,17 @@ def main():
             base_max_hp=50,
             base_max_mp=20,
             hp=100,
-            mp=50
-        )
+            mp=50,
+        ),
     )
     hero.init_equipment()
 
     # Give hero a weapon
     sword = create_weapon("Iron Sword", base_damage=8, damage_type="physical", value=50)
     hero.equipment.equip(sword)
-    print(f"Hero equipped: {sword.name} ({sword.base_damage} base damage, {sword.damage_type} type)")
+    print(
+        f"Hero equipped: {sword.name} ({sword.base_damage} base damage, {sword.damage_type} type)"
+    )
 
     # Create enemies
     goblin1 = Enemy(
@@ -74,10 +76,10 @@ def main():
             dexterity=12,
             charisma=5,
             base_max_hp=20,
-            hp=30
+            hp=30,
         ),
         exp_reward=20,
-        gold_reward=10
+        gold_reward=10,
     )
 
     goblin2 = Enemy(
@@ -89,19 +91,17 @@ def main():
             dexterity=16,
             charisma=5,
             base_max_hp=15,
-            hp=25
+            hp=25,
         ),
         exp_reward=25,
-        gold_reward=15
+        gold_reward=15,
     )
 
     print(f"\nEncountered: {goblin1.name} and {goblin2.name}!\n")
 
     # Create combat
     combat = Combat(
-        player_group=[hero],
-        enemy_group=[goblin1, goblin2],
-        events=game.events
+        player_group=[hero], enemy_group=[goblin1, goblin2], events=game.events
     )
 
     # Add victory callback

@@ -110,7 +110,7 @@ class Renderer(ABC):
         x: int,
         y: int,
         color: Color = Colors.WHITE,
-        font_size: int = 16
+        font_size: int = 16,
     ) -> None:
         """Draw text.
 
@@ -125,7 +125,12 @@ class Renderer(ABC):
 
     @abstractmethod
     def draw_sprite(
-        self, sprite_id: str, x: int, y: int, width: Optional[int] = None, height: Optional[int] = None
+        self,
+        sprite_id: str,
+        x: int,
+        y: int,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
     ) -> None:
         """Draw a sprite/image.
 
@@ -243,7 +248,9 @@ class TextBox(UIElement):
             return
 
         # Draw background
-        renderer.draw_rect(self.x, self.y, self.width, self.height, self.bg_color, filled=True)
+        renderer.draw_rect(
+            self.x, self.y, self.width, self.height, self.bg_color, filled=True
+        )
 
         # Draw border
         renderer.draw_rect(

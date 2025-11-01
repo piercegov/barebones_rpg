@@ -92,9 +92,7 @@ class TurnOrder(BaseModel):
         """
         # Sort by speed (highest first)
         self.combatants = sorted(
-            all_combatants,
-            key=lambda c: c.stats.speed,
-            reverse=True
+            all_combatants, key=lambda c: c.stats.speed, reverse=True
         )
         self.current_index = 0
 
@@ -165,7 +163,7 @@ class Combat:
         self,
         player_group: List[Any],
         enemy_group: List[Any],
-        events: Optional[EventManager] = None
+        events: Optional[EventManager] = None,
     ):
         """Initialize combat.
 
@@ -198,13 +196,15 @@ class Combat:
         self.state = CombatState.TURN_START
         self.turn_number = 1
 
-        self.events.publish(Event(
-            EventType.COMBAT_START,
-            {
-                "players": self.players.members,
-                "enemies": self.enemies.members,
-            }
-        ))
+        self.events.publish(
+            Event(
+                EventType.COMBAT_START,
+                {
+                    "players": self.players.members,
+                    "enemies": self.enemies.members,
+                },
+            )
+        )
 
         self._start_next_turn()
 
@@ -220,13 +220,15 @@ class Combat:
             # No one left, shouldn't happen but handle it
             return
 
-        self.events.publish(Event(
-            EventType.COMBAT_TURN_START,
-            {
-                "turn": self.turn_number,
-                "combatant": current,
-            }
-        ))
+        self.events.publish(
+            Event(
+                EventType.COMBAT_TURN_START,
+                {
+                    "turn": self.turn_number,
+                    "combatant": current,
+                },
+            )
+        )
 
         # Determine if it's player or enemy turn
         if current in self.players.members:
@@ -237,10 +239,7 @@ class Combat:
             self._execute_enemy_ai(current)
 
     def execute_action(
-        self,
-        action: CombatAction,
-        source: Any,
-        target: Optional[Any] = None
+        self, action: CombatAction, source: Any, target: Optional[Any] = None
     ) -> ActionResult:
         """Execute a combat action.
 
@@ -255,39 +254,45 @@ class Combat:
         # Check if action can be executed
         if not action.can_execute(source, {"combat_state": self}):
             return ActionResult(
-                success=False,
-                message=f"{source.name} can't perform {action.name}!"
+                success=False, message=f"{source.name} can't perform {action.name}!"
             )
 
         # Execute the action
         result = action.execute(source, target, {"combat_state": self})
 
         # Record in history
-        self.action_history.append({
-            "turn": self.turn_number,
-            "source": source.id,
-            "target": target.id if target else None,
-            "action": action.name,
-            "result": result,
-        })
-
-        # Publish event
-        self.events.publish(Event(
-            EventType.ATTACK if action.action_type.name == "ATTACK" else "combat_action",
+        self.action_history.append(
             {
-                "source": source,
-                "target": target,
-                "action": action,
+                "turn": self.turn_number,
+                "source": source.id,
+                "target": target.id if target else None,
+                "action": action.name,
                 "result": result,
             }
-        ))
+        )
+
+        # Publish event
+        self.events.publish(
+            Event(
+                (
+                    EventType.ATTACK
+                    if action.action_type.name == "ATTACK"
+                    else "combat_action"
+                ),
+                {
+                    "source": source,
+                    "target": target,
+                    "action": action,
+                    "result": result,
+                },
+            )
+        )
 
         # Check for deaths
         if target and target.is_dead():
-            self.events.publish(Event(
-                EventType.DEATH,
-                {"entity": target, "killer": source}
-            ))
+            self.events.publish(
+                Event(EventType.DEATH, {"entity": target, "killer": source})
+            )
 
         # Check if combat should end
         if result.metadata.get("fled"):
@@ -301,10 +306,12 @@ class Combat:
         """End the current turn and move to next."""
         current = self.turn_order.get_current()
 
-        self.events.publish(Event(
-            EventType.COMBAT_TURN_END,
-            {"turn": self.turn_number, "combatant": current}
-        ))
+        self.events.publish(
+            Event(
+                EventType.COMBAT_TURN_END,
+                {"turn": self.turn_number, "combatant": current},
+            )
+        )
 
         # Move to next combatant
         next_combatant = self.turn_order.next_turn()
@@ -328,6 +335,7 @@ class Combat:
             return
 
         import random
+
         target = random.choice(alive_players)
 
         # Execute basic attack
@@ -359,13 +367,15 @@ class Combat:
         """
         self.state = end_state
 
-        self.events.publish(Event(
-            EventType.COMBAT_END,
-            {
-                "result": end_state.name,
-                "turns": self.turn_number,
-            }
-        ))
+        self.events.publish(
+            Event(
+                EventType.COMBAT_END,
+                {
+                    "result": end_state.name,
+                    "turns": self.turn_number,
+                },
+            )
+        )
 
         # Call appropriate callbacks
         if end_state == CombatState.VICTORY:

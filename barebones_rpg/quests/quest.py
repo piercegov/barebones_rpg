@@ -43,7 +43,9 @@ class QuestObjective(BaseModel):
         ... )
     """
 
-    id: str = Field(default_factory=lambda: str(uuid4()), description="Unique objective ID")
+    id: str = Field(
+        default_factory=lambda: str(uuid4()), description="Unique objective ID"
+    )
     description: str = Field(description="Objective description")
     objective_type: ObjectiveType = Field(description="Type of objective")
 
@@ -127,7 +129,7 @@ class QuestObjective(BaseModel):
 
 class Quest(BaseModel):
     """A quest with objectives and rewards.
-    
+
     Quests automatically register themselves with the QuestManager singleton
     when created.
 
@@ -147,7 +149,9 @@ class Quest(BaseModel):
     name: str = Field(description="Quest name")
     description: str = Field(default="", description="Quest description")
 
-    status: QuestStatus = Field(default=QuestStatus.NOT_STARTED, description="Quest status")
+    status: QuestStatus = Field(
+        default=QuestStatus.NOT_STARTED, description="Quest status"
+    )
     objectives: List[QuestObjective] = Field(
         default_factory=list, description="Quest objectives"
     )
@@ -155,7 +159,9 @@ class Quest(BaseModel):
     # Rewards
     exp_reward: int = Field(default=0, description="Experience reward")
     gold_reward: int = Field(default=0, description="Gold reward")
-    item_rewards: List[str] = Field(default_factory=list, description="Item rewards (item IDs)")
+    item_rewards: List[str] = Field(
+        default_factory=list, description="Item rewards (item IDs)"
+    )
 
     # Quest giver
     giver_npc_id: Optional[str] = Field(default=None, description="NPC who gave quest")
@@ -180,7 +186,7 @@ class Quest(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Custom data")
 
     model_config = {"arbitrary_types_allowed": True}
-    
+
     def __init__(self, **data):
         """Initialize quest and auto-register to QuestManager."""
         super().__init__(**data)
@@ -199,7 +205,12 @@ class Quest(BaseModel):
         self.objectives.append(objective)
         return True
 
-    def start(self, events: Optional[EventManager] = None, location: Optional[Any] = None, world: Optional[Any] = None) -> None:
+    def start(
+        self,
+        events: Optional[EventManager] = None,
+        location: Optional[Any] = None,
+        world: Optional[Any] = None,
+    ) -> None:
         """Start the quest.
 
         Args:
@@ -215,12 +226,15 @@ class Quest(BaseModel):
 
             if events:
                 events.publish(Event(EventType.QUEST_STARTED, {"quest": self}))
-                
+
                 # Auto-register event listeners for objectives
                 for objective in self.objectives:
-                    if objective.objective_type == ObjectiveType.KILL_ENEMY and objective.target:
+                    if (
+                        objective.objective_type == ObjectiveType.KILL_ENEMY
+                        and objective.target
+                    ):
                         self._register_kill_listener(objective, events)
-                
+
                 # Check for retroactive progress (e.g., if unique enemies are already dead)
                 self.check_retroactive_progress(events, location, world)
 
@@ -308,19 +322,24 @@ class Quest(BaseModel):
 
         completed = sum(1 for obj in self.objectives if obj.is_completed())
         return completed / len(self.objectives)
-    
-    def check_retroactive_progress(self, events: Optional[EventManager] = None, location: Optional[Any] = None, world: Optional[Any] = None) -> None:
+
+    def check_retroactive_progress(
+        self,
+        events: Optional[EventManager] = None,
+        location: Optional[Any] = None,
+        world: Optional[Any] = None,
+    ) -> None:
         """Check for retroactive progress on objectives.
-        
+
         This method checks if objectives can be completed based on current world state,
         even if the required actions happened before the quest was started.
-        
+
         For example, if a quest requires killing a unique enemy (tracked by ID) and that
         enemy is already dead when the quest starts, this will mark the objective complete.
-        
+
         Objectives with ID-based targets (UUIDs) are considered unique and will be checked
         retroactively. Name-based targets are considered generic and won't be checked.
-        
+
         Args:
             events: Event manager for publishing events
             location: Location to check for entity existence (for single-location quests)
@@ -328,55 +347,62 @@ class Quest(BaseModel):
         """
         if not self.is_active():
             return
-        
+
         for objective in self.objectives:
             if objective.is_completed():
                 continue
-            
+
             # Only check KILL_ENEMY objectives with ID-based targets
-            if objective.objective_type == ObjectiveType.KILL_ENEMY and objective.target:
+            if (
+                objective.objective_type == ObjectiveType.KILL_ENEMY
+                and objective.target
+            ):
                 # Check if target looks like a UUID (ID-based) vs a name (generic)
                 is_uuid = self._is_uuid_format(objective.target)
-                
+
                 if is_uuid:
                     # This is a unique target - check if it still exists
                     entity_exists = False
-                    
+
                     if location:
                         # Check in specific location
                         entity_exists = any(
-                            hasattr(e, 'id') and e.id == objective.target
+                            hasattr(e, "id") and e.id == objective.target
                             for e in location.entities
                         )
                     elif world:
                         # Check in all locations of the world
                         for loc in world.locations.values():
                             entity_exists = any(
-                                hasattr(e, 'id') and e.id == objective.target
+                                hasattr(e, "id") and e.id == objective.target
                                 for e in loc.entities
                             )
                             if entity_exists:
                                 break
-                    
+
                     # If entity doesn't exist, it was already killed - mark objective complete
                     if not entity_exists:
-                        was_completed = objective.increment(objective.target_count - objective.current_count)
+                        was_completed = objective.increment(
+                            objective.target_count - objective.current_count
+                        )
                         if was_completed and events:
-                            events.publish(Event(
-                                EventType.OBJECTIVE_COMPLETED,
-                                {"quest": self, "objective": objective}
-                            ))
-        
+                            events.publish(
+                                Event(
+                                    EventType.OBJECTIVE_COMPLETED,
+                                    {"quest": self, "objective": objective},
+                                )
+                            )
+
         # Check if quest is now complete
         if events:
             self.check_completion(events)
-    
+
     def _is_uuid_format(self, value: str) -> bool:
         """Check if a string looks like a UUID.
-        
+
         Args:
             value: String to check
-            
+
         Returns:
             True if string appears to be a UUID
         """
@@ -384,16 +410,16 @@ class Quest(BaseModel):
         # Example: "550e8400-e29b-41d4-a716-446655440000"
         if len(value) != 36:
             return False
-        
-        parts = value.split('-')
+
+        parts = value.split("-")
         if len(parts) != 5:
             return False
-        
+
         # Check part lengths: 8-4-4-4-12
         expected_lengths = [8, 4, 4, 4, 12]
         if [len(p) for p in parts] != expected_lengths:
             return False
-        
+
         # Check if all parts are hexadecimal
         try:
             for part in parts:
@@ -401,54 +427,58 @@ class Quest(BaseModel):
             return True
         except ValueError:
             return False
-    
-    def _register_kill_listener(self, objective: QuestObjective, events: EventManager) -> None:
+
+    def _register_kill_listener(
+        self, objective: QuestObjective, events: EventManager
+    ) -> None:
         """Register event listener for kill objectives.
-        
+
         This method handles both name-based (generic) and ID-based (unique) targets:
         - Name-based: Matches any entity with the target name (e.g., "Goblin")
         - ID-based: Matches only the specific entity with the target ID (UUID)
-        
+
         Args:
             objective: The objective to track
             events: Event manager to subscribe to
         """
         # Determine if target is ID-based or name-based
         is_uuid = self._is_uuid_format(objective.target)
-        
+
         def on_death(event: Event):
             """Handle entity death events."""
             if not self.is_active() or objective.is_completed():
                 return
-            
-            entity = event.data.get('entity')
+
+            entity = event.data.get("entity")
             if not entity:
                 return
-            
+
             # Match based on target type
             matches = False
             if is_uuid:
                 # ID-based: match by entity ID
-                matches = hasattr(entity, 'id') and entity.id == objective.target
+                matches = hasattr(entity, "id") and entity.id == objective.target
             else:
                 # Name-based: match by entity name
-                matches = hasattr(entity, 'name') and entity.name == objective.target
-            
+                matches = hasattr(entity, "name") and entity.name == objective.target
+
             if matches:
                 was_completed = objective.increment(1)
                 if was_completed:
-                    events.publish(Event(
-                        EventType.OBJECTIVE_COMPLETED,
-                        {"quest": self, "objective": objective}
-                    ))
+                    events.publish(
+                        Event(
+                            EventType.OBJECTIVE_COMPLETED,
+                            {"quest": self, "objective": objective},
+                        )
+                    )
                     self.check_completion(events)
-        
+
         events.subscribe(EventType.DEATH, on_death)
 
 
 class QuestManager(BaseModel):
     """Manages all quests in the game (Singleton).
-    
+
     This is a framework-managed singleton. Access via QuestManager.instance()
     or through game.quests property.
 
@@ -460,8 +490,12 @@ class QuestManager(BaseModel):
     """
 
     quests: Dict[str, Quest] = Field(default_factory=dict, description="All quests")
-    active_quests: List[str] = Field(default_factory=list, description="Active quest IDs")
-    completed_quests: List[str] = Field(default_factory=list, description="Completed quest IDs")
+    active_quests: List[str] = Field(
+        default_factory=list, description="Active quest IDs"
+    )
+    completed_quests: List[str] = Field(
+        default_factory=list, description="Completed quest IDs"
+    )
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -520,7 +554,9 @@ class QuestManager(BaseModel):
             return True
         return False
 
-    def complete_quest(self, quest_id: str, events: Optional[EventManager] = None) -> bool:
+    def complete_quest(
+        self, quest_id: str, events: Optional[EventManager] = None
+    ) -> bool:
         """Complete a quest.
 
         Args:
@@ -562,7 +598,7 @@ class QuestManager(BaseModel):
         objective_type: ObjectiveType,
         target: str,
         amount: int = 1,
-        events: Optional[EventManager] = None
+        events: Optional[EventManager] = None,
     ) -> bool:
         """Update progress on matching objectives.
 
@@ -594,10 +630,12 @@ class QuestManager(BaseModel):
                 updated = True
 
                 if was_completed and events:
-                    events.publish(Event(
-                        EventType.OBJECTIVE_COMPLETED,
-                        {"quest": quest, "objective": objective}
-                    ))
+                    events.publish(
+                        Event(
+                            EventType.OBJECTIVE_COMPLETED,
+                            {"quest": quest, "objective": objective},
+                        )
+                    )
 
         # Check if quest is complete
         if updated:
@@ -633,7 +671,7 @@ _quest_manager_instance: Optional[QuestManager] = None
 
 def _get_quest_manager() -> QuestManager:
     """Get or create the QuestManager singleton instance.
-    
+
     Returns:
         The QuestManager singleton instance
     """
@@ -645,7 +683,7 @@ def _get_quest_manager() -> QuestManager:
 
 def _reset_quest_manager() -> None:
     """Reset the QuestManager singleton instance.
-    
+
     Useful for testing or when you need to reset quest state.
     """
     global _quest_manager_instance
@@ -653,11 +691,13 @@ def _reset_quest_manager() -> None:
 
 
 # Add class methods to QuestManager after definition
-def _instance_method(cls) -> 'QuestManager':
+def _instance_method(cls) -> "QuestManager":
     return _get_quest_manager()
+
 
 def _reset_method(cls) -> None:
     _reset_quest_manager()
+
 
 QuestManager.instance = classmethod(_instance_method)
 QuestManager.reset = classmethod(_reset_method)
