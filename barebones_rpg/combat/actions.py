@@ -106,7 +106,7 @@ class AttackAction(CombatAction):
             )
 
         # Calculate damage
-        base_damage = max(1, source.stats.atk - target.stats.defense)
+        base_damage = source.stats.atk
 
         # Check for critical hit
         is_critical = random.randint(1, 100) <= source.stats.critical

@@ -79,8 +79,14 @@ def test_critical_hits_apply_multiplier(attacker_and_target, monkeypatch):
     attacker, target = attacker_and_target
     action = AttackAction()
     
+    call_count = {"count": 0}
+    
     def deterministic(a, b):
-        return 50
+        call_count["count"] += 1
+        if call_count["count"] == 1:
+            return 50
+        # Second call is crit check - return low value to crit
+        return 1
     
     monkeypatch.setattr(random, "randint", deterministic)
     
