@@ -310,6 +310,7 @@ def test_item_dropped_event_published():
             base_max_hp=50,
             hp=100,
             base_physical_attack=50,  # High attack
+            base_accuracy=100,  # 100% hit rate
         ),
     )
     hero.init_equipment()
@@ -365,13 +366,15 @@ def test_get_dropped_loot():
     hero = Character(
         name="Hero",
         stats=Stats(
-            strength=20,
+            strength=50,  # Very high to ensure kill
             constitution=12,
             intelligence=10,
             dexterity=14,
             charisma=10,
             base_max_hp=50,
             hp=100,
+            base_physical_attack=50,  # High attack
+            base_accuracy=100,  # 100% hit rate
         ),
     )
     hero.init_equipment()
@@ -386,6 +389,7 @@ def test_get_dropped_loot():
             charisma=5,
             hp=1,
             base_evasion=0,
+            base_physical_defense=0,  # No defense
         ),
         loot_table=[{"item": "Goblin Bone", "chance": 1.0}],
     )
@@ -415,13 +419,15 @@ def test_no_loot_drops_when_enemy_has_no_loot_table():
     hero = Character(
         name="Hero",
         stats=Stats(
-            strength=20,
+            strength=50,  # Very high to ensure kill
             constitution=12,
             intelligence=10,
             dexterity=14,
             charisma=10,
             base_max_hp=50,
             hp=100,
+            base_physical_attack=50,  # High attack
+            base_accuracy=100,  # 100% hit rate
         ),
     )
     hero.init_equipment()
@@ -436,6 +442,7 @@ def test_no_loot_drops_when_enemy_has_no_loot_table():
             charisma=5,
             hp=1,
             base_evasion=0,
+            base_physical_defense=0,  # No defense
         ),
         loot_table=[],  # No loot
     )
@@ -475,13 +482,15 @@ def test_multiple_enemies_drop_loot():
     hero = Character(
         name="Hero",
         stats=Stats(
-            strength=20,
+            strength=50,  # Very high to ensure kills
             constitution=12,
             intelligence=10,
             dexterity=14,
             charisma=10,
             base_max_hp=50,
             hp=100,
+            base_physical_attack=50,  # High attack
+            base_accuracy=100,  # 100% hit rate
         ),
     )
     hero.init_equipment()
@@ -497,6 +506,7 @@ def test_multiple_enemies_drop_loot():
             charisma=5,
             hp=1,
             base_evasion=0,
+            base_physical_defense=0,  # No defense
         ),
         loot_table=[{"item": "Goblin Bone", "chance": 1.0}],
     )
@@ -511,6 +521,7 @@ def test_multiple_enemies_drop_loot():
             charisma=5,
             hp=1,
             base_evasion=0,
+            base_physical_defense=0,  # No defense
         ),
         loot_table=[{"item": "Goblin Scale", "chance": 1.0}],
     )
