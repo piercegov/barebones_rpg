@@ -46,31 +46,51 @@ def main():
     hero = Character(
         name="Hero",
         stats=Stats(
+            strength=15,
+            constitution=12,
+            intelligence=10,
+            dexterity=14,
+            charisma=10,
+            base_max_hp=50,
+            base_max_mp=20,
             hp=100,
-            max_hp=100,
-            mp=50,
-            max_mp=50,
-            atk=15,
-            defense=5,
-            speed=12
+            mp=50
         )
     )
+    hero.init_equipment()
 
     # Give hero a weapon
-    sword = create_weapon("Iron Sword", atk=5, value=50)
-    print(f"Hero picks up: {sword.name} (+{sword.stat_modifiers['atk']} ATK)")
+    sword = create_weapon("Iron Sword", base_damage=8, damage_type="physical", value=50)
+    hero.equipment.equip(sword)
+    print(f"Hero equipped: {sword.name} ({sword.base_damage} base damage, {sword.damage_type} type)")
 
     # Create enemies
     goblin1 = Enemy(
         name="Goblin",
-        stats=Stats(hp=30, atk=8, defense=2, speed=10),
+        stats=Stats(
+            strength=8,
+            constitution=6,
+            intelligence=5,
+            dexterity=12,
+            charisma=5,
+            base_max_hp=20,
+            hp=30
+        ),
         exp_reward=20,
         gold_reward=10
     )
 
     goblin2 = Enemy(
         name="Goblin Scout",
-        stats=Stats(hp=25, atk=10, defense=1, speed=15),
+        stats=Stats(
+            strength=10,
+            constitution=5,
+            intelligence=5,
+            dexterity=16,
+            charisma=5,
+            base_max_hp=15,
+            hp=25
+        ),
         exp_reward=25,
         gold_reward=15
     )
@@ -104,7 +124,7 @@ def main():
             break
 
         print(f"\n--- Turn {turn}: {current.name}'s turn ---")
-        print(f"HP: {current.stats.hp}/{current.stats.max_hp}")
+        print(f"HP: {current.stats.hp}/{current.stats.get_max_hp()}")
 
         if current == hero:
             # Player's turn - attack first enemy
@@ -132,7 +152,7 @@ def main():
             break
 
     print("\nCombat ended!")
-    print(f"Final hero HP: {hero.stats.hp}/{hero.stats.max_hp}")
+    print(f"Final hero HP: {hero.stats.hp}/{hero.stats.get_max_hp()}")
 
 
 if __name__ == "__main__":

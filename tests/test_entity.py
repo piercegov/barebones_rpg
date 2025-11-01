@@ -7,10 +7,10 @@ from barebones_rpg.core.events import EventManager, EventType
 
 def test_entity_defense_reduces_damage_but_minimum_1():
     """Entity defense should reduce damage but always deal at least 1 damage."""
-    stats = Stats(hp=100, defense=20)
+    stats = Stats(constitution=20, base_physical_defense=10, hp=100)
     entity = Entity(name="Tank", stats=stats)
     
-    attacker_stats = Stats(atk=15)
+    attacker_stats = Stats(strength=15)
     attacker = Entity(name="Weak Attacker", stats=attacker_stats)
     
     damage_taken = entity.take_damage(15, attacker)
@@ -21,18 +21,18 @@ def test_entity_defense_reduces_damage_but_minimum_1():
 
 def test_entity_defense_reduces_damage_normally():
     """Normal damage reduction by defense."""
-    stats = Stats(hp=100, defense=5)
+    stats = Stats(constitution=4, base_physical_defense=3, hp=100)  # defense = 3 + (4*0.5) = 5
     entity = Entity(name="Defender", stats=stats)
     
     damage_taken = entity.take_damage(20)
     
-    assert damage_taken == 15
+    assert damage_taken == 15  # 20 - 5 = 15
     assert entity.stats.hp == 85
 
 
 def test_healing_caps_at_max_hp():
     """Healing should cap at max_hp."""
-    entity = Entity(name="Wounded", stats=Stats(hp=50, max_hp=100))
+    entity = Entity(name="Wounded", stats=Stats(constitution=10, base_max_hp=50, hp=50))
     
     healed = entity.heal(100)
     
@@ -44,7 +44,7 @@ def test_character_leveling_single_level():
     """Character should level up when gaining enough exp."""
     character = Character(
         name="Hero",
-        stats=Stats(level=1, exp=0, exp_to_next=100, hp=100, max_hp=100)
+        stats=Stats(constitution=10, level=1, exp=0, exp_to_next=100, base_max_hp=50, hp=100)
     )
     
     leveled_up = character.gain_exp(100)
@@ -58,7 +58,7 @@ def test_character_leveling_exp_overflow():
     """Exp overflow should carry to next level."""
     character = Character(
         name="Hero",
-        stats=Stats(level=1, exp=80, exp_to_next=100, hp=100, max_hp=100)
+        stats=Stats(constitution=10, level=1, exp=80, exp_to_next=100, base_max_hp=50, hp=100)
     )
     
     leveled_up = character.gain_exp(30)
@@ -72,7 +72,7 @@ def test_character_multiple_level_ups_in_one_call():
     """Multiple level-ups should happen in one gain_exp call."""
     character = Character(
         name="Hero",
-        stats=Stats(level=1, exp=0, exp_to_next=100, hp=100, max_hp=100)
+        stats=Stats(constitution=10, level=1, exp=0, exp_to_next=100, base_max_hp=50, hp=100)
     )
     
     leveled_up = character.gain_exp(300)
@@ -82,24 +82,29 @@ def test_character_multiple_level_ups_in_one_call():
 
 
 def test_character_level_up_stats_increase():
-    """Leveling up should increase character stats."""
+    """Leveling up should give stat points."""
     character = Character(
         name="Hero",
         stats=Stats(
+            strength=10,
+            constitution=10,
+            intelligence=10,
+            dexterity=10,
+            charisma=10,
             level=1, exp=0, exp_to_next=100,
-            hp=100, max_hp=100, mp=50, max_mp=50,
-            atk=10, defense=5, speed=10
+            base_max_hp=50, base_max_mp=20,
+            hp=100, mp=50,
+            stat_points=0
         )
     )
     
-    old_max_hp = character.stats.max_hp
-    old_atk = character.stats.atk
+    old_stat_points = character.stats.stat_points
     
     character.gain_exp(100)
     
-    assert character.stats.max_hp > old_max_hp
-    assert character.stats.atk > old_atk
-    assert character.stats.hp == character.stats.max_hp
+    # Leveling up should grant stat points
+    assert character.stats.stat_points > old_stat_points
+    assert character.stats.hp == character.stats.get_max_hp()  # HP restored to max
 
 
 def test_entity_action_callbacks_registration():
@@ -179,7 +184,7 @@ def test_character_gain_exp_publishes_event():
     
     character = Character(
         name="Hero",
-        stats=Stats(level=1, exp=0, exp_to_next=100, hp=100, max_hp=100)
+        stats=Stats(constitution=10, level=1, exp=0, exp_to_next=100, base_max_hp=50, hp=100)
     )
     
     character.gain_exp(100, events)
@@ -193,7 +198,7 @@ def test_character_gain_exp_publishes_event():
 
 def test_entity_to_dict_and_from_dict():
     """Entities should be serializable to/from dict."""
-    entity = Entity(name="Test", stats=Stats(hp=100, atk=15))
+    entity = Entity(name="Test", stats=Stats(strength=15, hp=100))
     
     data = entity.to_dict()
     

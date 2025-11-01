@@ -123,19 +123,22 @@ def main():
     hero = Character(
         name="Adventurer",
         stats=Stats(
+            strength=10,
+            constitution=10,
+            intelligence=8,
+            dexterity=12,
+            charisma=10,
+            base_max_hp=50,
+            base_max_mp=15,
             hp=100,
-            max_hp=100,
-            mp=30,
-            max_mp=30,
-            atk=10,
-            defense=5,
-            speed=12
+            mp=30
         )
     )
     hero.init_inventory(max_slots=20)
 
     print(f"You are {hero.name}, a brave adventurer")
-    print(f"Stats: HP={hero.stats.hp} ATK={hero.stats.atk} DEF={hero.stats.defense}\n")
+    print(f"Stats: STR={hero.stats.strength} CON={hero.stats.constitution} DEX={hero.stats.dexterity}")
+    print(f"HP={hero.stats.hp}/{hero.stats.get_max_hp()} MP={hero.stats.mp}/{hero.stats.get_max_mp()}\n")
 
     # Create world
     world, village, forest = create_game_world()
@@ -149,7 +152,7 @@ def main():
     elder = NPC(
         name="Village Elder",
         description="A wise old man who leads the village",
-        stats=Stats(hp=50, atk=0)
+        stats=Stats(strength=5, constitution=8, intelligence=12, dexterity=6, charisma=15, hp=50)
     )
     village.add_entity(elder, 15, 15)
 
@@ -235,13 +238,21 @@ def main():
     # Encounter goblin chief
     goblin_chief = Enemy(
         name="Goblin Chief",
-        stats=Stats(hp=50, atk=12, defense=3, speed=10),
+        stats=Stats(
+            strength=12,
+            constitution=10,
+            intelligence=6,
+            dexterity=12,
+            charisma=8,
+            base_max_hp=30,
+            hp=50
+        ),
         exp_reward=100,
         gold_reward=50
     )
 
     print(f"⚔️  Encountered: {goblin_chief.name}!")
-    print(f"   HP: {goblin_chief.stats.hp} ATK: {goblin_chief.stats.atk}\n")
+    print(f"   HP: {goblin_chief.stats.hp} STR: {goblin_chief.stats.strength}\n")
 
     # Simulate combat (simplified)
     print("--- Battle ---")

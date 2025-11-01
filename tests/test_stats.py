@@ -42,17 +42,17 @@ def test_is_alive_and_is_dead(basic_stats):
 
 def test_multiple_status_effect_modifiers_stack():
     """Multiple status effects should stack their stat modifiers correctly."""
-    stats = Stats(atk=10, defense=5)
+    stats = Stats(strength=10, constitution=10)
     manager = StatsManager(stats)
     
-    effect1 = StatusEffect(name="Buff1", stat_modifiers={"atk": 5, "defense": 2})
-    effect2 = StatusEffect(name="Buff2", stat_modifiers={"atk": 3, "defense": 1})
+    effect1 = StatusEffect(name="Buff1", stat_modifiers={"strength": 5, "constitution": 2})
+    effect2 = StatusEffect(name="Buff2", stat_modifiers={"strength": 3, "constitution": 1})
     
     manager.add_status_effect(effect1)
     manager.add_status_effect(effect2)
     
-    assert manager.get_effective_stat("atk") == 18
-    assert manager.get_effective_stat("defense") == 8
+    assert manager.get_effective_stat("strength") == 18
+    assert manager.get_effective_stat("constitution") == 13
 
 
 def test_status_effect_expiration():
@@ -60,8 +60,8 @@ def test_status_effect_expiration():
     stats = Stats()
     manager = StatsManager(stats)
     
-    temporary_effect = StatusEffect(name="TempBuff", duration=2, stat_modifiers={"atk": 10})
-    permanent_effect = StatusEffect(name="PermBuff", duration=-1, stat_modifiers={"defense": 5})
+    temporary_effect = StatusEffect(name="TempBuff", duration=2, stat_modifiers={"strength": 10})
+    permanent_effect = StatusEffect(name="PermBuff", duration=-1, stat_modifiers={"constitution": 5})
     
     manager.add_status_effect(temporary_effect)
     manager.add_status_effect(permanent_effect)
@@ -105,7 +105,7 @@ def test_remove_existing_status_effect():
     stats = Stats()
     manager = StatsManager(stats)
     
-    effect = StatusEffect(name="TestEffect", stat_modifiers={"atk": 5})
+    effect = StatusEffect(name="TestEffect", stat_modifiers={"strength": 5})
     manager.add_status_effect(effect)
     
     assert manager.has_status("TestEffect")
@@ -140,21 +140,21 @@ def test_status_effect_on_turn_callback():
 
 def test_stats_modify_on_regular_stat():
     """Modify should work on regular stat fields."""
-    stats = Stats(atk=10)
-    stats.modify("atk", 5)
-    assert stats.atk == 15
+    stats = Stats(strength=10)
+    stats.modify("strength", 5)
+    assert stats.strength == 15
     
-    stats.modify("atk", -3)
-    assert stats.atk == 12
+    stats.modify("strength", -3)
+    assert stats.strength == 12
 
 
 def test_get_effective_stat_with_no_effects():
     """get_effective_stat should return base value when no effects applied."""
-    stats = Stats(atk=15, defense=10)
+    stats = Stats(strength=15, constitution=10)
     manager = StatsManager(stats)
     
-    assert manager.get_effective_stat("atk") == 15
-    assert manager.get_effective_stat("defense") == 10
+    assert manager.get_effective_stat("strength") == 15
+    assert manager.get_effective_stat("constitution") == 10
 
 
 def test_get_effective_stat_with_default():

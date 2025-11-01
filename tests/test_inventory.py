@@ -60,19 +60,21 @@ def test_equipment_stat_bonuses_sum_correctly():
     """Equipment stat bonuses should sum correctly across multiple items."""
     equipment = Equipment()
     
-    sword = create_weapon("Iron Sword", atk=5)
-    helmet = create_armor("Iron Helmet", defense=3, slot=EquipSlot.HEAD)
-    boots = create_armor("Iron Boots", defense=2, slot=EquipSlot.FEET)
+    # Weapons no longer provide atk stat bonuses, they have base_damage instead
+    # Give sword a strength bonus via stat_modifiers for testing
+    sword = create_weapon("Iron Sword", base_damage=5, stat_modifiers={"strength": 2})
+    helmet = create_armor("Iron Helmet", physical_defense=3, slot=EquipSlot.HEAD)
+    boots = create_armor("Iron Boots", physical_defense=2, slot=EquipSlot.FEET)
     
     equipment.equip(sword)
     equipment.equip(helmet)
     equipment.equip(boots)
     
-    total_atk = equipment.get_total_stat_bonus("atk")
-    total_defense = equipment.get_total_stat_bonus("defense")
+    total_strength = equipment.get_total_stat_bonus("strength")
+    total_physical_defense = equipment.get_total_stat_bonus("base_physical_defense")
     
-    assert total_atk == 5
-    assert total_defense == 5
+    assert total_strength == 2
+    assert total_physical_defense == 5
 
 
 def test_removing_more_items_than_exist():
@@ -98,8 +100,8 @@ def test_equipping_item_returns_previously_equipped():
     """Equipping an item should return the previously equipped item in that slot."""
     equipment = Equipment()
     
-    sword1 = create_weapon("Iron Sword", atk=5)
-    sword2 = create_weapon("Steel Sword", atk=10)
+    sword1 = create_weapon("Iron Sword", base_damage=5)
+    sword2 = create_weapon("Steel Sword", base_damage=10)
     
     old_item = equipment.equip(sword1)
     assert old_item is None
@@ -141,7 +143,7 @@ def test_inventory_find_item_by_name():
     """find_item should locate items by name."""
     inventory = Inventory(max_slots=10)
     
-    sword = create_weapon("Iron Sword", atk=5)
+    sword = create_weapon("Iron Sword", base_damage=5)
     inventory.add_item(sword)
     
     found = inventory.find_item("Iron Sword")
@@ -192,8 +194,8 @@ def test_equipment_get_all_equipped():
     """get_all_equipped should return all equipped items."""
     equipment = Equipment()
     
-    sword = create_weapon("Sword", atk=5)
-    helmet = create_armor("Helmet", defense=3, slot=EquipSlot.HEAD)
+    sword = create_weapon("Sword", base_damage=5)
+    helmet = create_armor("Helmet", physical_defense=3, slot=EquipSlot.HEAD)
     
     equipment.equip(sword)
     equipment.equip(helmet)
@@ -209,7 +211,7 @@ def test_equipment_unequip():
     """unequip should remove item from slot and return it."""
     equipment = Equipment()
     
-    sword = create_weapon("Sword", atk=5)
+    sword = create_weapon("Sword", base_damage=5)
     equipment.equip(sword)
     
     unequipped = equipment.unequip(EquipSlot.WEAPON)
@@ -222,7 +224,7 @@ def test_inventory_remove_item_by_name():
     """remove_item_by_name should work correctly."""
     inventory = Inventory(max_slots=10)
     
-    sword = create_weapon("Iron Sword", atk=5)
+    sword = create_weapon("Iron Sword", base_damage=5)
     inventory.add_item(sword)
     
     result = inventory.remove_item_by_name("Iron Sword")
@@ -235,8 +237,8 @@ def test_inventory_find_items_by_type():
     """find_items_by_type should return all items of a specific type."""
     inventory = Inventory(max_slots=10)
     
-    sword = create_weapon("Sword", atk=5)
-    helmet = create_armor("Helmet", defense=3, slot=EquipSlot.HEAD)
+    sword = create_weapon("Sword", base_damage=5)
+    helmet = create_armor("Helmet", physical_defense=3, slot=EquipSlot.HEAD)
     potion = Item(name="Potion", item_type=ItemType.CONSUMABLE)
     
     inventory.add_item(sword)
@@ -254,14 +256,15 @@ def test_equipment_get_all_stat_bonuses():
     """get_all_stat_bonuses should return dict of all bonuses."""
     equipment = Equipment()
     
-    sword = create_weapon("Sword", atk=10)
-    helmet = create_armor("Helmet", defense=5, slot=EquipSlot.HEAD)
+    # Weapons have base_damage, not atk stat_modifiers, so give sword a stat bonus for testing
+    sword = create_weapon("Sword", base_damage=10, stat_modifiers={"strength": 3})
+    helmet = create_armor("Helmet", physical_defense=5, slot=EquipSlot.HEAD)
     
     equipment.equip(sword)
     equipment.equip(helmet)
     
     bonuses = equipment.get_all_stat_bonuses()
     
-    assert bonuses["atk"] == 10
-    assert bonuses["defense"] == 5
+    assert bonuses["strength"] == 3
+    assert bonuses["base_physical_defense"] == 5
 

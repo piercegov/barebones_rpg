@@ -16,7 +16,17 @@ def event_manager():
 @pytest.fixture
 def basic_stats():
     """Create basic stats for testing."""
-    return Stats(hp=100, max_hp=100, mp=50, max_mp=50, atk=15, defense=5, speed=10)
+    return Stats(
+        strength=15,
+        constitution=10,
+        intelligence=10,  # 10 INT → max_mp = 20 + (10*3) = 50
+        dexterity=12,
+        charisma=10,
+        base_max_hp=50,
+        base_max_mp=20,
+        hp=100,
+        mp=50
+    )
 
 
 @pytest.fixture
@@ -28,14 +38,37 @@ def basic_entity(basic_stats):
 @pytest.fixture
 def basic_character():
     """Create a basic character for testing."""
-    stats = Stats(hp=100, max_hp=100, mp=50, max_mp=50, atk=15, defense=5, speed=10, level=1, exp=0, exp_to_next=100)
+    stats = Stats(
+        strength=15,
+        constitution=12,
+        intelligence=10,
+        dexterity=14,
+        charisma=10,
+        base_max_hp=50,
+        base_max_mp=20,
+        hp=100,
+        mp=50,
+        level=1,
+        exp=0,
+        exp_to_next=100
+    )
     return Character(name="Hero", stats=stats)
 
 
 @pytest.fixture
 def basic_enemy():
     """Create a basic enemy for testing."""
-    stats = Stats(hp=50, max_hp=50, mp=0, max_mp=0, atk=10, defense=3, speed=8)
+    stats = Stats(
+        strength=10,
+        constitution=8,
+        intelligence=5,
+        dexterity=10,
+        charisma=5,
+        base_max_hp=30,
+        base_max_mp=0,
+        hp=50,
+        mp=0
+    )
     return Enemy(name="Goblin", stats=stats, exp_reward=25, gold_reward=10)
 
 
@@ -54,7 +87,7 @@ def equipment():
 @pytest.fixture
 def sample_weapon():
     """Create a sample weapon item."""
-    return create_weapon("Iron Sword", atk=5, value=100)
+    return create_weapon("Iron Sword", base_damage=5, damage_type="physical", value=100)
 
 
 @pytest.fixture

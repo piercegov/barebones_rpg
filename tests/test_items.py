@@ -107,7 +107,7 @@ def test_non_stackable_items_dont_stack():
 
 def test_consumable_items_reduce_quantity_on_use():
     """Consumable items should reduce quantity when used."""
-    entity = Entity(name="Hero", stats=Stats(hp=50, max_hp=100))
+    entity = Entity(name="Hero", stats=Stats(constitution=10, base_max_hp=50, hp=50))
     
     def heal_effect(target, context):
         return target.heal(30)

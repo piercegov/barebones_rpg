@@ -81,6 +81,38 @@ class AttackAction(CombatAction):
         super().__init__(ActionType.ATTACK)
         self.name = "Attack"
 
+    def calculate_damage(self, source: Any, target: Optional[Any], weapon: Optional[Any], context: Dict[str, Any]) -> tuple[int, str]:
+        """Calculate base damage before crits and defense.
+        
+        Override this method to add proficiency systems or other damage modifiers.
+        
+        Args:
+            source: Attacker
+            target: Defender
+            weapon: Equipped weapon (or None for unarmed)
+            context: Combat context
+            
+        Returns:
+            Tuple of (damage_amount, damage_type)
+        """
+        if weapon is None:
+            # Unarmed attack - just use strength
+            return source.stats.get_stat("strength", 10), "physical"
+        
+        # Get damage type from weapon
+        damage_type = weapon.damage_type
+        
+        # Select appropriate attribute based on damage type
+        if damage_type == "magic":
+            stat_value = source.stats.get_stat("intelligence", 10)
+        else:  # physical or any other type defaults to strength
+            stat_value = source.stats.get_stat("strength", 10)
+        
+        # Calculate total damage
+        total_damage = stat_value + weapon.base_damage
+        
+        return total_damage, damage_type
+
     def execute(self, source: Any, target: Optional[Any], context: Dict[str, Any]) -> ActionResult:
         """Execute a physical attack.
 
@@ -95,8 +127,14 @@ class AttackAction(CombatAction):
         if target is None:
             return ActionResult(success=False, message="No target selected")
 
+        # Get equipped weapon
+        weapon = None
+        if hasattr(source, 'equipment') and source.equipment is not None:
+            from ..items.item import EquipSlot
+            weapon = source.equipment.get_equipped(EquipSlot.WEAPON)
+
         # Calculate hit chance
-        hit_chance = source.stats.accuracy - target.stats.evasion
+        hit_chance = source.stats.get_stat("accuracy", 90) - target.stats.get_stat("evasion", 5)
         if random.randint(1, 100) > hit_chance:
             return ActionResult(
                 success=True,
@@ -104,16 +142,16 @@ class AttackAction(CombatAction):
                 message=f"{source.name} attacks {target.name} but misses!"
             )
 
-        # Calculate damage
-        base_damage = source.stats.atk
+        # Calculate damage using the hookable method
+        base_damage, damage_type = self.calculate_damage(source, target, weapon, context)
 
         # Check for critical hit
-        is_critical = random.randint(1, 100) <= source.stats.critical
+        is_critical = random.randint(1, 100) <= source.stats.get_stat("critical", 5)
         if is_critical:
             base_damage = int(base_damage * 1.5)
 
-        # Apply damage
-        actual_damage = target.take_damage(base_damage, source)
+        # Apply damage with damage type
+        actual_damage = target.take_damage(base_damage, source, damage_type)
 
         message = f"{source.name} attacks {target.name} for {actual_damage} damage!"
         if is_critical:
@@ -123,7 +161,8 @@ class AttackAction(CombatAction):
             success=True,
             damage=actual_damage,
             critical=is_critical,
-            message=message
+            message=message,
+            metadata={"damage_type": damage_type}
         )
 
 
@@ -270,6 +309,7 @@ def create_skill_action(
     name: str,
     mp_cost: int,
     damage_multiplier: float = 1.5,
+    damage_type: str = "physical",
     targets_enemy: bool = True
 ) -> SkillAction:
     """Create a damage skill.
@@ -278,6 +318,7 @@ def create_skill_action(
         name: Skill name
         mp_cost: MP cost
         damage_multiplier: Damage multiplier vs normal attack
+        damage_type: Type of damage (physical, magic, or custom)
         targets_enemy: Whether skill targets enemies
 
     Returns:
@@ -287,8 +328,14 @@ def create_skill_action(
         if target is None:
             return ActionResult(success=False, message="No target selected")
 
-        base_damage = int(source.stats.atk * damage_multiplier)
-        actual_damage = target.take_damage(base_damage, source)
+        # Select stat based on damage type
+        if damage_type == "magic":
+            stat_value = source.stats.get_stat("intelligence", 10)
+        else:
+            stat_value = source.stats.get_stat("strength", 10)
+
+        base_damage = int(stat_value * damage_multiplier)
+        actual_damage = target.take_damage(base_damage, source, damage_type)
 
         return ActionResult(
             success=True,

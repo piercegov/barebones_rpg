@@ -75,6 +75,10 @@ class Item(BaseModel):
         default_factory=dict, description="Stat modifications when equipped"
     )
     required_level: int = Field(default=1, description="Required level to use")
+    
+    # Weapon properties
+    base_damage: int = Field(default=0, description="Base damage for weapons")
+    damage_type: str = Field(default="physical", description="Damage type (physical, magic, or custom)")
 
     # Consumable properties
     consumable: bool = Field(default=False, description="Item is consumed on use")
@@ -179,7 +183,8 @@ class Item(BaseModel):
 
 def create_weapon(
     name: str,
-    atk: int,
+    base_damage: int,
+    damage_type: str = "physical",
     description: str = "",
     value: int = 0,
     **kwargs
@@ -188,10 +193,11 @@ def create_weapon(
 
     Args:
         name: Weapon name
-        atk: Attack power bonus
+        base_damage: Base damage dealt by weapon
+        damage_type: Type of damage (physical, magic, or custom)
         description: Description
         value: Gold value
-        **kwargs: Additional properties
+        **kwargs: Additional properties (stat_modifiers, metadata, etc.)
 
     Returns:
         Weapon item
@@ -201,7 +207,8 @@ def create_weapon(
         description=description,
         item_type=ItemType.WEAPON,
         equip_slot=EquipSlot.WEAPON,
-        stat_modifiers={"atk": atk},
+        base_damage=base_damage,
+        damage_type=damage_type,
         value=value,
         **kwargs
     )
@@ -209,8 +216,9 @@ def create_weapon(
 
 def create_armor(
     name: str,
-    defense: int,
-    slot: EquipSlot,
+    physical_defense: int = 0,
+    magic_defense: int = 0,
+    slot: EquipSlot = EquipSlot.BODY,
     description: str = "",
     value: int = 0,
     **kwargs
@@ -219,7 +227,8 @@ def create_armor(
 
     Args:
         name: Armor name
-        defense: Defense bonus
+        physical_defense: Physical defense bonus
+        magic_defense: Magic defense bonus
         slot: Equipment slot
         description: Description
         value: Gold value
@@ -228,12 +237,18 @@ def create_armor(
     Returns:
         Armor item
     """
+    stat_modifiers = {}
+    if physical_defense > 0:
+        stat_modifiers["base_physical_defense"] = physical_defense
+    if magic_defense > 0:
+        stat_modifiers["base_magic_defense"] = magic_defense
+    
     return Item(
         name=name,
         description=description,
         item_type=ItemType.ARMOR,
         equip_slot=slot,
-        stat_modifiers={"defense": defense},
+        stat_modifiers=stat_modifiers,
         value=value,
         **kwargs
     )

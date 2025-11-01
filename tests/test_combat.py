@@ -12,15 +12,15 @@ def combat_setup():
     """Setup a basic combat scenario."""
     hero = Character(
         name="Hero",
-        stats=Stats(hp=100, max_hp=100, atk=15, defense=5, speed=12)
+        stats=Stats(strength=15, constitution=12, intelligence=10, dexterity=14, charisma=10, base_max_hp=50, hp=100)
     )
     enemy1 = Enemy(
         name="Goblin",
-        stats=Stats(hp=30, max_hp=30, atk=8, defense=2, speed=8)
+        stats=Stats(strength=8, constitution=6, intelligence=5, dexterity=10, charisma=5, base_max_hp=20, hp=30)
     )
     enemy2 = Enemy(
         name="Orc",
-        stats=Stats(hp=50, max_hp=50, atk=12, defense=4, speed=6)
+        stats=Stats(strength=12, constitution=10, intelligence=5, dexterity=8, charisma=5, base_max_hp=30, hp=50)
     )
     events = EventManager()
     
@@ -45,8 +45,8 @@ def test_turn_order_skips_dead_combatants(combat_setup):
 
 def test_turn_order_wraps_around():
     """Turn order should wrap around at the end of combatants list."""
-    hero = Character(name="Hero", stats=Stats(speed=10))
-    enemy = Enemy(name="Goblin", stats=Stats(speed=8))
+    hero = Character(name="Hero", stats=Stats(dexterity=12))
+    enemy = Enemy(name="Goblin", stats=Stats(dexterity=10))
     
     turn_order = TurnOrder()
     turn_order.initialize([hero, enemy])
@@ -151,8 +151,8 @@ def test_status_effects_processed_each_turn():
     """Status effects should be processed for all combatants each turn."""
     from barebones_rpg.entities.stats import StatusEffect
     
-    hero = Character(name="Hero", stats=Stats(hp=100, speed=10))
-    enemy = Enemy(name="Goblin", stats=Stats(hp=30, speed=8))
+    hero = Character(name="Hero", stats=Stats(hp=100, dexterity=12))
+    enemy = Enemy(name="Goblin", stats=Stats(hp=30, dexterity=10))
     
     poison_ticks = {"count": 0}
     
@@ -190,9 +190,9 @@ def test_combatant_group_not_defeated():
 
 def test_turn_order_initialized_by_speed():
     """Turn order should be sorted by speed (highest first)."""
-    slow = Character(name="Slow", stats=Stats(speed=5))
-    medium = Character(name="Medium", stats=Stats(speed=10))
-    fast = Character(name="Fast", stats=Stats(speed=15))
+    slow = Character(name="Slow", stats=Stats(dexterity=8))
+    medium = Character(name="Medium", stats=Stats(dexterity=12))
+    fast = Character(name="Fast", stats=Stats(dexterity=16))
     
     turn_order = TurnOrder()
     turn_order.initialize([slow, medium, fast])
@@ -204,8 +204,8 @@ def test_turn_order_initialized_by_speed():
 
 def test_combat_is_active():
     """Combat should be active during player and enemy turns."""
-    hero = Character(name="Hero", stats=Stats(speed=10))
-    enemy = Enemy(name="Goblin", stats=Stats(speed=8))
+    hero = Character(name="Hero", stats=Stats(dexterity=12))
+    enemy = Enemy(name="Goblin", stats=Stats(dexterity=10))
     
     combat = Combat([hero], [enemy], EventManager())
     
@@ -218,8 +218,9 @@ def test_combat_is_active():
 
 def test_victory_callback_executed():
     """Victory callback should be executed when combat is won."""
-    hero = Character(name="Hero", stats=Stats(hp=100, atk=20, speed=10))
-    enemy = Enemy(name="Goblin", stats=Stats(hp=1, speed=8))
+    hero = Character(name="Hero", stats=Stats(strength=20, constitution=15, intelligence=10, dexterity=12, charisma=10, hp=100))
+    hero.init_equipment()  # Initialize equipment so AttackAction works properly
+    enemy = Enemy(name="Goblin", stats=Stats(strength=5, constitution=3, intelligence=5, dexterity=10, charisma=5, hp=1))
     
     combat = Combat([hero], [enemy], EventManager())
     

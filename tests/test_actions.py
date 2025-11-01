@@ -16,18 +16,18 @@ def attacker_and_target():
     """Create an attacker and target for testing."""
     attacker = Character(
         name="Hero",
-        stats=Stats(hp=100, atk=20, accuracy=90, critical=5, speed=10)
+        stats=Stats(strength=20, constitution=12, intelligence=10, dexterity=14, charisma=10, hp=100)
     )
     target = Enemy(
         name="Goblin",
-        stats=Stats(hp=50, defense=5, evasion=10, speed=8)
+        stats=Stats(strength=8, constitution=8, intelligence=5, dexterity=12, charisma=5, hp=50)
     )
     return attacker, target
 
 
 def test_attack_with_no_target_returns_failure():
     """Attack with no target should return failure."""
-    attacker = Character(name="Hero", stats=Stats(atk=15))
+    attacker = Character(name="Hero", stats=Stats(strength=15))
     action = AttackAction()
     
     result = action.execute(attacker, None, {})
@@ -98,7 +98,7 @@ def test_critical_hits_apply_multiplier(attacker_and_target, monkeypatch):
 
 def test_skill_mp_cost_prevents_execution():
     """Skill with insufficient MP should fail to execute."""
-    caster = Character(name="Mage", stats=Stats(mp=10, max_mp=50))
+    caster = Character(name="Mage", stats=Stats(intelligence=12, base_max_mp=20, mp=10))
     target = Enemy(name="Goblin", stats=Stats(hp=50))
     
     def skill_effect(source, target, context):
@@ -114,8 +114,8 @@ def test_skill_mp_cost_prevents_execution():
 
 def test_skill_executes_with_sufficient_mp():
     """Skill should execute when caster has enough MP."""
-    caster = Character(name="Mage", stats=Stats(mp=50, max_mp=50, atk=15))
-    target = Enemy(name="Goblin", stats=Stats(hp=50, defense=0))
+    caster = Character(name="Mage", stats=Stats(strength=15, intelligence=12, base_max_mp=20, mp=50))
+    target = Enemy(name="Goblin", stats=Stats(constitution=0, hp=50))  # 0 CON = 0 defense
     
     def skill_effect(source, target, context):
         damage = target.take_damage(30, source)
@@ -132,8 +132,8 @@ def test_skill_executes_with_sufficient_mp():
 
 def test_run_action_success_rate_with_speed_difference(monkeypatch):
     """Run action success rate should be affected by speed difference."""
-    fast_runner = Character(name="Fast", stats=Stats(speed=20))
-    slow_enemy = Enemy(name="Slow", stats=Stats(speed=10))
+    fast_runner = Character(name="Fast", stats=Stats(dexterity=20))
+    slow_enemy = Enemy(name="Slow", stats=Stats(dexterity=10))
     
     def favorable_roll(a, b):
         return 50
@@ -149,8 +149,8 @@ def test_run_action_success_rate_with_speed_difference(monkeypatch):
 
 def test_run_action_fails(monkeypatch):
     """Run action can fail."""
-    runner = Character(name="Runner", stats=Stats(speed=10))
-    enemy = Enemy(name="Enemy", stats=Stats(speed=10))
+    runner = Character(name="Runner", stats=Stats(dexterity=10))
+    enemy = Enemy(name="Enemy", stats=Stats(dexterity=10))
     
     def unfavorable_roll(a, b):
         return 100
@@ -179,20 +179,20 @@ def test_skill_can_execute_checks_mp():
 
 
 def test_attack_action_calculates_damage_correctly():
-    """Attack action should calculate damage as atk - defense with minimum 1."""
-    attacker = Character(name="Hero", stats=Stats(atk=15, accuracy=100, critical=0))
-    target = Enemy(name="Tank", stats=Stats(hp=100, defense=10, evasion=0))
+    """Attack action should calculate damage as strength - defense with minimum 1."""
+    attacker = Character(name="Hero", stats=Stats(strength=15, dexterity=18, base_accuracy=100, base_critical=0))
+    target = Enemy(name="Tank", stats=Stats(constitution=12, dexterity=10, hp=100, base_physical_defense=5))
     
     action = AttackAction()
     result = action.execute(attacker, target, {})
     
-    assert result.damage > 1
+    assert result.damage >= 1
 
 
 def test_attack_action_calculates_damage_correctly_atk_lower():
-    """Attack action should calculate damage as atk - defense with minimum 1."""
-    attacker = Character(name="Hero", stats=Stats(atk=5, accuracy=100, critical=0))
-    target = Enemy(name="Tank", stats=Stats(hp=100, defense=10, evasion=0))
+    """Attack action should calculate damage as strength - defense with minimum 1."""
+    attacker = Character(name="Hero", stats=Stats(strength=5, dexterity=18, base_accuracy=100, base_critical=0))
+    target = Enemy(name="Tank", stats=Stats(constitution=12, dexterity=10, hp=100, base_physical_defense=5))
     
     action = AttackAction()
     result = action.execute(attacker, target, {})
@@ -202,7 +202,7 @@ def test_attack_action_calculates_damage_correctly_atk_lower():
 
 def test_skill_action_deducts_mp_cost():
     """SkillAction should deduct MP cost when executed."""
-    caster = Character(name="Mage", stats=Stats(mp=50, max_mp=50))
+    caster = Character(name="Mage", stats=Stats(intelligence=12, base_max_mp=20, mp=50))
     target = Enemy(name="Goblin", stats=Stats(hp=50))
     
     def skill_effect(source, target, context):

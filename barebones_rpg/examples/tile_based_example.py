@@ -143,14 +143,24 @@ class TileBasedGame:
         # Create player with sword
         self.player = Character(
             name="Hero",
-            stats=Stats(hp=100, max_hp=100, atk=15, defense=5, speed=12, mp=50, max_mp=50),
+            stats=Stats(
+                strength=15,
+                constitution=12,
+                intelligence=10,
+                dexterity=14,
+                charisma=10,
+                base_max_hp=50,
+                base_max_mp=20,
+                hp=100,
+                mp=50
+            ),
             faction="player"
         )
         self.player.init_inventory(max_slots=20)
         self.player.init_equipment()
 
         # Give player a sword (melee weapon with 1 tile range)
-        sword = create_weapon("Iron Sword", atk=10, value=100, metadata={"range": 1})
+        sword = create_weapon("Iron Sword", base_damage=10, damage_type="physical", value=100, metadata={"range": 1})
         self.player.inventory.add_item(sword)
         self.player.equipment.equip(sword)
 
@@ -160,7 +170,7 @@ class TileBasedGame:
         self.friendly_npc = NPC(
             name="Villager",
             description="A friendly villager who doesn't move much.",
-            stats=Stats(hp=50, max_hp=50, atk=0, defense=0, speed=5),
+            stats=Stats(strength=5, constitution=8, intelligence=10, dexterity=8, charisma=12, base_max_hp=30, hp=50),
             faction="neutral"
         )
         self.location.add_entity(self.friendly_npc, 5, 5)
@@ -168,7 +178,15 @@ class TileBasedGame:
         # Create enemy
         self.enemy = Enemy(
             name="Goblin",
-            stats=Stats(hp=30, max_hp=30, atk=8, defense=2, speed=10),
+            stats=Stats(
+                strength=8,
+                constitution=6,
+                intelligence=5,
+                dexterity=12,
+                charisma=5,
+                base_max_hp=20,
+                hp=30
+            ),
             faction="enemy",
             exp_reward=20,
             gold_reward=10

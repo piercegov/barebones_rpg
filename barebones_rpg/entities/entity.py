@@ -76,18 +76,25 @@ class Entity(BaseModel):
         """Check if entity is dead."""
         return self.stats.is_dead()
 
-    def take_damage(self, amount: int, source: Optional["Entity"] = None) -> int:
+    def take_damage(self, amount: int, source: Optional["Entity"] = None, damage_type: str = "physical") -> int:
         """Take damage from an attack.
 
         Args:
             amount: Base damage amount
             source: Entity that caused the damage
+            damage_type: Type of damage (physical, magic, or custom)
 
         Returns:
             Actual damage taken after defense calculations
         """
-        # Apply defense reduction
-        actual_damage = max(1, amount - self.stats.defense)
+        # Select appropriate defense based on damage type
+        if damage_type == "magic":
+            defense = self.stats.get_stat("magic_defense", 0)
+        else:  # physical or any other type uses physical defense
+            defense = self.stats.get_stat("physical_defense", 0)
+        
+        # Apply defense reduction (minimum 1 damage)
+        actual_damage = max(1, amount - defense)
         self.stats.take_damage(actual_damage)
 
         return actual_damage
@@ -232,22 +239,54 @@ class Character(Entity):
 
         return leveled_up
 
-    def level_up(self) -> None:
+    def level_up(self, stat_points_per_level: int = 3) -> None:
         """Level up the character.
 
-        This can be overridden to customize stat growth.
+        Args:
+            stat_points_per_level: Number of stat points to award (default: 3)
+
+        This can be overridden to customize stat growth. The default implementation
+        gives unallocated stat points that can be spent on any stat. Games can
+        override this to auto-allocate, use different point values, or restrict
+        what stats can be increased.
         """
         self.stats.level += 1
         self.stats.exp_to_next = int(self.stats.exp_to_next * 1.5)
+        
+        # Give stat points for player/game to allocate
+        self.stats.stat_points += stat_points_per_level
+        
+        # Restore HP/MP to new max values
+        self.stats.hp = self.stats.get_max_hp()
+        self.stats.mp = self.stats.get_max_mp()
 
-        # Basic stat increases (can be customized)
-        self.stats.max_hp += 10
-        self.stats.hp = self.stats.max_hp
-        self.stats.max_mp += 5
-        self.stats.mp = self.stats.max_mp
-        self.stats.atk += 2
-        self.stats.defense += 1
-        self.stats.speed += 1
+    def allocate_stat_point(self, stat_name: str, amount: int = 1) -> bool:
+        """Allocate stat points to increase a stat.
+
+        This method is fully generic - it can increase any stat (primary attributes
+        or derived substats). Games can override this to add restrictions.
+
+        Args:
+            stat_name: Name of the stat to increase
+            amount: Number of points to spend (default: 1)
+
+        Returns:
+            True if allocation was successful, False if not enough points
+
+        Example:
+            >>> character.allocate_stat_point("strength", 2)  # Increase STR by 2
+            >>> character.allocate_stat_point("training_speed", 1)  # Train speed substat
+        """
+        if self.stats.stat_points < amount:
+            return False
+        
+        # Spend the points
+        self.stats.stat_points -= amount
+        
+        # Increase the stat
+        self.stats.modify(stat_name, amount)
+        
+        return True
 
 
 class NPC(Entity):
