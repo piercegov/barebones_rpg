@@ -98,7 +98,8 @@ class Item(BaseModel):
         default="physical", description="Damage type (physical, magic, or custom)"
     )
     range: int = Field(
-        default=1, description="Weapon range (1=melee, higher values for ranged weapons)"
+        default=1,
+        description="Weapon range (1=melee, higher values for ranged weapons)",
     )
 
     # Consumable properties

@@ -162,4 +162,3 @@ class Party(BaseModel):
             if member_id in entity_lookup:
                 party.add_member(entity_lookup[member_id])
         return party
-

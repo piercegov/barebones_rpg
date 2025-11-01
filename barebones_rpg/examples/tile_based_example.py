@@ -688,7 +688,9 @@ class TileBasedGame:
                 alive_enemies = self.combat.enemies.get_alive_members()
                 if alive_enemies:
                     action = AttackAction()
-                    self.combat.execute_action(action, current_entity, [alive_enemies[0]])
+                    self.combat.execute_action(
+                        action, current_entity, [alive_enemies[0]]
+                    )
 
                     from barebones_rpg.combat.combat import CombatState
 

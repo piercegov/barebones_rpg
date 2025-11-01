@@ -7,4 +7,3 @@ that can be used in combat and throughout the game world.
 from .party import Party
 
 __all__ = ["Party"]
-

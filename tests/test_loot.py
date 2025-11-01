@@ -227,9 +227,7 @@ def test_roll_loot_table_with_min_max_quantity():
         name="Bone", item_type=ItemType.MATERIAL, value=5, stackable=True, max_stack=99
     )
 
-    loot_table = [
-        {"item": bone, "chance": 1.0, "min_quantity": 3, "max_quantity": 7}
-    ]
+    loot_table = [{"item": bone, "chance": 1.0, "min_quantity": 3, "max_quantity": 7}]
 
     drops = roll_loot_table(loot_table)
 
@@ -400,4 +398,3 @@ def test_multiple_enemies_with_same_unique_drop():
     # And it should be from the first boss
     assert len(drops_from_boss1) == 1
     assert drops_from_boss1[0].item.name == "Ring of Power"
-

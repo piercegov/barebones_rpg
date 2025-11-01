@@ -3,13 +3,16 @@
 This module provides the core combat management system.
 """
 
-from typing import List, Optional, Dict, Any, Callable, Union
+from typing import List, Optional, Dict, Any, Callable, Union, TYPE_CHECKING
 from enum import Enum, auto
 from dataclasses import dataclass, field
 from pydantic import BaseModel, Field
 
 from .actions import CombatAction, ActionResult, AttackAction
 from ..core.events import EventManager, Event, EventType
+
+if TYPE_CHECKING:
+    from ..party.party import Party
 
 
 class CombatState(Enum):
@@ -186,9 +189,7 @@ class Combat:
         # Convert Party objects to lists for CombatantGroup
         # This maintains backward compatibility while supporting the new Party system
         player_members = (
-            player_group.members
-            if hasattr(player_group, "members")
-            else player_group
+            player_group.members if hasattr(player_group, "members") else player_group
         )
         enemy_members = (
             enemy_group.members if hasattr(enemy_group, "members") else enemy_group

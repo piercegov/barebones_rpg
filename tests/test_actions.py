@@ -135,7 +135,9 @@ def test_skill_executes_with_sufficient_mp():
 
     def skill_effect(source, targets, context):
         damage = targets[0].take_damage(30, source)
-        return ActionResult(success=True, damage=damage, message="Fireball!", targets_hit=targets)
+        return ActionResult(
+            success=True, damage=damage, message="Fireball!", targets_hit=targets
+        )
 
     skill = SkillAction("Fireball", mp_cost=20, effect=skill_effect)
 
@@ -248,16 +250,18 @@ def test_aoe_skill_hits_all_targets():
     """AOE skill should hit all targets in the list."""
     from barebones_rpg.combat.actions import create_skill_action
 
-    caster = Character(
-        name="Mage", stats=Stats(intelligence=20, base_max_mp=50, mp=50)
-    )
+    caster = Character(name="Mage", stats=Stats(intelligence=20, base_max_mp=50, mp=50))
     enemy1 = Enemy(name="Goblin1", stats=Stats(constitution=0, hp=30))
     enemy2 = Enemy(name="Goblin2", stats=Stats(constitution=0, hp=30))
     enemy3 = Enemy(name="Goblin3", stats=Stats(constitution=0, hp=30))
 
     # Create AOE skill with max_targets=None (unlimited)
     fireball = create_skill_action(
-        "Fireball", mp_cost=15, damage_multiplier=1.0, damage_type="magic", max_targets=None
+        "Fireball",
+        mp_cost=15,
+        damage_multiplier=1.0,
+        damage_type="magic",
+        max_targets=None,
     )
 
     result = fireball.execute(caster, [enemy1, enemy2, enemy3], {})
@@ -276,9 +280,7 @@ def test_single_target_skill_hits_first_target_only():
     """Single-target skill should only hit the first target in the list."""
     from barebones_rpg.combat.actions import create_skill_action
 
-    caster = Character(
-        name="Mage", stats=Stats(intelligence=20, base_max_mp=50, mp=50)
-    )
+    caster = Character(name="Mage", stats=Stats(intelligence=20, base_max_mp=50, mp=50))
     enemy1 = Enemy(name="Goblin1", stats=Stats(constitution=0, hp=30))
     enemy2 = Enemy(name="Goblin2", stats=Stats(constitution=0, hp=30))
 
@@ -307,7 +309,9 @@ def test_aoe_heal_heals_all_targets():
     ally3 = Character(name="Mage", stats=Stats(base_max_hp=60, hp=20))
 
     # Create AOE heal with max_targets=None (unlimited)
-    group_heal = create_heal_skill("Mass Heal", mp_cost=20, heal_amount=25, max_targets=None)
+    group_heal = create_heal_skill(
+        "Mass Heal", mp_cost=20, heal_amount=25, max_targets=None
+    )
 
     result = group_heal.execute(healer, [ally1, ally2, ally3], {})
 
@@ -323,15 +327,9 @@ def test_attack_range_validation():
     from barebones_rpg.items.item import create_weapon
 
     attacker = Character(
-        name="Archer",
-        stats=Stats(strength=15, base_accuracy=100),
-        position=(0, 0)
+        name="Archer", stats=Stats(strength=15, base_accuracy=100), position=(0, 0)
     )
-    target = Enemy(
-        name="Distant Goblin",
-        stats=Stats(hp=50),
-        position=(10, 10)
-    )
+    target = Enemy(name="Distant Goblin", stats=Stats(hp=50), position=(10, 10))
 
     # Give attacker a melee weapon (range=1)
     sword = create_weapon("Sword", base_damage=10, range=1)
@@ -352,12 +350,10 @@ def test_attack_succeeds_within_range():
     attacker = Character(
         name="Archer",
         stats=Stats(strength=15, base_accuracy=100, base_critical=0),
-        position=(0, 0)
+        position=(0, 0),
     )
     target = Enemy(
-        name="Close Goblin",
-        stats=Stats(hp=50, constitution=0),
-        position=(3, 0)
+        name="Close Goblin", stats=Stats(hp=50, constitution=0), position=(3, 0)
     )
 
     # Give attacker a ranged weapon (range=5)
@@ -386,7 +382,11 @@ def test_cleave_attack_hits_limited_targets():
 
     # Create cleave skill that hits 2 targets
     cleave = create_skill_action(
-        "Cleave", mp_cost=10, damage_multiplier=1.0, damage_type="physical", max_targets=2
+        "Cleave",
+        mp_cost=10,
+        damage_multiplier=1.0,
+        damage_type="physical",
+        max_targets=2,
     )
 
     result = cleave.execute(attacker, [enemy1, enemy2, enemy3, enemy4], {})
@@ -409,17 +409,15 @@ def test_aoe_damage_handles_individual_deaths():
 
     caster = Character(
         name="Mage",
-        stats=Stats(intelligence=15, base_accuracy=100, base_max_mp=50, mp=50)
+        stats=Stats(intelligence=15, base_accuracy=100, base_max_mp=50, mp=50),
     )
-    
+
     # One enemy with full HP, one with 1 HP
     full_hp_enemy = Enemy(
-        name="Healthy Goblin",
-        stats=Stats(constitution=0, hp=50, base_max_hp=50)
+        name="Healthy Goblin", stats=Stats(constitution=0, hp=50, base_max_hp=50)
     )
     low_hp_enemy = Enemy(
-        name="Wounded Goblin",
-        stats=Stats(constitution=0, hp=1, base_max_hp=50)
+        name="Wounded Goblin", stats=Stats(constitution=0, hp=1, base_max_hp=50)
     )
 
     # Create AOE skill with max_targets=None
@@ -428,26 +426,26 @@ def test_aoe_damage_handles_individual_deaths():
         mp_cost=10,
         damage_multiplier=1.0,
         damage_type="magic",
-        max_targets=None
+        max_targets=None,
     )
 
     result = fireball.execute(caster, [full_hp_enemy, low_hp_enemy], {})
 
     assert result.success
     assert len(result.targets_hit) == 2
-    
+
     # Both should have been hit
     assert full_hp_enemy in result.targets_hit
     assert low_hp_enemy in result.targets_hit
-    
+
     # Low HP enemy should be dead
     assert low_hp_enemy.is_dead()
     assert low_hp_enemy.stats.hp == 0
-    
+
     # Full HP enemy should be damaged but alive
     assert full_hp_enemy.is_alive()
     assert full_hp_enemy.stats.hp < 50
     assert full_hp_enemy.stats.hp > 0
-    
+
     # Total damage should be sum of both
     assert result.damage > 0

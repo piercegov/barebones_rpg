@@ -180,9 +180,7 @@ class TestPartyMetadata:
 
     def test_metadata_in_constructor(self):
         """Test setting metadata in constructor."""
-        party = Party(
-            name="Adventurers", metadata={"gold": 50, "reputation": "good"}
-        )
+        party = Party(name="Adventurers", metadata={"gold": 50, "reputation": "good"})
         assert party.metadata["gold"] == 50
         assert party.metadata["reputation"] == "good"
 
@@ -192,9 +190,7 @@ class TestPartySerialization:
 
     def test_to_dict(self, hero, mage):
         """Test converting party to dictionary."""
-        party = Party(
-            name="Adventurers", members=[hero, mage], metadata={"gold": 100}
-        )
+        party = Party(name="Adventurers", members=[hero, mage], metadata={"gold": 100})
         data = party.to_dict()
         assert data["name"] == "Adventurers"
         assert len(data["member_ids"]) == 2
@@ -250,9 +246,7 @@ class TestCombatIntegration:
     def test_combat_with_lists_backward_compat(self, hero, mage, goblin):
         """Test that Combat still accepts lists (backward compatibility)."""
         events = EventManager()
-        combat = Combat(
-            player_group=[hero, mage], enemy_group=[goblin], events=events
-        )
+        combat = Combat(player_group=[hero, mage], enemy_group=[goblin], events=events)
 
         assert combat.players.members == [hero, mage]
         assert combat.enemies.members == [goblin]
@@ -373,13 +367,10 @@ class TestPartyExtensibility:
                 # Back half of party
                 return self.members[len(self.members) // 2 + 1 :]
 
-        party = PartyWithFormation(
-            name="Tactical Squad", members=[warrior, hero, mage]
-        )
+        party = PartyWithFormation(name="Tactical Squad", members=[warrior, hero, mage])
         party.set_formation("defensive")
         assert party.formation == "defensive"
         assert len(party.get_front_line()) == 2
         assert warrior in party.get_front_line()
         assert len(party.get_back_line()) == 1
         assert mage in party.get_back_line()
-

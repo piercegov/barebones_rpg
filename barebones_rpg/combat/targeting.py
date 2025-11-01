@@ -83,7 +83,9 @@ def is_in_range(
     source: Any,
     target: Any,
     range_value: int,
-    distance_func: Callable[[Tuple[int, int], Tuple[int, int]], float] = manhattan_distance,
+    distance_func: Callable[
+        [Tuple[int, int], Tuple[int, int]], float
+    ] = manhattan_distance,
 ) -> bool:
     """Check if a target is within range of the source.
 
@@ -122,7 +124,9 @@ def filter_targets_by_range(
     source: Any,
     targets: List[Any],
     range_value: int,
-    distance_func: Callable[[Tuple[int, int], Tuple[int, int]], float] = manhattan_distance,
+    distance_func: Callable[
+        [Tuple[int, int], Tuple[int, int]], float
+    ] = manhattan_distance,
 ) -> List[Any]:
     """Filter a list of targets to only those within range of the source.
 
@@ -159,7 +163,9 @@ def get_targets_in_area(
     center: Tuple[int, int],
     radius: int,
     all_entities: List[Any],
-    distance_func: Callable[[Tuple[int, int], Tuple[int, int]], float] = manhattan_distance,
+    distance_func: Callable[
+        [Tuple[int, int], Tuple[int, int]], float
+    ] = manhattan_distance,
 ) -> List[Any]:
     """Get all entities within a circular area.
 
@@ -281,4 +287,3 @@ def _bresenham_line(
             y += sy
 
     return points
-

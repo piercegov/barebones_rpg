@@ -293,11 +293,11 @@ def test_item_dropped_event_published():
     """Test that ITEM_DROPPED event is published when enemy with loot dies."""
     # Clear registry before test
     LootRegistry.clear()
-    
+
     # Setup item in registry
     bone = Item(name="Goblin Bone", item_type=ItemType.MATERIAL, value=5)
     LootRegistry.register("Goblin Bone", bone)
-    
+
     # Create enemy with loot table
     hero = Character(
         name="Hero",
@@ -314,7 +314,7 @@ def test_item_dropped_event_published():
         ),
     )
     hero.init_equipment()
-    
+
     enemy = Enemy(
         name="Goblin",
         stats=Stats(
@@ -329,26 +329,26 @@ def test_item_dropped_event_published():
         ),
         loot_table=[{"item": "Goblin Bone", "chance": 1.0}],  # 100% drop
     )
-    
+
     events = EventManager()
     dropped_items = []
-    
+
     def on_item_dropped(event):
         dropped_items.append(event.data.get("item"))
-    
+
     events.subscribe(EventType.ITEM_DROPPED, on_item_dropped)
-    
+
     combat = Combat([hero], [enemy], events)
     combat.start()
-    
+
     # Kill the enemy
     action = AttackAction()
     combat.execute_action(action, hero, [enemy])
-    
+
     # Check that item was dropped
     assert len(dropped_items) == 1
     assert dropped_items[0].name == "Goblin Bone"
-    
+
     # Cleanup
     LootRegistry.clear()
 
@@ -357,11 +357,11 @@ def test_get_dropped_loot():
     """Test that dropped loot can be retrieved via get_dropped_loot()."""
     # Clear registry before test
     LootRegistry.clear()
-    
+
     # Setup item in registry
     bone = Item(name="Goblin Bone", item_type=ItemType.MATERIAL, value=5)
     LootRegistry.register("Goblin Bone", bone)
-    
+
     # Create enemy with loot table
     hero = Character(
         name="Hero",
@@ -378,7 +378,7 @@ def test_get_dropped_loot():
         ),
     )
     hero.init_equipment()
-    
+
     enemy = Enemy(
         name="Goblin",
         stats=Stats(
@@ -393,23 +393,23 @@ def test_get_dropped_loot():
         ),
         loot_table=[{"item": "Goblin Bone", "chance": 1.0}],
     )
-    
+
     combat = Combat([hero], [enemy], EventManager())
     combat.start()
-    
+
     # Initially no loot
     assert len(combat.get_dropped_loot()) == 0
-    
+
     # Kill the enemy
     action = AttackAction()
     combat.execute_action(action, hero, [enemy])
-    
+
     # Check dropped loot
     dropped_loot = combat.get_dropped_loot()
     assert len(dropped_loot) == 1
     assert dropped_loot[0].item.name == "Goblin Bone"
     assert dropped_loot[0].source == enemy
-    
+
     # Cleanup
     LootRegistry.clear()
 
@@ -431,7 +431,7 @@ def test_no_loot_drops_when_enemy_has_no_loot_table():
         ),
     )
     hero.init_equipment()
-    
+
     enemy = Enemy(
         name="Goblin",
         stats=Stats(
@@ -446,22 +446,22 @@ def test_no_loot_drops_when_enemy_has_no_loot_table():
         ),
         loot_table=[],  # No loot
     )
-    
+
     events = EventManager()
     dropped_items = []
-    
+
     def on_item_dropped(event):
         dropped_items.append(event.data.get("item"))
-    
+
     events.subscribe(EventType.ITEM_DROPPED, on_item_dropped)
-    
+
     combat = Combat([hero], [enemy], events)
     combat.start()
-    
+
     # Kill the enemy
     action = AttackAction()
     combat.execute_action(action, hero, [enemy])
-    
+
     # No items should have dropped
     assert len(dropped_items) == 0
     assert len(combat.get_dropped_loot()) == 0
@@ -471,13 +471,13 @@ def test_multiple_enemies_drop_loot():
     """Test that multiple enemies can drop loot in the same combat."""
     # Clear registry before test
     LootRegistry.clear()
-    
+
     # Setup items in registry
     bone = Item(name="Goblin Bone", item_type=ItemType.MATERIAL, value=5)
     scale = Item(name="Goblin Scale", item_type=ItemType.MATERIAL, value=10)
     LootRegistry.register("Goblin Bone", bone)
     LootRegistry.register("Goblin Scale", scale)
-    
+
     # Create hero
     hero = Character(
         name="Hero",
@@ -494,7 +494,7 @@ def test_multiple_enemies_drop_loot():
         ),
     )
     hero.init_equipment()
-    
+
     # Create enemies with different loot
     enemy1 = Enemy(
         name="Goblin 1",
@@ -510,7 +510,7 @@ def test_multiple_enemies_drop_loot():
         ),
         loot_table=[{"item": "Goblin Bone", "chance": 1.0}],
     )
-    
+
     enemy2 = Enemy(
         name="Goblin 2",
         stats=Stats(
@@ -525,20 +525,20 @@ def test_multiple_enemies_drop_loot():
         ),
         loot_table=[{"item": "Goblin Scale", "chance": 1.0}],
     )
-    
+
     combat = Combat([hero], [enemy1, enemy2], EventManager())
     combat.start()
-    
+
     # Kill both enemies
     action = AttackAction()
     combat.execute_action(action, hero, [enemy1])
     if combat.is_active():  # If combat didn't end after first kill
         combat.end_turn()
         combat.execute_action(action, hero, [enemy2])
-    
+
     # Check that both items dropped
     dropped_loot = combat.get_dropped_loot()
     assert len(dropped_loot) >= 1  # At least one enemy died
-    
+
     # Cleanup
     LootRegistry.clear()

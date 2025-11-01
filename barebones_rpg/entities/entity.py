@@ -324,13 +324,13 @@ class Enemy(Entity):
     """Enemy character class.
 
     Enemies have AI behavior and drop items/exp when defeated.
-    
+
     The loot_table supports both string references (looked up in LootRegistry)
     and direct Item objects for procedural generation:
-    
+
     Example:
         >>> from barebones_rpg.items import create_material
-        >>> 
+        >>>
         >>> # Using string references (requires LootRegistry setup)
         >>> goblin = Enemy(
         ...     name="Goblin",
@@ -339,7 +339,7 @@ class Enemy(Entity):
         ...         {"item": "Health Potion", "chance": 0.1}
         ...     ]
         ... )
-        >>> 
+        >>>
         >>> # Using direct Item objects (code-first)
         >>> goblin = Enemy(
         ...     name="Goblin",
