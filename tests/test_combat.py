@@ -251,16 +251,24 @@ def test_victory_callback_executed():
             strength=20,
             constitution=15,
             intelligence=10,
-            dexterity=12,
+            dexterity=20,  # High DEX for speed and accuracy
             charisma=10,
             hp=100,
+            base_accuracy=100,  # Ensure attack always hits
+            base_evasion=0,
         ),
     )
     hero.init_equipment()  # Initialize equipment so AttackAction works properly
     enemy = Enemy(
         name="Goblin",
         stats=Stats(
-            strength=5, constitution=3, intelligence=5, dexterity=10, charisma=5, hp=1
+            strength=5,
+            constitution=3,
+            intelligence=5,
+            dexterity=5,  # Low DEX for speed
+            charisma=5,
+            hp=1,
+            base_evasion=0,  # Ensure attack always hits
         ),
     )
 

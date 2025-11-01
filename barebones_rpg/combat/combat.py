@@ -3,7 +3,7 @@
 This module provides the core combat management system.
 """
 
-from typing import List, Optional, Dict, Any, Callable
+from typing import List, Optional, Dict, Any, Callable, Union
 from enum import Enum, auto
 from dataclasses import dataclass, field
 from pydantic import BaseModel, Field
@@ -146,13 +146,24 @@ class Combat:
     Example:
         >>> from barebones_rpg.entities import Character, Enemy
         >>> from barebones_rpg.core import EventManager
+        >>> from barebones_rpg.party import Party
         >>>
         >>> hero = Character(name="Hero", stats=Stats(hp=100, atk=15))
         >>> goblin = Enemy(name="Goblin", stats=Stats(hp=30, atk=5))
         >>>
+        >>> # Using lists (backward compatible)
         >>> combat = Combat(
         ...     player_group=[hero],
         ...     enemy_group=[goblin],
+        ...     events=EventManager()
+        ... )
+        >>>
+        >>> # Or using Party objects
+        >>> party = Party(name="Heroes", members=[hero])
+        >>> enemies = Party(name="Monsters", members=[goblin])
+        >>> combat = Combat(
+        ...     player_group=party,
+        ...     enemy_group=enemies,
         ...     events=EventManager()
         ... )
         >>> combat.start()
@@ -161,19 +172,30 @@ class Combat:
 
     def __init__(
         self,
-        player_group: List[Any],
-        enemy_group: List[Any],
+        player_group: Union[List[Any], "Party"],
+        enemy_group: Union[List[Any], "Party"],
         events: Optional[EventManager] = None,
     ):
         """Initialize combat.
 
         Args:
-            player_group: List of player characters
-            enemy_group: List of enemies
+            player_group: List of player characters or Party object
+            enemy_group: List of enemies or Party object
             events: Event manager for publishing combat events
         """
-        self.players = CombatantGroup(name="Players", members=player_group)
-        self.enemies = CombatantGroup(name="Enemies", members=enemy_group)
+        # Convert Party objects to lists for CombatantGroup
+        # This maintains backward compatibility while supporting the new Party system
+        player_members = (
+            player_group.members
+            if hasattr(player_group, "members")
+            else player_group
+        )
+        enemy_members = (
+            enemy_group.members if hasattr(enemy_group, "members") else enemy_group
+        )
+
+        self.players = CombatantGroup(name="Players", members=player_members)
+        self.enemies = CombatantGroup(name="Enemies", members=enemy_members)
         self.events = events or EventManager()
 
         self.state = CombatState.NOT_STARTED
