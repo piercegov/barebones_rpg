@@ -262,14 +262,14 @@ class Combat:
             self._execute_enemy_ai(current)
 
     def execute_action(
-        self, action: CombatAction, source: Any, target: Optional[Any] = None
+        self, action: CombatAction, source: Any, targets: List[Any]
     ) -> ActionResult:
         """Execute a combat action.
 
         Args:
             action: The action to execute
             source: Entity performing the action
-            target: Target of the action (if applicable)
+            targets: List of target entities (can be empty for self-targeting actions)
 
         Returns:
             Result of the action
@@ -281,44 +281,62 @@ class Combat:
             )
 
         # Execute the action
-        result = action.execute(source, target, {"combat_state": self})
+        result = action.execute(source, targets, {"combat_state": self})
 
         # Record in history
         self.action_history.append(
             {
                 "turn": self.turn_number,
                 "source": source.id,
-                "target": target.id if target else None,
+                "targets": [t.id for t in targets] if targets else [],
                 "action": action.name,
                 "result": result,
             }
         )
 
-        # Publish event
-        self.events.publish(
-            Event(
-                (
-                    EventType.ATTACK
-                    if action.action_type.name == "ATTACK"
-                    else "combat_action"
-                ),
-                {
-                    "source": source,
-                    "target": target,
-                    "action": action,
-                    "result": result,
-                },
-            )
-        )
-
-        # Check for deaths
-        if target and target.is_dead():
+        # Publish events for each target hit
+        if result.targets_hit:
+            for target in result.targets_hit:
+                self.events.publish(
+                    Event(
+                        (
+                            EventType.ATTACK
+                            if action.action_type.name == "ATTACK"
+                            else "combat_action"
+                        ),
+                        {
+                            "source": source,
+                            "target": target,
+                            "action": action,
+                            "result": result,
+                        },
+                    )
+                )
+        else:
+            # Publish event without specific target (e.g., missed attack, failed action)
             self.events.publish(
-                Event(EventType.DEATH, {"entity": target, "killer": source})
+                Event(
+                    (
+                        EventType.ATTACK
+                        if action.action_type.name == "ATTACK"
+                        else "combat_action"
+                    ),
+                    {
+                        "source": source,
+                        "target": targets[0] if targets else None,
+                        "action": action,
+                        "result": result,
+                    },
+                )
             )
-            
-            # Handle loot drops from enemies
-            self._handle_loot_drops(target)
+
+        # Check for deaths and handle loot drops
+        for target in result.targets_hit:
+            if target.is_dead():
+                self.events.publish(
+                    Event(EventType.DEATH, {"entity": target, "killer": source})
+                )
+                self._handle_loot_drops(target)
 
         # Check if combat should end
         if result.metadata.get("fled"):
@@ -364,9 +382,9 @@ class Combat:
 
         target = random.choice(alive_players)
 
-        # Execute basic attack
+        # Execute basic attack (wrap target in list)
         action = AttackAction()
-        result = self.execute_action(action, enemy, target)
+        result = self.execute_action(action, enemy, [target])
 
         # Auto-end turn after AI action
         self.end_turn()

@@ -148,7 +148,7 @@ def test_death_event_published(combat_setup):
 
     action = AttackAction()
     enemy1.stats.hp = 1
-    result = combat.execute_action(action, hero, enemy1)
+    result = combat.execute_action(action, hero, [enemy1])
 
     history = events.get_history()
     death_events = [e for e in history if e.event_type == EventType.DEATH]
@@ -284,7 +284,7 @@ def test_victory_callback_executed():
     combat.start()
 
     action = AttackAction()
-    combat.execute_action(action, hero, enemy)
+    combat.execute_action(action, hero, [enemy])
 
     assert victory_called["called"]
 
@@ -343,7 +343,7 @@ def test_item_dropped_event_published():
     
     # Kill the enemy
     action = AttackAction()
-    combat.execute_action(action, hero, enemy)
+    combat.execute_action(action, hero, [enemy])
     
     # Check that item was dropped
     assert len(dropped_items) == 1
@@ -402,7 +402,7 @@ def test_get_dropped_loot():
     
     # Kill the enemy
     action = AttackAction()
-    combat.execute_action(action, hero, enemy)
+    combat.execute_action(action, hero, [enemy])
     
     # Check dropped loot
     dropped_loot = combat.get_dropped_loot()
@@ -460,7 +460,7 @@ def test_no_loot_drops_when_enemy_has_no_loot_table():
     
     # Kill the enemy
     action = AttackAction()
-    combat.execute_action(action, hero, enemy)
+    combat.execute_action(action, hero, [enemy])
     
     # No items should have dropped
     assert len(dropped_items) == 0
@@ -531,10 +531,10 @@ def test_multiple_enemies_drop_loot():
     
     # Kill both enemies
     action = AttackAction()
-    combat.execute_action(action, hero, enemy1)
+    combat.execute_action(action, hero, [enemy1])
     if combat.is_active():  # If combat didn't end after first kill
         combat.end_turn()
-        combat.execute_action(action, hero, enemy2)
+        combat.execute_action(action, hero, [enemy2])
     
     # Check that both items dropped
     dropped_loot = combat.get_dropped_loot()

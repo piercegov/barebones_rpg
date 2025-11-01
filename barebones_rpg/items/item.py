@@ -47,7 +47,14 @@ class Item(BaseModel):
         ...     name="Iron Sword",
         ...     item_type=ItemType.WEAPON,
         ...     description="A basic iron sword",
-        ...     stat_modifiers={"atk": 5}
+        ...     stat_modifiers={"atk": 5},
+        ...     range=1
+        ... )
+        >>> bow = Item(
+        ...     name="Longbow",
+        ...     item_type=ItemType.WEAPON,
+        ...     base_damage=8,
+        ...     range=5
         ... )
         >>> potion = Item(
         ...     name="Health Potion",
@@ -89,6 +96,9 @@ class Item(BaseModel):
     base_damage: int = Field(default=0, description="Base damage for weapons")
     damage_type: str = Field(
         default="physical", description="Damage type (physical, magic, or custom)"
+    )
+    range: int = Field(
+        default=1, description="Weapon range (1=melee, higher values for ranged weapons)"
     )
 
     # Consumable properties
@@ -196,6 +206,7 @@ def create_weapon(
     name: str,
     base_damage: int,
     damage_type: str = "physical",
+    range: int = 1,
     description: str = "",
     value: int = 0,
     **kwargs,
@@ -206,12 +217,18 @@ def create_weapon(
         name: Weapon name
         base_damage: Base damage dealt by weapon
         damage_type: Type of damage (physical, magic, or custom)
+        range: Weapon range (1=melee, higher for ranged)
         description: Description
         value: Gold value
         **kwargs: Additional properties (stat_modifiers, metadata, etc.)
 
     Returns:
         Weapon item
+
+    Example:
+        >>> sword = create_weapon("Iron Sword", base_damage=10, range=1)
+        >>> bow = create_weapon("Longbow", base_damage=8, range=5)
+        >>> spear = create_weapon("Spear", base_damage=9, range=2)
     """
     return Item(
         name=name,
@@ -220,6 +237,7 @@ def create_weapon(
         equip_slot=EquipSlot.WEAPON,
         base_damage=base_damage,
         damage_type=damage_type,
+        range=range,
         value=value,
         **kwargs,
     )

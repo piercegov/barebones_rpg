@@ -42,7 +42,7 @@ def test_attack_with_no_target_returns_failure():
     attacker = Character(name="Hero", stats=Stats(strength=15))
     action = AttackAction()
 
-    result = action.execute(attacker, None, {})
+    result = action.execute(attacker, [], {})
 
     assert result.success is False
     assert result.message == "No target selected"
@@ -58,7 +58,7 @@ def test_attack_misses_based_on_accuracy(attacker_and_target, monkeypatch):
 
     monkeypatch.setattr(random, "randint", always_miss)
 
-    result = action.execute(attacker, target, {})
+    result = action.execute(attacker, [target], {})
 
     assert result.success is True
     assert result.missed is True
@@ -78,7 +78,7 @@ def test_attack_hits_and_deals_damage(attacker_and_target, monkeypatch):
     monkeypatch.setattr(random, "randint", always_hit_no_crit)
 
     old_hp = target.stats.hp
-    result = action.execute(attacker, target, {})
+    result = action.execute(attacker, [target], {})
 
     assert result.success is True
     assert not result.missed
@@ -102,7 +102,7 @@ def test_critical_hits_apply_multiplier(attacker_and_target, monkeypatch):
 
     monkeypatch.setattr(random, "randint", deterministic)
 
-    result = action.execute(attacker, target, {})
+    result = action.execute(attacker, [target], {})
 
     assert result.critical is True
     assert result.damage > 0
@@ -113,12 +113,12 @@ def test_skill_mp_cost_prevents_execution():
     caster = Character(name="Mage", stats=Stats(intelligence=12, base_max_mp=20, mp=10))
     target = Enemy(name="Goblin", stats=Stats(hp=50))
 
-    def skill_effect(source, target, context):
-        return ActionResult(success=True, damage=30)
+    def skill_effect(source, targets, context):
+        return ActionResult(success=True, damage=30, targets_hit=targets)
 
     skill = SkillAction("Fireball", mp_cost=20, effect=skill_effect)
 
-    result = skill.execute(caster, target, {})
+    result = skill.execute(caster, [target], {})
 
     assert result.success is False
     assert "doesn't have enough MP" in result.message
@@ -133,13 +133,13 @@ def test_skill_executes_with_sufficient_mp():
         name="Goblin", stats=Stats(constitution=0, hp=50)
     )  # 0 CON = 0 defense
 
-    def skill_effect(source, target, context):
-        damage = target.take_damage(30, source)
-        return ActionResult(success=True, damage=damage, message="Fireball!")
+    def skill_effect(source, targets, context):
+        damage = targets[0].take_damage(30, source)
+        return ActionResult(success=True, damage=damage, message="Fireball!", targets_hit=targets)
 
     skill = SkillAction("Fireball", mp_cost=20, effect=skill_effect)
 
-    result = skill.execute(caster, target, {})
+    result = skill.execute(caster, [target], {})
 
     assert result.success is True
     assert caster.stats.mp == 30
@@ -157,7 +157,7 @@ def test_run_action_success_rate_with_speed_difference(monkeypatch):
     monkeypatch.setattr(random, "randint", favorable_roll)
 
     action = RunAction()
-    result = action.execute(fast_runner, slow_enemy, {})
+    result = action.execute(fast_runner, [slow_enemy], {})
 
     assert result.success is True
     assert result.metadata.get("fled") is True
@@ -174,7 +174,7 @@ def test_run_action_fails(monkeypatch):
     monkeypatch.setattr(random, "randint", unfavorable_roll)
 
     action = RunAction()
-    result = action.execute(runner, enemy, {})
+    result = action.execute(runner, [enemy], {})
 
     assert result.success is True
     assert result.metadata.get("fled") is False
@@ -184,8 +184,8 @@ def test_skill_can_execute_checks_mp():
     """Skill can_execute should check MP availability."""
     low_mp_caster = Character(name="Tired Mage", stats=Stats(mp=5))
 
-    def dummy_effect(source, target, context):
-        return ActionResult(success=True)
+    def dummy_effect(source, targets, context):
+        return ActionResult(success=True, targets_hit=targets)
 
     skill = SkillAction("Expensive Spell", mp_cost=20, effect=dummy_effect)
 
@@ -206,7 +206,7 @@ def test_attack_action_calculates_damage_correctly():
     )
 
     action = AttackAction()
-    result = action.execute(attacker, target, {})
+    result = action.execute(attacker, [target], {})
 
     assert result.damage >= 1
 
@@ -223,7 +223,7 @@ def test_attack_action_calculates_damage_correctly_atk_lower():
     )
 
     action = AttackAction()
-    result = action.execute(attacker, target, {})
+    result = action.execute(attacker, [target], {})
 
     assert result.damage == 1
 
@@ -233,12 +233,221 @@ def test_skill_action_deducts_mp_cost():
     caster = Character(name="Mage", stats=Stats(intelligence=12, base_max_mp=20, mp=50))
     target = Enemy(name="Goblin", stats=Stats(hp=50))
 
-    def skill_effect(source, target, context):
-        return ActionResult(success=True, message="Boom!")
+    def skill_effect(source, targets, context):
+        return ActionResult(success=True, message="Boom!", targets_hit=targets)
 
     skill = SkillAction("Magic Missile", mp_cost=15, effect=skill_effect)
 
     old_mp = caster.stats.mp
-    result = skill.execute(caster, target, {})
+    result = skill.execute(caster, [target], {})
 
     assert caster.stats.mp == old_mp - 15
+
+
+def test_aoe_skill_hits_all_targets():
+    """AOE skill should hit all targets in the list."""
+    from barebones_rpg.combat.actions import create_skill_action
+
+    caster = Character(
+        name="Mage", stats=Stats(intelligence=20, base_max_mp=50, mp=50)
+    )
+    enemy1 = Enemy(name="Goblin1", stats=Stats(constitution=0, hp=30))
+    enemy2 = Enemy(name="Goblin2", stats=Stats(constitution=0, hp=30))
+    enemy3 = Enemy(name="Goblin3", stats=Stats(constitution=0, hp=30))
+
+    # Create AOE skill with max_targets=None (unlimited)
+    fireball = create_skill_action(
+        "Fireball", mp_cost=15, damage_multiplier=1.0, damage_type="magic", max_targets=None
+    )
+
+    result = fireball.execute(caster, [enemy1, enemy2, enemy3], {})
+
+    assert result.success
+    assert len(result.targets_hit) == 3
+    assert enemy1 in result.targets_hit
+    assert enemy2 in result.targets_hit
+    assert enemy3 in result.targets_hit
+    assert enemy1.stats.hp < 30
+    assert enemy2.stats.hp < 30
+    assert enemy3.stats.hp < 30
+
+
+def test_single_target_skill_hits_first_target_only():
+    """Single-target skill should only hit the first target in the list."""
+    from barebones_rpg.combat.actions import create_skill_action
+
+    caster = Character(
+        name="Mage", stats=Stats(intelligence=20, base_max_mp=50, mp=50)
+    )
+    enemy1 = Enemy(name="Goblin1", stats=Stats(constitution=0, hp=30))
+    enemy2 = Enemy(name="Goblin2", stats=Stats(constitution=0, hp=30))
+
+    # Create single-target skill (max_targets=1 by default)
+    magic_missile = create_skill_action(
+        "Magic Missile", mp_cost=5, damage_multiplier=1.0, damage_type="magic"
+    )
+
+    result = magic_missile.execute(caster, [enemy1, enemy2], {})
+
+    assert result.success
+    assert len(result.targets_hit) == 1
+    assert enemy1 in result.targets_hit
+    assert enemy2 not in result.targets_hit
+    assert enemy1.stats.hp < 30
+    assert enemy2.stats.hp == 30  # Second target not affected
+
+
+def test_aoe_heal_heals_all_targets():
+    """AOE heal should heal all targets in the list."""
+    from barebones_rpg.combat.actions import create_heal_skill
+
+    healer = Character(name="Cleric", stats=Stats(base_max_mp=50, mp=50))
+    ally1 = Character(name="Warrior", stats=Stats(base_max_hp=100, hp=50))
+    ally2 = Character(name="Rogue", stats=Stats(base_max_hp=80, hp=30))
+    ally3 = Character(name="Mage", stats=Stats(base_max_hp=60, hp=20))
+
+    # Create AOE heal with max_targets=None (unlimited)
+    group_heal = create_heal_skill("Mass Heal", mp_cost=20, heal_amount=25, max_targets=None)
+
+    result = group_heal.execute(healer, [ally1, ally2, ally3], {})
+
+    assert result.success
+    assert len(result.targets_hit) == 3
+    assert ally1.stats.hp == 75
+    assert ally2.stats.hp == 55
+    assert ally3.stats.hp == 45
+
+
+def test_attack_range_validation():
+    """Attack should fail if target is out of range."""
+    from barebones_rpg.items.item import create_weapon
+
+    attacker = Character(
+        name="Archer",
+        stats=Stats(strength=15, base_accuracy=100),
+        position=(0, 0)
+    )
+    target = Enemy(
+        name="Distant Goblin",
+        stats=Stats(hp=50),
+        position=(10, 10)
+    )
+
+    # Give attacker a melee weapon (range=1)
+    sword = create_weapon("Sword", base_damage=10, range=1)
+    attacker.init_equipment()
+    attacker.equipment.equip(sword)
+
+    action = AttackAction()
+    result = action.execute(attacker, [target], {})
+
+    assert result.success is False
+    assert "out of range" in result.message.lower()
+
+
+def test_attack_succeeds_within_range():
+    """Attack should succeed if target is within range."""
+    from barebones_rpg.items.item import create_weapon
+
+    attacker = Character(
+        name="Archer",
+        stats=Stats(strength=15, base_accuracy=100, base_critical=0),
+        position=(0, 0)
+    )
+    target = Enemy(
+        name="Close Goblin",
+        stats=Stats(hp=50, constitution=0),
+        position=(3, 0)
+    )
+
+    # Give attacker a ranged weapon (range=5)
+    bow = create_weapon("Bow", base_damage=8, range=5)
+    attacker.init_equipment()
+    attacker.equipment.equip(bow)
+
+    action = AttackAction()
+    result = action.execute(attacker, [target], {})
+
+    assert result.success is True
+    assert result.damage > 0
+
+
+def test_cleave_attack_hits_limited_targets():
+    """Cleave attack should hit only max_targets number of enemies."""
+    from barebones_rpg.combat.actions import create_skill_action
+
+    attacker = Character(
+        name="Warrior", stats=Stats(strength=20, base_max_mp=30, mp=30)
+    )
+    enemy1 = Enemy(name="Goblin1", stats=Stats(constitution=0, hp=30))
+    enemy2 = Enemy(name="Goblin2", stats=Stats(constitution=0, hp=30))
+    enemy3 = Enemy(name="Goblin3", stats=Stats(constitution=0, hp=30))
+    enemy4 = Enemy(name="Goblin4", stats=Stats(constitution=0, hp=30))
+
+    # Create cleave skill that hits 2 targets
+    cleave = create_skill_action(
+        "Cleave", mp_cost=10, damage_multiplier=1.0, damage_type="physical", max_targets=2
+    )
+
+    result = cleave.execute(attacker, [enemy1, enemy2, enemy3, enemy4], {})
+
+    assert result.success
+    assert len(result.targets_hit) == 2  # Only hits first 2
+    assert enemy1 in result.targets_hit
+    assert enemy2 in result.targets_hit
+    assert enemy3 not in result.targets_hit
+    assert enemy4 not in result.targets_hit
+    assert enemy1.stats.hp < 30
+    assert enemy2.stats.hp < 30
+    assert enemy3.stats.hp == 30  # Not hit
+    assert enemy4.stats.hp == 30  # Not hit
+
+
+def test_aoe_damage_handles_individual_deaths():
+    """AOE damage should properly handle when only some targets die."""
+    from barebones_rpg.combat.actions import create_skill_action
+
+    caster = Character(
+        name="Mage",
+        stats=Stats(intelligence=15, base_accuracy=100, base_max_mp=50, mp=50)
+    )
+    
+    # One enemy with full HP, one with 1 HP
+    full_hp_enemy = Enemy(
+        name="Healthy Goblin",
+        stats=Stats(constitution=0, hp=50, base_max_hp=50)
+    )
+    low_hp_enemy = Enemy(
+        name="Wounded Goblin",
+        stats=Stats(constitution=0, hp=1, base_max_hp=50)
+    )
+
+    # Create AOE skill with max_targets=None
+    fireball = create_skill_action(
+        "Fireball",
+        mp_cost=10,
+        damage_multiplier=1.0,
+        damage_type="magic",
+        max_targets=None
+    )
+
+    result = fireball.execute(caster, [full_hp_enemy, low_hp_enemy], {})
+
+    assert result.success
+    assert len(result.targets_hit) == 2
+    
+    # Both should have been hit
+    assert full_hp_enemy in result.targets_hit
+    assert low_hp_enemy in result.targets_hit
+    
+    # Low HP enemy should be dead
+    assert low_hp_enemy.is_dead()
+    assert low_hp_enemy.stats.hp == 0
+    
+    # Full HP enemy should be damaged but alive
+    assert full_hp_enemy.is_alive()
+    assert full_hp_enemy.stats.hp < 50
+    assert full_hp_enemy.stats.hp > 0
+    
+    # Total damage should be sum of both
+    assert result.damage > 0

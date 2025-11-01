@@ -170,8 +170,8 @@ class TileBasedGame:
             "Iron Sword",
             base_damage=10,
             damage_type="physical",
+            range=1,
             value=100,
-            metadata={"range": 1},
         )
         self.player.inventory.add_item(sword)
         self.player.equipment.equip(sword)
@@ -510,7 +510,7 @@ class TileBasedGame:
             if self.player.equipment
             else None
         )
-        weapon_range = weapon.metadata.get("range", 1) if weapon else 1
+        weapon_range = weapon.range if weapon else 1
 
         if distance <= weapon_range:
             self._start_combat(self.player, enemy)
@@ -688,7 +688,7 @@ class TileBasedGame:
                 alive_enemies = self.combat.enemies.get_alive_members()
                 if alive_enemies:
                     action = AttackAction()
-                    self.combat.execute_action(action, current_entity, alive_enemies[0])
+                    self.combat.execute_action(action, current_entity, [alive_enemies[0]])
 
                     from barebones_rpg.combat.combat import CombatState
 

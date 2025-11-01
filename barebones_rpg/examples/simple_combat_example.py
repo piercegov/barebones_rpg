@@ -133,7 +133,7 @@ def main():
                 target = alive_enemies[0]
                 print(f"Hero attacks {target.name}!")
                 action = AttackAction()
-                combat.execute_action(action, hero, target)
+                combat.execute_action(action, hero, [target])
 
                 # Check if combat ended
                 if not combat.is_active():

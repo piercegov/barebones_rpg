@@ -3,7 +3,7 @@
 This module defines the actions that can be taken during combat.
 """
 
-from typing import Optional, Dict, Any, Callable
+from typing import Optional, Dict, Any, Callable, List
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from pydantic import BaseModel, Field
@@ -24,17 +24,24 @@ class ActionResult(BaseModel):
     """Result of a combat action.
 
     Contains information about what happened when an action was performed.
+    Supports both single-target and multi-target actions.
     """
 
     success: bool = Field(
         default=True,
         description="Whether action executed validly (False = invalid/cannot execute)",
     )
-    damage: int = Field(default=0, description="Damage dealt")
-    healing: int = Field(default=0, description="Healing done")
+    damage: int = Field(default=0, description="Total damage dealt")
+    healing: int = Field(default=0, description="Total healing done")
     message: str = Field(default="", description="Result message")
     critical: bool = Field(default=False, description="Was a critical hit")
     missed: bool = Field(default=False, description="Did the action miss")
+    targets_hit: List[Any] = Field(
+        default_factory=list, description="List of targets affected by this action"
+    )
+    target_results: Dict[str, Any] = Field(
+        default_factory=dict, description="Per-target breakdown (optional)"
+    )
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Additional data"
     )
@@ -46,6 +53,8 @@ class CombatAction(ABC):
     """Base class for combat actions.
 
     All combat actions inherit from this and implement execute().
+    Actions now accept a list of targets to support both single-target
+    and multi-target (AOE) abilities.
     """
 
     def __init__(self, action_type: ActionType = ActionType.CUSTOM):
@@ -54,17 +63,21 @@ class CombatAction(ABC):
 
     @abstractmethod
     def execute(
-        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+        self, source: Any, targets: List[Any], context: Dict[str, Any]
     ) -> ActionResult:
         """Execute the action.
 
         Args:
             source: Entity performing the action
-            target: Target of the action (if any)
+            targets: List of target entities (empty list for self-only actions)
             context: Additional context (combat state, etc.)
 
         Returns:
             Result of the action
+
+        Note:
+            For single-target actions, use targets[0] (after checking the list isn't empty).
+            For multi-target actions, iterate through all targets in the list.
         """
         pass
 
@@ -127,20 +140,25 @@ class AttackAction(CombatAction):
         return total_damage, damage_type
 
     def execute(
-        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+        self, source: Any, targets: List[Any], context: Dict[str, Any]
     ) -> ActionResult:
         """Execute a physical attack.
 
+        By default, attacks the first target in the list (single-target).
+        Can be extended for cleave/multi-target attacks.
+
         Args:
             source: Attacker
-            target: Defender
+            targets: List of target entities
             context: Combat context
 
         Returns:
             Attack result
         """
-        if target is None:
+        if not targets:
             return ActionResult(success=False, message="No target selected")
+
+        target = targets[0]
 
         # Get equipped weapon
         weapon = None
@@ -148,6 +166,18 @@ class AttackAction(CombatAction):
             from ..items.item import EquipSlot
 
             weapon = source.equipment.get_equipped(EquipSlot.WEAPON)
+
+        # Check range if both entities have positions and weapon has range
+        if weapon and hasattr(weapon, "range") and weapon.range > 0:
+            if hasattr(source, "position") and hasattr(target, "position"):
+                from .targeting import manhattan_distance
+
+                distance = manhattan_distance(source.position, target.position)
+                if distance > weapon.range:
+                    return ActionResult(
+                        success=False,
+                        message=f"{target.name} is out of range! (distance: {distance}, weapon range: {weapon.range})",
+                    )
 
         # Calculate hit chance
         hit_chance = source.stats.get_stat("accuracy", 90) - target.stats.get_stat(
@@ -158,6 +188,7 @@ class AttackAction(CombatAction):
                 success=True,
                 missed=True,
                 message=f"{source.name} attacks {target.name} but misses!",
+                targets_hit=[],
             )
 
         # Calculate damage using the hookable method
@@ -182,6 +213,7 @@ class AttackAction(CombatAction):
             damage=actual_damage,
             critical=is_critical,
             message=message,
+            targets_hit=[target],
             metadata={"damage_type": damage_type},
         )
 
@@ -214,13 +246,13 @@ class SkillAction(CombatAction):
         return super().can_execute(source, context) and source.stats.mp >= self.mp_cost
 
     def execute(
-        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+        self, source: Any, targets: List[Any], context: Dict[str, Any]
     ) -> ActionResult:
         """Execute the skill.
 
         Args:
             source: Entity using skill
-            target: Target of skill
+            targets: List of target entities
             context: Combat context
 
         Returns:
@@ -234,8 +266,8 @@ class SkillAction(CombatAction):
         # Deduct MP cost
         source.stats.mp -= self.mp_cost
 
-        # Execute the effect
-        result = self.effect(source, target, context)
+        # Execute the effect (effect function receives the full target list)
+        result = self.effect(source, targets, context)
 
         return result
 
@@ -249,25 +281,29 @@ class ItemAction(CombatAction):
         self.name = f"Use {item.name}"
 
     def execute(
-        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+        self, source: Any, targets: List[Any], context: Dict[str, Any]
     ) -> ActionResult:
         """Use an item.
 
         Args:
             source: Entity using item
-            target: Target of item use
+            targets: List of target entities (uses first target or source if empty)
             context: Combat context
 
         Returns:
             Item use result
         """
-        # Use the item
-        result = self.item.use(target or source, context)
+        # Use the item on first target, or source if no targets
+        target = targets[0] if targets else source
+        result = self.item.use(target, context)
 
         message = f"{source.name} uses {self.item.name}!"
 
         return ActionResult(
-            success=True, message=message, metadata={"item_result": result}
+            success=True,
+            message=message,
+            targets_hit=[target],
+            metadata={"item_result": result},
         )
 
 
@@ -280,13 +316,13 @@ class RunAction(CombatAction):
         self.base_success_rate = 50
 
     def execute(
-        self, source: Any, target: Optional[Any], context: Dict[str, Any]
+        self, source: Any, targets: List[Any], context: Dict[str, Any]
     ) -> ActionResult:
         """Attempt to run from combat.
 
         Args:
             source: Entity trying to run
-            target: Enemy (used for speed comparison)
+            targets: List of enemies (uses first for speed comparison if available)
             context: Combat context
 
         Returns:
@@ -294,8 +330,8 @@ class RunAction(CombatAction):
         """
         # Calculate run success based on speed
         success_rate = self.base_success_rate
-        if target and hasattr(target, "stats"):
-            speed_diff = source.stats.speed - target.stats.speed
+        if targets and hasattr(targets[0], "stats"):
+            speed_diff = source.stats.speed - targets[0].stats.speed
             success_rate += speed_diff * 2  # +2% per speed point
 
         success_rate = max(10, min(90, success_rate))  # Clamp between 10-90%
@@ -328,6 +364,7 @@ def create_skill_action(
     damage_multiplier: float = 1.5,
     damage_type: str = "physical",
     targets_enemy: bool = True,
+    max_targets: int = 1,
 ) -> SkillAction:
     """Create a damage skill.
 
@@ -337,13 +374,24 @@ def create_skill_action(
         damage_multiplier: Damage multiplier vs normal attack
         damage_type: Type of damage (physical, magic, or custom)
         targets_enemy: Whether skill targets enemies
+        max_targets: Maximum number of targets to hit (1=single target, 2=cleave, None=unlimited AOE)
 
     Returns:
         Skill action
+
+    Example:
+        >>> # Single-target skill
+        >>> fireball = create_skill_action("Fireball", mp_cost=10, damage_multiplier=2.0, damage_type="magic")
+        >>>
+        >>> # Cleave attack (hits 2 targets)
+        >>> cleave = create_skill_action("Cleave", mp_cost=5, damage_multiplier=1.2, max_targets=2)
+        >>>
+        >>> # AOE skill that hits all targets
+        >>> meteor = create_skill_action("Meteor", mp_cost=25, damage_multiplier=1.5, damage_type="magic", max_targets=None)
     """
 
-    def effect(source, target, context):
-        if target is None:
+    def effect(source, targets, context):
+        if not targets:
             return ActionResult(success=False, message="No target selected")
 
         # Select stat based on damage type
@@ -353,35 +401,95 @@ def create_skill_action(
             stat_value = source.stats.get_stat("strength", 10)
 
         base_damage = int(stat_value * damage_multiplier)
-        actual_damage = target.take_damage(base_damage, source, damage_type)
+
+        # Determine which targets to hit based on max_targets
+        if max_targets is None:
+            targets_to_hit = targets
+        else:
+            targets_to_hit = targets[:max_targets]
+
+        total_damage = 0
+        targets_hit = []
+        messages = []
+
+        for target in targets_to_hit:
+            actual_damage = target.take_damage(base_damage, source, damage_type)
+            total_damage += actual_damage
+            targets_hit.append(target)
+            messages.append(f"{target.name} for {actual_damage} damage")
+
+        if len(targets_hit) == 1:
+            message = f"{source.name} uses {name} on {messages[0]}!"
+        else:
+            message = f"{source.name} uses {name} hitting {', '.join(messages)}!"
 
         return ActionResult(
             success=True,
-            damage=actual_damage,
-            message=f"{source.name} uses {name} on {target.name} for {actual_damage} damage!",
+            damage=total_damage,
+            message=message,
+            targets_hit=targets_hit,
+            metadata={"damage_type": damage_type},
         )
 
     return SkillAction(name, mp_cost, effect, targets_enemy)
 
 
-def create_heal_skill(name: str, mp_cost: int, heal_amount: int) -> SkillAction:
+def create_heal_skill(
+    name: str, mp_cost: int, heal_amount: int, max_targets: int = 1
+) -> SkillAction:
     """Create a healing skill.
 
     Args:
         name: Skill name
         mp_cost: MP cost
-        heal_amount: Amount to heal
+        heal_amount: Amount to heal per target
+        max_targets: Maximum number of targets to heal (1=single target, None=unlimited group heal)
 
     Returns:
         Healing skill action
+
+    Example:
+        >>> # Single-target heal
+        >>> cure = create_heal_skill("Cure", mp_cost=5, heal_amount=30)
+        >>>
+        >>> # Group heal (heals 3 targets)
+        >>> group_heal = create_heal_skill("Group Heal", mp_cost=15, heal_amount=20, max_targets=3)
+        >>>
+        >>> # Mass heal (heals all targets)
+        >>> mass_heal = create_heal_skill("Mass Heal", mp_cost=25, heal_amount=15, max_targets=None)
     """
 
-    def effect(source, target, context):
-        actual_heal = target.heal(heal_amount)
+    def effect(source, targets, context):
+        if not targets:
+            # If no targets specified, heal self
+            targets = [source]
+
+        # Determine which targets to heal based on max_targets
+        if max_targets is None:
+            targets_to_heal = targets
+        else:
+            targets_to_heal = targets[:max_targets]
+
+        total_healing = 0
+        targets_hit = []
+        messages = []
+
+        for target in targets_to_heal:
+            actual_heal = target.heal(heal_amount)
+            total_healing += actual_heal
+            targets_hit.append(target)
+            messages.append(f"{target.name} for {actual_heal} HP")
+
+        if len(targets_hit) == 1:
+            message = f"{source.name} uses {name} on {messages[0]}!"
+        else:
+            message = f"{source.name} uses {name} healing {', '.join(messages)}!"
+
         return ActionResult(
             success=True,
-            healing=actual_heal,
-            message=f"{source.name} uses {name} on {target.name} for {actual_heal} HP!",
+            healing=total_healing,
+            message=message,
+            targets_hit=targets_hit,
         )
 
     return SkillAction(name, mp_cost, effect, targets_enemy=False)
