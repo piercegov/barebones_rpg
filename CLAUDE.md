@@ -55,8 +55,8 @@ uv run mypy barebones_rpg
 The framework uses an **event-driven architecture** with a central `EventManager` that enables loose coupling between systems. The `Game` class acts as the central hub coordinating all systems through an event pub-sub pattern.
 
 ### System Organization
-- **core/**: Event system (`EventManager`) and game engine (`Game`, `GameState`, `GameConfig`)
-- **entities/**: Entity base classes (`Entity`, `Character`, `NPC`, `Enemy`) with stats and leveling systems
+- **core/**: Event system (`EventManager`) and game engine (`Game`, `GameState`, `GameConfig`), generic `Registry` base class
+- **entities/**: Entity base classes (`Entity`, `Character`, `NPC`, `Enemy`) with stats and leveling systems, AI interface (`AIInterface`, `AIContext`, `AIAction`, `AIRegistry`, `AISystem`)
 - **combat/**: Turn-based combat system with action framework (`Combat`, `CombatAction`, `AttackAction`)
 - **items/**: Item system with inventory, equipment, and loot drops (`Item`, `Inventory`, `Equipment`, `LootRegistry`, `LootDrop`)
 - **quests/**: Quest tracking with objectives (`Quest`, `QuestObjective`, `QuestManager`)
@@ -106,6 +106,34 @@ The loot system supports hybrid data-driven and code-first approaches:
 - **Manual Collection**: Framework handles drop generation, but users must subscribe to events or call `combat.get_dropped_loot()` to add items to player inventory
 
 Enemy loot table format: `[{"item": "Name" or Item, "chance": 0.0-1.0, "quantity": N}]`
+
+### AI System
+The framework provides a flexible AI interface system for entity behavior:
+- **AIInterface**: Abstract base class that all AI implementations must inherit from
+- **AIContext**: Context object passed to AI containing entity state, nearby entities, location, etc.
+- **AIAction**: Action object returned by AI describing what the entity wants to do
+- **AIRegistry**: Global registry for sharing AI instances across multiple entities (memory efficient)
+- **AISystem**: Helper system for executing AI and building contexts
+
+Users implement custom AI by inheriting from `AIInterface` and implementing `decide_action(context)`. The AI system supports any approach: state machines, behavior trees, utility AI, LLM-based decisions, or any custom logic.
+
+Example:
+```python
+class AggressiveMeleeAI(AIInterface):
+    def decide_action(self, context: AIContext) -> Optional[AIAction]:
+        if context.nearby_entities:
+            target = context.nearby_entities[0]
+            distance = abs(context.entity.position[0] - target.position[0]) + abs(context.entity.position[1] - target.position[1])
+            if distance <= 1:
+                return AIAction(action_type="attack", target=target)
+            return AIAction(action_type="move", target_position=target.position)
+        return AIAction(action_type="wait")
+
+# Register once, use for many entities
+AIRegistry.register("aggressive_melee", AggressiveMeleeAI())
+goblin1 = Enemy(name="Goblin 1", ai_type="aggressive_melee")
+goblin2 = Enemy(name="Goblin 2", ai_type="aggressive_melee")  # Shares same AI instance
+```
 
 ## Project Requirements
 

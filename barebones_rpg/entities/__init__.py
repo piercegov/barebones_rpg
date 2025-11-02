@@ -2,7 +2,9 @@
 
 from .stats import Stats, StatusEffect, StatsManager
 from .entity import Entity, Character, NPC, Enemy
-from .ai import SimplePathfindingAI, TacticalAI, AIController
+from .ai import SimplePathfindingAI, TacticalAI
+from .ai_interface import AIInterface, AIContext, AIAction, AIRegistry
+from .ai_system import AISystem
 
 __all__ = [
     "Stats",
@@ -14,5 +16,9 @@ __all__ = [
     "Enemy",
     "SimplePathfindingAI",
     "TacticalAI",
-    "AIController",
+    "AIInterface",
+    "AIContext",
+    "AIAction",
+    "AIRegistry",
+    "AISystem",
 ]

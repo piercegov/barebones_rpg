@@ -19,7 +19,11 @@ from .entities import (
     StatusEffect,
     SimplePathfindingAI,
     TacticalAI,
-    AIController,
+    AIInterface,
+    AIContext,
+    AIAction,
+    AIRegistry,
+    AISystem,
 )
 
 # Item exports
@@ -95,7 +99,11 @@ __all__ = [
     "StatusEffect",
     "SimplePathfindingAI",
     "TacticalAI",
-    "AIController",
+    "AIInterface",
+    "AIContext",
+    "AIAction",
+    "AIRegistry",
+    "AISystem",
     # Items
     "Item",
     "ItemType",

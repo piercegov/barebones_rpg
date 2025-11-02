@@ -1,16 +1,16 @@
 """AI systems for entities.
 
 This module provides AI behavior for NPCs and enemies, including
-pathfinding-based movement and decision making.
+pathfinding-based movement and decision making using the AIInterface.
 """
 
-from typing import Optional, Callable, Any
-from barebones_rpg.entities.entity import Entity, Enemy
-from barebones_rpg.world.world import Location
+from typing import Optional
+from barebones_rpg.entities.entity import Entity
 from barebones_rpg.world.tilemap_pathfinding import TilemapPathfinder
+from barebones_rpg.entities.ai_interface import AIInterface, AIContext, AIAction
 
 
-class SimplePathfindingAI:
+class SimplePathfindingAI(AIInterface):
     """Simple pathfinding-based AI for enemies.
 
     This AI will:
@@ -20,95 +20,79 @@ class SimplePathfindingAI:
 
     Args:
         pathfinder: The pathfinder to use for navigation
+        attack_range: Range at which entity can attack (default: 1)
+        max_moves: Maximum moves per turn (default: 3)
     """
 
-    def __init__(self, pathfinder: TilemapPathfinder):
+    def __init__(
+        self, pathfinder: TilemapPathfinder, attack_range: int = 1, max_moves: int = 3
+    ):
         """Initialize the AI.
 
         Args:
             pathfinder: The pathfinder to use for navigation
+            attack_range: Range at which entity can attack
+            max_moves: Maximum moves per turn
         """
         self.pathfinder = pathfinder
+        self.attack_range = attack_range
+        self.max_moves = max_moves
 
-    def process_turn(
-        self,
-        entity: Entity,
-        target: Entity,
-        location: Location,
-        max_moves: int,
-        on_attack: Optional[Callable[[Entity, Entity], None]] = None,
-        attack_range: int = 1,
-    ) -> bool:
-        """Process a turn for an entity using pathfinding AI.
+    def decide_action(self, context: AIContext) -> Optional[AIAction]:
+        """Decide what action to take based on context.
 
-        The AI will:
-        1. Check if target is in attack range
-        2. If yes, trigger attack callback
-        3. If no, move toward target up to max_moves
+        This implementation:
+        1. Finds nearest enemy in nearby_entities
+        2. If in attack range, returns attack action
+        3. If not in range, returns move action toward target
+        4. If no enemies nearby, returns wait action
 
         Args:
-            entity: The entity performing actions
-            target: The target entity
-            location: The location/map
-            max_moves: Maximum number of moves to make
-            on_attack: Callback when entity attacks (entity, target)
-            attack_range: Range required for attack (Manhattan distance)
+            context: AI context with entity and surroundings
 
         Returns:
-            True if entity attacked, False if entity moved/did nothing
+            AIAction describing what to do
         """
-        # Check if adjacent to target
+        entity = context.entity
+        location = context.location
+
+        if not context.nearby_entities:
+            return AIAction(action_type="wait")
+
+        target = context.nearby_entities[0]
+
         ex, ey = entity.position
         tx, ty = target.position
         distance = abs(ex - tx) + abs(ey - ty)
 
-        if distance <= attack_range:
-            # In attack range - attack!
-            if on_attack:
-                on_attack(entity, target)
-            return True
+        if distance <= self.attack_range:
+            return AIAction(action_type="attack", target=target)
 
-        # Move toward target
-        moves_made = 0
-        while moves_made < max_moves:
-            # Calculate path to target
-            path = self.pathfinder.find_path(entity.position, target.position)
+        if not location:
+            return AIAction(action_type="wait")
 
-            if not path or len(path) <= 1:
-                # No path or already at position
-                break
+        path = self.pathfinder.find_path(entity.position, target.position)
 
-            # Move one step along path
-            next_pos = path[1]  # path[0] is current position
+        if not path or len(path) <= 1:
+            return AIAction(action_type="wait")
 
-            # Check if tile is walkable and not occupied
-            if not location.is_walkable(next_pos[0], next_pos[1]):
-                break
+        next_pos = path[1]
 
-            entity_at_pos = location.get_entity_at(next_pos[0], next_pos[1])
+        if not location.is_walkable(next_pos[0], next_pos[1]):
+            return AIAction(action_type="wait")
 
-            if entity_at_pos is not None:
-                # Tile is occupied, can't move there
-                break
+        entity_at_pos = location.get_entity_at(next_pos[0], next_pos[1])
+        if entity_at_pos is not None:
+            return AIAction(action_type="wait")
 
-            # Move entity
-            location.remove_entity(entity)
-            location.add_entity(entity, next_pos[0], next_pos[1])
-            entity.position = next_pos
-            moves_made += 1
-
-            # Check if now in attack range
-            new_distance = abs(next_pos[0] - tx) + abs(next_pos[1] - ty)
-            if new_distance <= attack_range:
-                # Now in range - attack!
-                if on_attack:
-                    on_attack(entity, target)
-                return True
-
-        return False
+        return AIAction(
+            action_type="move",
+            target_position=next_pos,
+            parameters={"max_moves": self.max_moves},
+        )
 
 
-class TacticalAI:
+class TacticalAI(AIInterface):
     """More advanced tactical AI with behavior modes.
 
     This AI can:
@@ -119,17 +103,61 @@ class TacticalAI:
 
     Args:
         pathfinder: The pathfinder to use for navigation
+        flee_hp_threshold: HP percentage threshold for fleeing (default: 0.3)
+        attack_range: Attack range (default: 1)
+        max_moves: Maximum moves per turn (default: 3)
     """
 
-    def __init__(self, pathfinder: TilemapPathfinder):
+    def __init__(
+        self,
+        pathfinder: TilemapPathfinder,
+        flee_hp_threshold: float = 0.3,
+        attack_range: int = 1,
+        max_moves: int = 3,
+    ):
         """Initialize the tactical AI.
 
         Args:
             pathfinder: The pathfinder to use for navigation
+            flee_hp_threshold: HP percentage threshold for fleeing
+            attack_range: Attack range
+            max_moves: Maximum moves per turn
         """
         self.pathfinder = pathfinder
         self.behavior_mode = "aggressive"  # aggressive, defensive, patrol, guard
-        self.flee_hp_threshold = 0.3  # Flee when below 30% HP
+        self.flee_hp_threshold = flee_hp_threshold
+        self.attack_range = attack_range
+        self.max_moves = max_moves
+
+    def decide_action(self, context: AIContext) -> Optional[AIAction]:
+        """Decide what action to take based on context.
+
+        This implementation considers health status:
+        - If HP below threshold, flees from nearest enemy
+        - Otherwise, behaves like SimplePathfindingAI
+
+        Args:
+            context: AI context with entity and surroundings
+
+        Returns:
+            AIAction describing what to do
+        """
+        entity = context.entity
+
+        if self.should_flee(entity):
+            if context.nearby_entities:
+                threat = context.nearby_entities[0]
+                return AIAction(
+                    action_type="flee",
+                    target=threat,
+                    parameters={"max_moves": self.max_moves},
+                )
+            return AIAction(action_type="wait")
+
+        simple_ai = SimplePathfindingAI(
+            self.pathfinder, self.attack_range, self.max_moves
+        )
+        return simple_ai.decide_action(context)
 
     def should_flee(self, entity: Entity) -> bool:
         """Check if entity should flee based on HP.
@@ -146,82 +174,6 @@ class TacticalAI:
         hp_percent = entity.stats.hp / entity.stats.max_hp
         return hp_percent < self.flee_hp_threshold
 
-    def flee_from(
-        self, entity: Entity, threat: Entity, location: Location, max_moves: int
-    ):
-        """Flee away from a threat.
-
-        Args:
-            entity: The entity fleeing
-            threat: The entity to flee from
-            location: The location/map
-            max_moves: Maximum number of moves
-        """
-        ex, ey = entity.position
-        tx, ty = threat.position
-
-        # Calculate direction away from threat
-        dx = ex - tx
-        dy = ey - ty
-
-        # Normalize direction
-        if dx != 0:
-            dx = dx // abs(dx)
-        if dy != 0:
-            dy = dy // abs(dy)
-
-        # Try to move away
-        for _ in range(max_moves):
-            # Try to move in the away direction
-            new_x = ex + dx
-            new_y = ey + dy
-
-            # Check if valid position
-            if (
-                location.is_walkable(new_x, new_y)
-                and location.get_entity_at(new_x, new_y) is None
-            ):
-                location.remove_entity(entity)
-                location.add_entity(entity, new_x, new_y)
-                entity.position = (new_x, new_y)
-                ex, ey = new_x, new_y
-            else:
-                # Can't move in preferred direction, try alternatives
-                break
-
-    def process_turn(
-        self,
-        entity: Entity,
-        target: Entity,
-        location: Location,
-        max_moves: int,
-        on_attack: Optional[Callable[[Entity, Entity], None]] = None,
-        attack_range: int = 1,
-    ) -> bool:
-        """Process a turn using tactical AI.
-
-        Args:
-            entity: The entity performing actions
-            target: The target entity
-            location: The location/map
-            max_moves: Maximum number of moves to make
-            on_attack: Callback when entity attacks
-            attack_range: Range required for attack
-
-        Returns:
-            True if entity attacked
-        """
-        # Check if should flee
-        if self.should_flee(entity):
-            self.flee_from(entity, target, location, max_moves)
-            return False
-
-        # Otherwise, use aggressive AI
-        simple_ai = SimplePathfindingAI(self.pathfinder)
-        return simple_ai.process_turn(
-            entity, target, location, max_moves, on_attack, attack_range
-        )
-
     def set_behavior(self, mode: str, flee_threshold: Optional[float] = None):
         """Set AI behavior mode.
 
@@ -232,99 +184,3 @@ class TacticalAI:
         self.behavior_mode = mode
         if flee_threshold is not None:
             self.flee_hp_threshold = flee_threshold
-
-
-class AIController:
-    """Controller for managing multiple AI entities.
-
-    This is useful for processing all enemy turns in sequence.
-
-    Args:
-        pathfinder: The pathfinder to use
-        default_ai_type: Default AI type ("simple" or "tactical")
-    """
-
-    def __init__(self, pathfinder: TilemapPathfinder, default_ai_type: str = "simple"):
-        """Initialize the AI controller.
-
-        Args:
-            pathfinder: The pathfinder to use
-            default_ai_type: Default AI type for entities
-        """
-        self.pathfinder = pathfinder
-        self.default_ai_type = default_ai_type
-        self.ai_instances: dict[str, SimplePathfindingAI | TacticalAI] = {}
-
-    def get_ai_for_entity(self, entity: Entity):
-        """Get or create AI instance for an entity.
-
-        Args:
-            entity: The entity to get AI for
-
-        Returns:
-            AI instance (SimplePathfindingAI or TacticalAI)
-        """
-        if entity.id not in self.ai_instances:
-            if self.default_ai_type == "tactical":
-                self.ai_instances[entity.id] = TacticalAI(self.pathfinder)
-            else:
-                self.ai_instances[entity.id] = SimplePathfindingAI(self.pathfinder)
-
-        return self.ai_instances[entity.id]
-
-    def process_entity_turn(
-        self,
-        entity: Entity,
-        target: Entity,
-        location: Location,
-        max_moves: int,
-        on_attack: Optional[Callable[[Entity, Entity], None]] = None,
-    ) -> bool:
-        """Process a turn for an entity.
-
-        Args:
-            entity: The entity to process
-            target: The target entity
-            location: The location/map
-            max_moves: Maximum moves for this turn
-            on_attack: Callback when entity attacks
-
-        Returns:
-            True if entity attacked
-        """
-        ai = self.get_ai_for_entity(entity)
-        return ai.process_turn(entity, target, location, max_moves, on_attack)
-
-    def process_all_enemies(
-        self,
-        enemies: list[Entity],
-        target: Entity,
-        location: Location,
-        max_moves_per_enemy: int,
-        on_attack: Optional[Callable[[Entity, Entity], None]] = None,
-    ):
-        """Process turns for all enemies.
-
-        Args:
-            enemies: List of enemy entities
-            target: The target entity (usually player)
-            location: The location/map
-            max_moves_per_enemy: Max moves per enemy
-            on_attack: Callback when an enemy attacks
-        """
-        for enemy in enemies:
-            self.process_entity_turn(
-                enemy, target, location, max_moves_per_enemy, on_attack
-            )
-
-    def set_entity_ai_type(self, entity: Entity, ai_type: str):
-        """Set specific AI type for an entity.
-
-        Args:
-            entity: The entity to set AI for
-            ai_type: AI type ("simple" or "tactical")
-        """
-        if ai_type == "tactical":
-            self.ai_instances[entity.id] = TacticalAI(self.pathfinder)
-        else:
-            self.ai_instances[entity.id] = SimplePathfindingAI(self.pathfinder)

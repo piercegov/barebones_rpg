@@ -18,6 +18,8 @@ from barebones_rpg.core.events import EventType, Event
 from barebones_rpg.entities.entity import Character, NPC, Enemy
 from barebones_rpg.entities.stats import Stats
 from barebones_rpg.entities.ai import SimplePathfindingAI
+from barebones_rpg.entities.ai_interface import AIContext, AIRegistry
+from barebones_rpg.entities.ai_system import AISystem
 from barebones_rpg.world.world import Location
 from barebones_rpg.world.tilemap_pathfinding import TilemapPathfinder
 from barebones_rpg.world.action_points import APManager
@@ -98,7 +100,10 @@ class TileBasedGame:
         # Update internal padding values
         self.dialog_renderer.dialog_box_padding = 40
         self.dialog_renderer.choice_padding = 20
-        self.ai_controller = SimplePathfindingAI(self.pathfinder)
+
+        # AI system setup
+        self.ai_system = AISystem()
+        AIRegistry.register("goblin_melee", SimplePathfindingAI(self.pathfinder))
 
         # Game state
         self.player: Optional[Character] = None
@@ -207,6 +212,7 @@ class TileBasedGame:
                 base_max_hp=20,
                 hp=30,
             ),
+            ai_type="goblin_melee",
             faction="enemy",
             exp_reward=20,
             gold_reward=10,
@@ -570,14 +576,41 @@ class TileBasedGame:
 
         for enemy in enemies:
             print(f"\n{enemy.name}'s turn:")
-            attacked = self.ai_controller.process_turn(
-                enemy,
-                self.player,
-                self.location,
-                ENEMY_AP,
-                on_attack=self._start_combat,
-                attack_range=1,
+
+            # Create AI context for the enemy
+            context = AIContext(
+                entity=enemy, nearby_entities=[self.player], location=self.location
             )
+
+            # Get AI decision
+            action = self.ai_system.process_entity(enemy, context)
+
+            if action and action.action_type == "attack":
+                self._start_combat(enemy, action.target)
+                attacked = True
+            elif action and action.action_type == "move":
+                # Execute the move
+                if action.target_position:
+                    if self.location.is_walkable(
+                        action.target_position[0], action.target_position[1]
+                    ):
+                        if (
+                            self.location.get_entity_at(
+                                action.target_position[0], action.target_position[1]
+                            )
+                            is None
+                        ):
+                            self.location.remove_entity(enemy)
+                            self.location.add_entity(
+                                enemy,
+                                action.target_position[0],
+                                action.target_position[1],
+                            )
+                            enemy.position = action.target_position
+                            print(f"  {enemy.name} moves to {action.target_position}")
+                attacked = False
+            else:
+                attacked = False
             if attacked:
                 return  # Combat started, stop processing
 

@@ -58,6 +58,11 @@ class Entity(BaseModel):
         default=(0, 0), description="World position (x, y)"
     )
 
+    # AI
+    ai_type: Optional[str] = Field(
+        default=None, description="AI type (registry key) for this entity's behavior"
+    )
+
     # Metadata
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Custom metadata"
