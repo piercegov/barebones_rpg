@@ -100,6 +100,12 @@ class Stats(BaseModel):
     # Custom stats (for extensibility - proficiencies, etc.)
     custom: Dict[str, Any] = Field(default_factory=dict, description="Custom stats")
 
+    # Damage resistances (percentage-based damage reduction)
+    resistances: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Damage type resistances (-1.0 to 1.0: negative = weakness, positive = resistance)",
+    )
+
     model_config = {"extra": "allow"}  # Allow additional fields
 
     def model_post_init(self, __context):
@@ -318,6 +324,40 @@ class Stats(BaseModel):
     def is_dead(self) -> bool:
         """Check if entity is dead (HP <= 0)."""
         return self.hp <= 0
+
+    def get_resistance(self, damage_type: str) -> float:
+        """Get resistance value for a damage type.
+
+        Args:
+            damage_type: Name of the damage type
+
+        Returns:
+            Resistance value (-1.0 to 1.0):
+            - Positive values = resistance (0.5 = 50% damage reduction)
+            - Negative values = weakness (-0.5 = 50% extra damage)
+            - 0.0 = no resistance or weakness
+        """
+        return self.resistances.get(damage_type, 0.0)
+
+    def set_resistance(self, damage_type: str, value: float) -> None:
+        """Set resistance for a damage type.
+
+        Args:
+            damage_type: Name of the damage type
+            value: Resistance value (-1.0 to 1.0):
+                   Positive = resistance, Negative = weakness
+        """
+        self.resistances[damage_type] = value
+
+    def modify_resistance(self, damage_type: str, delta: float) -> None:
+        """Modify resistance for a damage type by a delta.
+
+        Args:
+            damage_type: Name of the damage type
+            delta: Amount to change resistance by (can be positive or negative)
+        """
+        current = self.get_resistance(damage_type)
+        self.resistances[damage_type] = current + delta
 
 
 class StatusEffect(BaseModel):

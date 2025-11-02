@@ -13,6 +13,7 @@ from .actions import (
     create_heal_skill,
 )
 from .combat import Combat, CombatState, CombatantGroup, TurnOrder
+from .damage_types import DamageTypeRegistry, DamageTypeMetadata
 
 __all__ = [
     "CombatAction",
@@ -29,4 +30,6 @@ __all__ = [
     "CombatState",
     "CombatantGroup",
     "TurnOrder",
+    "DamageTypeRegistry",
+    "DamageTypeMetadata",
 ]

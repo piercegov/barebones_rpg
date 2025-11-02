@@ -542,3 +542,261 @@ def test_multiple_enemies_drop_loot():
 
     # Cleanup
     LootRegistry.clear()
+
+
+def test_weapon_damage_type_affects_damage():
+    """Test that weapon damage types are properly applied in combat."""
+    from barebones_rpg.combat.damage_types import DamageTypeRegistry
+    from barebones_rpg.items import create_weapon
+    
+    DamageTypeRegistry.reset()
+    
+    # Create hero with fire weapon
+    hero = Character(
+        name="Hero",
+        stats=Stats(
+            strength=10,
+            constitution=10,
+            intelligence=10,
+            dexterity=100,  # High DEX to always hit
+            charisma=10,
+            hp=100,
+            base_accuracy=100,  # Guarantee hit
+            base_critical=0,  # No crits for consistent testing
+            critical_per_dex=0,
+        ),
+    )
+    hero.init_equipment()
+    
+    fire_sword = create_weapon("Fire Sword", base_damage=20, damage_type="fire")
+    hero.equipment.equip(fire_sword)
+    
+    # Create enemy with fire resistance
+    enemy = Enemy(
+        name="Fire Resistant Enemy",
+        stats=Stats(
+            strength=5,
+            constitution=0,
+            intelligence=0,
+            dexterity=0,  # Low speed, goes last
+            charisma=5,
+            hp=100,
+            base_physical_defense=0,
+            base_evasion=0,  # Can't evade
+            defense_per_con=0,
+            magic_def_per_int=0,
+            resistances={"fire": 0.5},  # 50% fire resistance
+        ),
+    )
+    
+    combat = Combat([hero], [enemy], EventManager())
+    combat.start()
+    
+    # Attack with fire weapon
+    action = AttackAction()
+    result = combat.execute_action(action, hero, [enemy])
+    
+    # Damage should be reduced by fire resistance
+    # Base: 10 (str) + 20 (weapon) = 30
+    # After resistance: 30 - (0.5 * 30) = 15
+    assert result.damage == 15
+    assert enemy.stats.hp == 85
+
+
+def test_skill_damage_type_with_resistance():
+    """Test that skill damage types interact with resistances."""
+    from barebones_rpg.combat.damage_types import DamageTypeRegistry
+    from barebones_rpg.combat import create_skill_action
+    
+    DamageTypeRegistry.reset()
+    
+    hero = Character(
+        name="Mage",
+        stats=Stats(
+            strength=5,
+            constitution=10,
+            intelligence=20,  # High INT for magic
+            dexterity=100,  # High speed to go first
+            charisma=10,
+            hp=100,
+            mp=100,
+        ),
+    )
+    
+    # Enemy with ice resistance but fire weakness
+    enemy = Enemy(
+        name="Ice Golem",
+        stats=Stats(
+            strength=5,
+            constitution=0,  # No defense bonuses
+            intelligence=0,
+            dexterity=0,  # Low speed, goes last
+            charisma=5,
+            hp=200,
+            defense_per_con=0,
+            magic_def_per_int=0,
+            resistances={"ice": 0.8, "fire": -0.5},  # 80% ice resist, 50% fire weakness
+        ),
+    )
+    
+    # Create fire skill (using magic damage type so it scales with INT)
+    fireball = create_skill_action(
+        "Fireball",
+        mp_cost=10,
+        damage_multiplier=2.0,
+        damage_type="magic",  # Uses INT
+    )
+    
+    combat = Combat([hero], [enemy], EventManager())
+    combat.start()
+    
+    # Cast fireball (magic damage type, but enemy has no magic resistance)
+    result = combat.execute_action(fireball, hero, [enemy])
+    
+    # Base: 20 (INT) * 2.0 = 40
+    # Magic defense: 0, magic resistance: 0
+    # Damage: 40 - 0 - (0 * 40) = 40
+    assert result.damage == 40
+    assert enemy.stats.hp == 160
+
+
+def test_custom_damage_type_in_combat():
+    """Test that custom damage types work in combat."""
+    from barebones_rpg.combat.damage_types import DamageTypeRegistry
+    from barebones_rpg.items import create_weapon
+    
+    DamageTypeRegistry.reset()
+    
+    # Register a custom damage type
+    DamageTypeRegistry.register("necrotic", color="green", description="Death magic")
+    
+    hero = Character(
+        name="Necromancer",
+        stats=Stats(
+            strength=15,
+            constitution=10,
+            intelligence=10,
+            dexterity=100,  # High DEX to always hit
+            charisma=10,
+            hp=100,
+            base_accuracy=100,  # Guarantee hit
+            base_critical=0,  # No crits
+            critical_per_dex=0,
+        ),
+    )
+    hero.init_equipment()
+    
+    # Necrotic weapon
+    death_blade = create_weapon("Death Blade", base_damage=25, damage_type="necrotic")
+    hero.equipment.equip(death_blade)
+    
+    enemy = Enemy(
+        name="Undead",
+        stats=Stats(
+            strength=5,
+            constitution=5,
+            intelligence=5,
+            dexterity=5,
+            charisma=5,
+            hp=100,
+            base_physical_defense=10,  # Physical defense shouldn't apply to necrotic
+            resistances={"necrotic": 0.3},  # 30% necrotic resistance
+        ),
+    )
+    
+    combat = Combat([hero], [enemy], EventManager())
+    combat.start()
+    
+    action = AttackAction()
+    result = combat.execute_action(action, hero, [enemy])
+    
+    # Base: 15 (str) + 25 (weapon) = 40
+    # Defense: 0 (custom types ignore defense)
+    # Resistance: 40 - (0.3 * 40) = 40 - 12 = 28
+    assert result.damage == 28
+    assert enemy.stats.hp == 72
+
+
+def test_aoe_skill_with_different_resistances():
+    """Test AOE skill hitting targets with different resistances."""
+    from barebones_rpg.combat.damage_types import DamageTypeRegistry
+    from barebones_rpg.combat import create_skill_action
+    
+    DamageTypeRegistry.reset()
+    
+    mage = Character(
+        name="Mage",
+        stats=Stats(
+            strength=5,
+            constitution=10,
+            intelligence=20,
+            dexterity=100,  # High speed to go first
+            charisma=10,
+            hp=100,
+            mp=100,
+        ),
+    )
+    
+    # Three enemies with different magic resistances
+    enemy1 = Enemy(
+        name="Magic Immune",
+        stats=Stats(
+            hp=100,
+            constitution=0,
+            intelligence=0,
+            dexterity=0,  # Low speed
+            defense_per_con=0,
+            magic_def_per_int=0,
+            resistances={"magic": 1.0}
+        ),  # 100% magic resist
+    )
+    
+    enemy2 = Enemy(
+        name="Normal",
+        stats=Stats(
+            hp=100,
+            constitution=0,
+            intelligence=0,
+            dexterity=0,  # Low speed
+            defense_per_con=0,
+            magic_def_per_int=0,
+            resistances={}
+        ),  # No resistance
+    )
+    
+    enemy3 = Enemy(
+        name="Weak to Magic",
+        stats=Stats(
+            hp=100,
+            constitution=0,
+            intelligence=0,
+            dexterity=0,  # Low speed
+            defense_per_con=0,
+            magic_def_per_int=0,
+            resistances={"magic": -0.5}
+        ),  # 50% magic weakness
+    )
+    
+    # AOE magic spell
+    meteor = create_skill_action(
+        "Meteor",
+        mp_cost=20,
+        damage_multiplier=1.5,
+        damage_type="magic",
+        max_targets=None,  # Hits all targets
+    )
+    
+    combat = Combat([mage], [enemy1, enemy2, enemy3], EventManager())
+    combat.start()
+    
+    result = combat.execute_action(meteor, mage, [enemy1, enemy2, enemy3])
+    
+    # Base damage: 20 (INT) * 1.5 = 30
+    # Enemy1 (100% magic resist): 30 - 0 - (1.0 * 30) = 0
+    # Enemy2 (no magic resistance): 30 - 0 - (0 * 30) = 30
+    # Enemy3 (50% magic weakness): 30 - 0 - (-0.5 * 30) = 45
+    # Total: 0 + 30 + 45 = 75
+    assert result.damage == 75
+    assert enemy1.stats.hp == 100  # No damage
+    assert enemy2.stats.hp == 70   # Normal damage
+    assert enemy3.stats.hp == 55   # Extra damage

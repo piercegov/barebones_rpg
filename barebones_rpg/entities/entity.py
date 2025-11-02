@@ -97,19 +97,42 @@ class Entity(BaseModel):
             damage_type: Type of damage (physical, magic, or custom)
 
         Returns:
-            Actual damage taken after defense calculations
+            Actual damage taken after defense and resistance calculations
+
+        Note:
+            Damage calculation: final = max(0, starting - defense - (resistance * starting))
+            - Defense provides flat reduction
+            - Resistance provides percentage reduction (-1.0 to 1.0)
+            - Positive resistance reduces damage (0.5 = 50% reduction)
+            - Negative resistance increases damage (-0.5 = 50% extra damage, i.e., weakness)
+            - Both defense and resistance can be applied simultaneously
         """
-        # Select appropriate defense based on damage type
-        if damage_type == "magic":
-            defense = self.stats.get_stat("magic_defense", 0)
-        else:  # physical or any other type uses physical defense
+        from ..combat.damage_types import DamageTypeRegistry
+
+        # Ensure damage type is registered (auto-registers in lenient mode)
+        DamageTypeRegistry.ensure_registered(damage_type)
+
+        # Get defense based on damage type
+        if damage_type == "physical":
             defense = self.stats.get_stat("physical_defense", 0)
+        elif damage_type == "magic":
+            defense = self.stats.get_stat("magic_defense", 0)
+        else:
+            # Custom damage types don't use defense, only resistance
+            defense = 0
 
-        # Apply defense reduction (minimum 1 damage)
-        actual_damage = max(1, amount - defense)
-        self.stats.take_damage(actual_damage)
+        # Get resistance for this damage type
+        resistance = self.stats.get_resistance(damage_type)
 
-        return actual_damage
+        # Calculate damage: starting - defense - (resistance * starting)
+        after_defense = amount - defense
+        resistance_reduction = int(resistance * amount)
+        final_damage = max(0, after_defense - resistance_reduction)
+
+        # Apply the damage
+        self.stats.take_damage(final_damage)
+
+        return final_damage
 
     def heal(self, amount: int) -> int:
         """Heal the entity.

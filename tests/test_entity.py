@@ -7,7 +7,7 @@ from barebones_rpg.core.events import EventManager, EventType
 
 
 def test_entity_defense_reduces_damage_but_minimum_1():
-    """Entity defense should reduce damage but always deal at least 1 damage."""
+    """Entity defense should reduce damage with minimum 0 (new damage formula)."""
     stats = Stats(constitution=20, base_physical_defense=10, hp=100)
     entity = Entity(name="Tank", stats=stats)
 
@@ -16,8 +16,9 @@ def test_entity_defense_reduces_damage_but_minimum_1():
 
     damage_taken = entity.take_damage(15, attacker)
 
-    assert damage_taken == 1
-    assert entity.stats.hp == 99
+    # Damage: 15 - (10 base + 10 from CON) = 15 - 20 = 0 (clamped to 0)
+    assert damage_taken == 0
+    assert entity.stats.hp == 100  # No damage taken
 
 
 def test_entity_defense_reduces_damage_normally():

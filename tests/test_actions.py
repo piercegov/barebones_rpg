@@ -214,7 +214,7 @@ def test_attack_action_calculates_damage_correctly():
 
 
 def test_attack_action_calculates_damage_correctly_atk_lower():
-    """Attack action should calculate damage as strength - defense with minimum 1."""
+    """Attack action should calculate damage with defense and resistance, minimum 0."""
     attacker = Character(
         name="Hero",
         stats=Stats(strength=5, dexterity=18, base_accuracy=100, base_critical=0),
@@ -227,7 +227,8 @@ def test_attack_action_calculates_damage_correctly_atk_lower():
     action = AttackAction()
     result = action.execute(attacker, [target], {})
 
-    assert result.damage == 1
+    # Damage: 5 (STR) - (5 base + 6 from CON) = 5 - 11 = 0 (clamped to 0)
+    assert result.damage == 0
 
 
 def test_skill_action_deducts_mp_cost():
