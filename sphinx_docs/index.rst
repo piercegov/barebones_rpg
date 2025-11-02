@@ -37,7 +37,7 @@ Installation
 .. code-block:: bash
 
    # Clone the repository
-   git clone <repository-url>
+   git clone https://github.com/PierceGov/barebones_rpg.git
    cd barebones_rpg
 
    # Install with uv (recommended)
@@ -57,8 +57,16 @@ Basic Example
    game = Game(GameConfig(title="My RPG"))
 
    # Create characters
-   hero = Character(name="Hero", stats=Stats(hp=100, atk=15, defense=5))
-   goblin = Enemy(name="Goblin", stats=Stats(hp=30, atk=8, defense=2))
+   hero = Character(
+       name="Hero",
+       stats=Stats(strength=15, constitution=12, dexterity=10,
+                   intelligence=8, charisma=10, base_max_hp=50, hp=100)
+   )
+   goblin = Enemy(
+       name="Goblin",
+       stats=Stats(strength=8, constitution=6, dexterity=12,
+                   intelligence=5, charisma=5, base_max_hp=20, hp=30)
+   )
 
    # Create combat
    combat = Combat(

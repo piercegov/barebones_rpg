@@ -25,7 +25,7 @@ Using uv (Recommended)
    curl -LsSf https://astral.sh/uv/install.sh | sh
 
    # Clone the repository
-   git clone <repository-url>
+   git clone https://github.com/PierceGov/barebones_rpg.git
    cd barebones_rpg
 
    # Install dependencies
@@ -79,10 +79,15 @@ Let's create a simple combat encounter:
        name="Brave Knight",
        character_class="warrior",
        stats=Stats(
-           hp=100, max_hp=100,
-           mp=20, max_mp=20,
-           atk=15, defense=5,
-           speed=10
+           strength=15,
+           constitution=12,
+           dexterity=10,
+           intelligence=8,
+           charisma=10,
+           base_max_hp=50,
+           base_max_mp=20,
+           hp=100,
+           mp=50
        )
    )
 
@@ -90,9 +95,13 @@ Let's create a simple combat encounter:
    goblin = Enemy(
        name="Goblin",
        stats=Stats(
-           hp=30, max_hp=30,
-           atk=8, defense=2,
-           speed=8
+           strength=8,
+           constitution=6,
+           dexterity=12,
+           intelligence=5,
+           charisma=5,
+           base_max_hp=20,
+           hp=30
        ),
        exp_reward=50,
        gold_reward=10
@@ -114,19 +123,15 @@ Let's create a simple combat encounter:
    combat.start()
 
    # Execute combat actions
-   while not combat.is_finished():
-       current_entity = combat.get_current_turn_entity()
+   while combat.is_active():
+       current_entity = combat.get_current_combatant()
        
        if current_entity == hero:
            # Player's turn
            action = AttackAction()
-           combat.execute_action(action, hero, goblin)
-       else:
-           # Enemy's turn (simple AI)
-           action = AttackAction()
-           combat.execute_action(action, goblin, hero)
-       
-       combat.next_turn()
+           combat.execute_action(action, hero, [goblin])
+           combat.end_turn()
+       # Enemy turns are handled automatically by the combat system
 
 Next Steps
 ----------

@@ -64,7 +64,7 @@ The ``Game`` class manages different game states:
    game = Game(config)
    
    # Change states
-   game.change_state(GameState.EXPLORATION)
+   game.change_state(GameState.PLAYING)
    game.change_state(GameState.COMBAT)
    game.change_state(GameState.DIALOG)
 
@@ -112,7 +112,17 @@ All game objects that have stats and can perform actions inherit from ``Entity``
        name="Hero",
        character_class="warrior",
        level=1,
-       stats=Stats(hp=100, atk=15, defense=5, speed=10)
+       stats=Stats(
+           strength=15,
+           constitution=12,
+           dexterity=10,
+           intelligence=8,
+           charisma=10,
+           base_max_hp=50,
+           base_max_mp=20,
+           hp=100,
+           mp=50
+       )
    )
 
    # Friendly NPC
@@ -124,7 +134,15 @@ All game objects that have stats and can perform actions inherit from ``Entity``
    # Enemy
    dragon = Enemy(
        name="Ancient Dragon",
-       stats=Stats(hp=500, atk=50, defense=20, speed=15),
+       stats=Stats(
+           strength=50,
+           constitution=40,
+           dexterity=15,
+           intelligence=30,
+           charisma=20,
+           base_max_hp=400,
+           hp=500
+       ),
        exp_reward=1000,
        gold_reward=500,
        loot_table=[
@@ -192,16 +210,17 @@ The framework includes built-in actions and supports custom actions:
 
    # Built-in actions
    attack = AttackAction()
-   combat.execute_action(attack, hero, goblin)
+   combat.execute_action(attack, hero, [goblin])
 
    # Custom skill
    fireball = create_skill_action(
        name="Fireball",
        mp_cost=15,
        damage_multiplier=2.0,
-       target_all=False
+       damage_type="magic",
+       max_targets=1
    )
-   combat.execute_action(fireball, mage, goblin)
+   combat.execute_action(fireball, mage, [goblin])
 
 Items and Inventory
 -------------------
@@ -219,8 +238,8 @@ Items come in different types with various properties:
    )
 
    # Equipment
-   sword = create_weapon("Excalibur", atk=25, value=1000)
-   armor = create_armor("Plate Mail", defense=15, 
+   sword = create_weapon("Excalibur", base_damage=25, value=1000)
+   armor = create_armor("Plate Mail", physical_defense=15, 
                        slot=EquipSlot.BODY, value=800)
 
    # Consumables with callbacks
@@ -272,7 +291,15 @@ The loot system supports automatic drops when enemies are defeated:
    # Create enemy with loot table
    boss = Enemy(
        name="Boss",
-       stats=Stats(hp=200, atk=25),
+       stats=Stats(
+           strength=25,
+           constitution=20,
+           dexterity=15,
+           intelligence=10,
+           charisma=10,
+           base_max_hp=150,
+           hp=200
+       ),
        loot_table=[
            {"item": "Gold Coin", "chance": 1.0, 
             "min_quantity": 10, "max_quantity": 20},

@@ -137,6 +137,8 @@ Users implement custom AI by inheriting from `AIInterface` and implementing `dec
 
 Example:
 ```python
+from barebones_rpg.entities import AIInterface, AIContext, AIAction, AIRegistry, Enemy, Stats
+
 class AggressiveMeleeAI(AIInterface):
     def decide_action(self, context: AIContext) -> Optional[AIAction]:
         if context.nearby_entities:
@@ -149,8 +151,16 @@ class AggressiveMeleeAI(AIInterface):
 
 # Register once, use for many entities
 AIRegistry.register("aggressive_melee", AggressiveMeleeAI())
-goblin1 = Enemy(name="Goblin 1", ai_type="aggressive_melee")
-goblin2 = Enemy(name="Goblin 2", ai_type="aggressive_melee")  # Shares same AI instance
+goblin1 = Enemy(
+    name="Goblin 1",
+    ai_type="aggressive_melee",
+    stats=Stats(strength=8, constitution=6, base_max_hp=20, hp=30)
+)
+goblin2 = Enemy(
+    name="Goblin 2",
+    ai_type="aggressive_melee",
+    stats=Stats(strength=8, constitution=6, base_max_hp=20, hp=30)
+)  # Shares same AI instance
 ```
 
 ## Project Requirements
@@ -223,7 +233,15 @@ Prefer programmatic creation over data files. Example:
 def generate_enemy(level):
     return Enemy(
         name=f"Level {level} Goblin",
-        stats=Stats(hp=50 + level * 10, atk=5 + level * 2)
+        stats=Stats(
+            strength=5 + level * 2,
+            constitution=5 + level * 2,
+            dexterity=10,
+            intelligence=5,
+            charisma=5,
+            base_max_hp=30 + level * 8,
+            hp=50 + level * 10
+        )
     )
 
 # Also valid: Data-driven for static content

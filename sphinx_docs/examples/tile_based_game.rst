@@ -116,9 +116,9 @@ Action Points
 
 .. code-block:: python
 
-   from barebones_rpg.world import ActionPointManager
+   from barebones_rpg.world import APManager
 
-   ap_manager = ActionPointManager(max_ap=10)
+   ap_manager = APManager(max_ap=10)
 
    # Start turn
    ap_manager.reset_points()
@@ -136,9 +136,9 @@ Pathfinding
 
 .. code-block:: python
 
-   from barebones_rpg.world import TilemapPathfinding
+   from barebones_rpg.world import TilemapPathfinder
 
-   pathfinder = TilemapPathfinding(location)
+   pathfinder = TilemapPathfinder(location)
 
    # Find path from start to goal
    path = pathfinder.find_path(
@@ -234,10 +234,10 @@ Game Loop Structure
                    handle_click(event.pos)
            
            # Update game state
-           if current_state == GameState.PLAYER_TURN:
+           if current_state == CombatState.PLAYER_TURN:
                # Handle player input
                pass
-           elif current_state == GameState.ENEMY_TURN:
+           elif current_state == CombatState.ENEMY_TURN:
                # Execute enemy AI
                for enemy in enemies:
                    ai_action = enemy.ai.decide_action(context)

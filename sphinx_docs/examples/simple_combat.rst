@@ -31,10 +31,15 @@ Full Example
    hero = Character(
        name="Hero",
        stats=Stats(
-           hp=100, max_hp=100,
-           mp=20, max_mp=20,
-           atk=15, defense=5,
-           speed=10
+           strength=15,
+           constitution=12,
+           dexterity=10,
+           intelligence=8,
+           charisma=10,
+           base_max_hp=50,
+           base_max_mp=20,
+           hp=100,
+           mp=50
        )
    )
 
@@ -42,9 +47,13 @@ Full Example
    slime = Enemy(
        name="Slime",
        stats=Stats(
-           hp=30, max_hp=30,
-           atk=5, defense=1,
-           speed=6
+           strength=5,
+           constitution=5,
+           dexterity=6,
+           intelligence=3,
+           charisma=3,
+           base_max_hp=20,
+           hp=30
        ),
        exp_reward=25,
        gold_reward=10
@@ -75,27 +84,24 @@ Full Example
 
    # Combat loop
    turn = 1
-   while not combat.is_finished():
+   while combat.is_active():
        print(f"\\n--- Turn {turn} ---")
-       current = combat.get_current_turn_entity()
+       current = combat.get_current_combatant()
        print(f"{current.name}'s turn")
 
        if current == hero:
            # Player attacks
            action = AttackAction()
-           result = combat.execute_action(action, hero, slime)
-           print(f"Hero attacks Slime for {result.data.get('damage', 0)} damage!")
-       else:
-           # Enemy attacks
-           action = AttackAction()
-           result = combat.execute_action(action, slime, hero)
-           print(f"Slime attacks Hero for {result.data.get('damage', 0)} damage!")
-
-       # Display HP
-       print(f"Hero HP: {hero.stats.hp}/{hero.stats.max_hp}")
-       print(f"Slime HP: {slime.stats.hp}/{slime.stats.max_hp}")
-
-       combat.next_turn()
+           result = combat.execute_action(action, hero, [slime])
+           print(f"Hero attacks Slime for {result.damage} damage!")
+           
+           # Display HP
+           print(f"Hero HP: {hero.stats.hp}/{hero.stats.get_max_hp()}")
+           print(f"Slime HP: {slime.stats.hp}/{slime.stats.get_max_hp()}")
+           
+           combat.end_turn()
+       # Enemy turns are handled automatically
+       
        turn += 1
 
    print("\\nCombat ended!")
@@ -128,13 +134,15 @@ Actions are executed with:
 
 .. code-block:: python
 
-   result = combat.execute_action(action, source, target)
+   result = combat.execute_action(action, source, [target])
 
 The result contains:
 
 - ``success``: Whether the action succeeded
 - ``message``: Description of what happened
-- ``data``: Additional information (damage dealt, etc.)
+- ``damage``: Damage dealt (if any)
+- ``healing``: Healing done (if any)
+- ``targets_hit``: List of targets affected
 
 Next Steps
 ----------

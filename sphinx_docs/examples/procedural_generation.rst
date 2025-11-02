@@ -28,13 +28,21 @@ Example Snippet
        types = ["Goblin", "Orc", "Troll", "Dragon", "Skeleton"]
        enemy_type = enemy_type or random.choice(types)
        
+       # Scale attributes based on level
+       base_str = 8 + level * 2
+       base_con = 6 + level * 2
+       base_dex = 10 + random.randint(-2, 2)
+       
        return Enemy(
            name=f"Level {level} {enemy_type}",
            stats=Stats(
-               hp=30 + level * 15,
-               atk=5 + level * 3,
-               defense=2 + level * 2,
-               speed=8 + random.randint(-2, 2)
+               strength=base_str,
+               constitution=base_con,
+               dexterity=base_dex,
+               intelligence=5 + level,
+               charisma=5,
+               base_max_hp=20 + level * 10,
+               hp=30 + level * 15
            ),
            exp_reward=level * 25,
            gold_reward=level * 10
