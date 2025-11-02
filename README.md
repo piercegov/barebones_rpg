@@ -2,814 +2,120 @@
 
 A flexible, code-first RPG framework for building turn-based games with support for procedural generation and AI-driven content.
 
-## Overview
+## What is this?
 
-Barebones RPG is a Python framework designed to be a foundation for creating RPG games. It provides all the essential systems needed for an RPG, but with **no content** - making it a perfect starting point for your own games and stories.
+Barebones RPG is a Python framework designed to be a foundation for creating RPG games. It provides all the essential systems needed for an RPG (combat, entities, items, quests, dialog, world management, etc.), but with **no content** - making it a perfect starting point for your own games.
 
-### Key Features
-
-- **Code-First Design**: Primary interface is Python classes and functions for programmatic game creation
-- **Fully Extensible**: Hooks, events, and overridable behavior throughout
-- **Flexible Architecture**: Supports both hand-crafted and procedurally generated content
-- **Turn-Based Combat**: Built-in combat system with extensible action framework
-- **Rich Systems**: Entities, items, inventory, quests, dialog trees, world/map management
-- **Data Loading**: Optional JSON/YAML support for data-driven content
-- **Rendering Abstraction**: Pygame-based UI with clean separation from game logic
-- **AI-Ready**: Designed to easily integrate with LLMs for dynamic content generation
+The framework is code-first (Python classes and functions), fully extensible (hooks and events throughout), and supports both hand-crafted and procedurally generated content.
 
 ## Installation
-
-This project uses [uv](https://github.com/astral-sh/uv) for fast, reliable dependency management.
-
-```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Clone the repository
-git clone <repository-url>
-cd barebones_rpg
-
-# Install dependencies and the package
-uv sync
-
-# Or install in development mode with dev dependencies
-uv sync --dev
-```
-
-### Using pip (alternative)
-
-```bash
-pip install -e .
-# Or with dev dependencies
-pip install -e ".[dev]"
-```
 
 ### Requirements
 
 - Python 3.11+
-- pygame >= 2.5.0
-- pydantic >= 2.0.0
-- pyyaml >= 6.0
 
-## Quick Start
-
-### Running the Examples
+### Setup
 
 ```bash
-# Run the mini RPG example
+# Clone the repository
+git clone <repository-url>
+cd barebones_rpg
+
+# Install with uv (recommended)
+uv sync
+
+# Or with pip
+pip install -e .
+```
+
+### Development Setup
+
+```bash
+# Install with dev dependencies
+uv sync --dev
+
+# Or with pip
+pip install -e ".[dev]"
+```
+
+## Running the Examples
+
+```bash
+# Run the main example
 uv run python main.py
 
 # Or run specific examples
 uv run python -m barebones_rpg.examples.simple_combat_example
 uv run python -m barebones_rpg.examples.mini_rpg
 uv run python -m barebones_rpg.examples.tile_based_example
-
-# If you installed with pip, just use:
-# python main.py
 ```
 
-### Running Tests
-
-The project includes a comprehensive test suite using pytest. To run the tests:
+## Running Tests
 
 ```bash
 # Run all tests
 uv run pytest
 
-# Run with verbose output
-uv run pytest -v
-
-# Run specific test file
-uv run pytest tests/test_combat.py
-
-# Run specific test
-uv run pytest tests/test_combat.py::test_combat_ends_with_victory
-
-# Run with coverage report
-uv run pytest --cov=barebones_rpg --cov-report=html
-
-# If you installed with pip, just use:
-# pytest
+# Run with coverage
+uv run pytest --cov=barebones_rpg
 ```
 
-The test suite covers all major systems including:
-- Combat actions and turn-based combat
-- Entity stats and leveling
-- Items, inventory, and equipment
-- Dialog trees and conversations
-- Quest system and objectives
-- World, locations, and tiles
-- Event system
+## Documentation
 
-### Creating a Simple Game
+Full documentation is available in the `sphinx_docs/` directory. To build and view:
+
+```bash
+./build_docs.sh
+# Then open sphinx_docs/_build/html/index.html
+```
+
+The documentation includes:
+- Getting Started Guide
+- Core Concepts and Architecture
+- Complete API Reference
+- Step-by-Step Tutorials
+- In-Depth Guides
+- Example Breakdowns
+
+## Quick Example
 
 ```python
-from barebones_rpg import (
-    Game, GameConfig, Character, Enemy, Stats, Combat
-)
+from barebones_rpg import Game, GameConfig, Character, Enemy, Stats, Combat
 
 # Create game
 game = Game(GameConfig(title="My RPG"))
 
 # Create characters
-hero = Character(
-    name="Hero",
-    stats=Stats(hp=100, atk=15, defense=5)
-)
+hero = Character(name="Hero", stats=Stats(hp=100, atk=15, defense=5))
+goblin = Enemy(name="Goblin", stats=Stats(hp=30, atk=8, defense=2))
 
-goblin = Enemy(
-    name="Goblin",
-    stats=Stats(hp=30, atk=8, defense=2)
-)
-
-# Create combat
+# Start combat
 combat = Combat(
     player_group=[hero],
     enemy_group=[goblin],
     events=game.events
 )
-
 combat.start()
-
-# For a complete working example with action execution and turn management,
-# see: barebones_rpg/examples/simple_combat_example.py
 ```
 
-## Framework Architecture
+See `barebones_rpg/examples/` for complete working examples.
 
-### Core Systems
+## Project Structure
 
 ```
 barebones_rpg/
- core/           # Game engine, event system, state management
- entities/       # Characters, NPCs, enemies, stats
- combat/         # Turn-based combat system
- items/          # Items, inventory, equipment
- quests/         # Quest and objective tracking
- dialog/         # Conversation trees and choices
- world/          # Maps, locations, tiles
- rendering/      # Pygame renderer (swappable)
- loaders/        # JSON/YAML data loaders
- examples/       # Example games
+├── core/           # Game engine, events, save/load
+├── entities/       # Characters, NPCs, enemies, stats, AI
+├── combat/         # Turn-based combat system
+├── items/          # Items, inventory, equipment, loot
+├── quests/         # Quest and objective tracking
+├── dialog/         # Conversation trees
+├── world/          # Maps, locations, tiles
+├── rendering/      # Pygame renderer
+├── loaders/        # Data loaders (JSON/YAML)
+└── examples/       # Example games
 ```
-
-## Core Concepts
-
-### 1. Game Loop and State
-
-```python
-from barebones_rpg import Game, GameConfig, GameState
-
-config = GameConfig(
-    title="My RPG",
-    screen_width=800,
-    screen_height=600,
-    fps=60
-)
-
-game = Game(config)
-game.start()
-
-# Game manages state transitions
-game.change_state(GameState.COMBAT)
-```
-
-### 2. Event System
-
-The event system enables loose coupling between systems:
-
-```python
-from barebones_rpg import EventType, Event
-
-# Subscribe to events
-def on_level_up(event):
-    entity = event.data['entity']
-    print(f"{entity.name} leveled up!")
-
-game.events.subscribe(EventType.LEVEL_UP, on_level_up)
-
-# Events are published automatically by systems
-hero.gain_exp(100, game.events)  # Triggers LEVEL_UP event
-```
-
-### 3. Entities and Stats
-
-```python
-from barebones_rpg import Character, Stats, StatusEffect
-
-# Create character with stats
-hero = Character(
-    name="Warrior",
-    character_class="warrior",
-    stats=Stats(
-        hp=120, max_hp=120,
-        mp=30, max_mp=30,
-        atk=18, defense=8,
-        speed=12
-    )
-)
-
-# Stats system with modifiers
-hero.stats_manager.add_status_effect(
-    StatusEffect(
-        name="Strength Boost",
-        duration=3,  # 3 turns
-        stat_modifiers={"atk": 5}
-    )
-)
-
-# Experience and leveling
-hero.gain_exp(100, game.events)
-```
-
-### 4. Combat System
-
-```python
-from barebones_rpg import Combat, AttackAction, create_skill_action
-
-# Create combat encounter
-combat = Combat(
-    player_group=[hero, ally],
-    enemy_group=[goblin1, goblin2],
-    events=game.events
-)
-
-# Combat callbacks
-def on_victory(combat):
-    print("Battle won!")
-    # Award exp, gold, items
-
-combat.on_victory(on_victory)
-combat.start()
-
-# Execute actions
-action = AttackAction()
-combat.execute_action(action, hero, goblin1)
-
-# Custom skills
-fireball = create_skill_action(
-    name="Fireball",
-    mp_cost=10,
-    damage_multiplier=2.0
-)
-combat.execute_action(fireball, mage, goblin2)
-```
-
-### 5. Items and Inventory
-
-```python
-from barebones_rpg import (
-    create_weapon, create_armor, create_consumable,
-    Inventory, Equipment, EquipSlot
-)
-
-# Create items programmatically
-sword = create_weapon("Excalibur", atk=25, value=1000)
-armor = create_armor("Plate Mail", defense=15, slot=EquipSlot.BODY, value=800)
-
-# Consumables with custom effects
-potion = create_consumable(
-    "Mega Potion",
-    on_use=lambda entity, ctx: entity.heal(100),
-    stackable=True,
-    max_stack=99
-)
-
-# Entities have built-in inventory/equipment support
-hero = Character(name="Hero", stats=Stats(hp=100, atk=15))
-hero.init_inventory(max_slots=20)  # Initialize inventory
-hero.init_equipment()  # Initialize equipment
-
-# Add items to entity's inventory
-hero.inventory.add_item(sword)
-hero.inventory.add_item(potion)
-
-# Equip items
-hero.equipment.equip(sword)
-total_atk_bonus = hero.equipment.get_total_stat_bonus("atk")
-
-# Or use inventory/equipment independently
-inventory = Inventory(max_slots=20)
-inventory.add_item(sword)
-
-equipment = Equipment()
-old_weapon = equipment.equip(sword)  # Returns previously equipped item
-```
-
-### 6. Loot System
-
-The framework includes a flexible loot system that supports both data-driven (string-based) and code-first (object-based) item drops:
-
-```python
-from barebones_rpg import (
-    Enemy, LootRegistry, create_weapon, create_consumable,
-    EventType, Item, ItemType
-)
-
-# Register items in the global registry (data-driven approach)
-bone = Item(name="Goblin Bone", item_type=ItemType.MATERIAL, value=5)
-LootRegistry.register("Goblin Bone", bone)
-
-health_potion = create_consumable(
-    "Health Potion",
-    on_use=lambda entity, ctx: entity.heal(50),
-    value=25
-)
-LootRegistry.register("Health Potion", health_potion)
-
-# Create enemy with loot table (string references)
-goblin = Enemy(
-    name="Goblin",
-    stats=Stats(hp=30, atk=8),
-    loot_table=[
-        {"item": "Goblin Bone", "chance": 0.3},      # 30% drop rate
-        {"item": "Health Potion", "chance": 0.1}     # 10% drop rate
-    ]
-)
-
-# Or use direct Item objects (code-first approach)
-rare_sword = create_weapon("Rare Sword", base_damage=25, unique=True)
-boss = Enemy(
-    name="Boss",
-    stats=Stats(hp=200, atk=25),
-    loot_table=[
-        {"item": rare_sword, "chance": 0.05},       # 5% drop for unique item
-        {"item": Item(name="Gold Coin", item_type=ItemType.MATERIAL, 
-                     value=1), "chance": 1.0, "min_quantity": 10, "max_quantity": 20}
-    ]
-)
-
-# Loot drops automatically during combat when enemies die
-# Handle drops via events
-def on_item_dropped(event):
-    loot_drop = event.data.get("loot_drop")
-    print(f"Dropped: {loot_drop.item.name}")
-    player.inventory.add_item(loot_drop.item)
-
-game.events.subscribe(EventType.ITEM_DROPPED, on_item_dropped)
-
-# Or retrieve all drops after combat
-combat = Combat([hero], [goblin], game.events)
-combat.start()
-# ... combat happens ...
-for drop in combat.get_dropped_loot():
-    player.inventory.add_item(drop.item)
-```
-
-**Unique Items**: Items with `unique=True` will only drop once per game. The LootRegistry tracks which unique items have already dropped.
-
-### 7. Dialog Trees
-
-```python
-from barebones_rpg import DialogTree, DialogNode, DialogChoice, DialogSession
-
-# Create dialog tree
-tree = DialogTree(name="Merchant Dialog")
-
-greeting = DialogNode(
-    id="greeting",
-    speaker="Merchant",
-    text="Welcome to my shop!",
-    choices=[
-        DialogChoice(text="Show me your wares", next_node_id="shop"),
-        DialogChoice(text="Goodbye", next_node_id=None)
-    ]
-)
-
-tree.add_node(greeting)
-tree.set_start_node("greeting")
-
-# Run dialog session
-session = DialogSession(tree, context={"player": hero})
-session.start()
-
-# Present choices to player and execute
-current = session.get_current_node()
-choices = session.get_available_choices()
-session.make_choice(0)  # Player selects first choice
-```
-
-### 8. Quests
-
-```python
-from barebones_rpg import Quest, QuestObjective, ObjectiveType, QuestManager
-
-# Create quest
-quest = Quest(
-    name="Save the Village",
-    description="Defeat the goblin raiders",
-    exp_reward=200,
-    gold_reward=100
-)
-
-# Add objectives
-quest.add_objective(QuestObjective(
-    description="Defeat Goblin Chief",
-    objective_type=ObjectiveType.KILL_ENEMY,
-    target="Goblin Chief",
-    target_count=1
-))
-
-quest.add_objective(QuestObjective(
-    description="Collect village banner",
-    objective_type=ObjectiveType.COLLECT_ITEM,
-    target="Village Banner",
-    target_count=1
-))
-
-# Quest management
-manager = QuestManager()
-manager.add_quest(quest)
-manager.start_quest(quest.id, game.events)
-
-# Update progress
-manager.update_objective(
-    quest.id,
-    ObjectiveType.KILL_ENEMY,
-    "Goblin Chief",
-    1,
-    game.events
-)
-```
-
-### 9. Save/Load System
-
-The framework includes a comprehensive save/load system with callback serialization:
-
-```python
-from barebones_rpg import Game, GameConfig, CallbackRegistry
-
-# 1. Register callbacks before creating items/quests
-def heal_50(entity, context):
-    entity.heal(50)
-
-CallbackRegistry.register("heal_50", heal_50)
-
-# 2. Configure save directory
-config = GameConfig(save_directory="saves")
-game = Game(config)
-
-# 3. Register game objects
-hero = Character(name="Hero", stats=Stats(hp=100, atk=15))
-hero.init_inventory()
-game.register_entity(hero)
-
-# Create items with callbacks
-potion = create_consumable("Health Potion", on_use=heal_50)
-hero.inventory.add_item(potion)
-
-# 4. Save and load
-game.save_to_file("my_save")
-game.load_from_file("my_save")
-
-# List saves
-saves = game.list_saves()
-
-# Delete save
-game.delete_save("old_save")
-```
-
-**Key Features:**
-- Automatic serialization of entities, items, parties, and quests
-- Callback functions preserved via symbolic names
-- JSON-based save files with versioning
-- Customizable save directory
-- Custom systems can implement `save()` and `load()` methods
-
-### 10. World and Maps
-
-```python
-from barebones_rpg import World, Location, Tile
-
-# Create world
-world = World(name="Fantasy Realm")
-
-# Create locations
-village = Location(
-    name="Starting Village",
-    width=30, height=30
-)
-
-dungeon = Location(
-    name="Dark Dungeon",
-    width=50, height=50
-)
-
-# Customize tiles
-wall = Tile(x=0, y=0, tile_type="wall", walkable=False)
-village.set_tile(0, 0, wall)
-
-# Connect locations
-world.add_location(village)
-world.add_location(dungeon)
-world.connect_locations(village.id, "north", dungeon.id, bidirectional=True)
-
-# Add entities to locations
-village.add_entity(elder_npc, x=15, y=15)
-
-# Navigation
-world.set_current_location(dungeon.id, game.events)
-```
-
-## Advanced Usage
-
-### Procedural Content Generation
-
-```python
-import random
-from barebones_rpg import Enemy, Stats, Location
-
-# Procedurally generate enemies
-def generate_enemy(level):
-    enemy_types = ["Goblin", "Orc", "Troll", "Dragon"]
-    name = random.choice(enemy_types)
-
-    return Enemy(
-        name=f"Level {level} {name}",
-        stats=Stats(
-            hp=50 + level * 10,
-            atk=5 + level * 2,
-            defense=3 + level,
-            speed=10 + random.randint(-2, 2)
-        ),
-        exp_reward=level * 20,
-        gold_reward=level * 10
-    )
-
-# Generate dungeon
-def generate_dungeon(floors=5):
-    locations = []
-    for i in range(floors):
-        floor = Location(
-            name=f"Dungeon Floor {i+1}",
-            width=40, height=40
-        )
-
-        # Add random enemies
-        num_enemies = random.randint(3, 7)
-        for _ in range(num_enemies):
-            enemy = generate_enemy(i + 1)
-            x, y = random.randint(0, 39), random.randint(0, 39)
-            floor.add_entity(enemy, x, y)
-
-        locations.append(floor)
-
-    return locations
-```
-
-### AI-Driven Content (LLM Integration)
-
-```python
-# Example: AI-generated dialog
-class AIDialogNode(DialogNode):
-    def __init__(self, llm_client, prompt_template, **kwargs):
-        super().__init__(**kwargs)
-        self.llm_client = llm_client
-        self.prompt_template = prompt_template
-
-    def enter(self, context):
-        # Generate dialog on-the-fly
-        prompt = self.prompt_template.format(**context)
-        self.text = self.llm_client.generate(prompt)
-        return super().enter(context)
-
-# Example: AI-generated quests
-def generate_quest_with_ai(llm_client, player_level):
-    prompt = f"Generate an RPG quest for level {player_level} player"
-    quest_description = llm_client.generate(prompt)
-
-    quest = Quest(
-        name=f"Dynamic Quest {player_level}",
-        description=quest_description,
-        exp_reward=player_level * 50
-    )
-
-    return quest
-```
-
-### Custom Combat Actions
-
-```python
-from barebones_rpg import CombatAction, ActionResult, ActionType
-
-class CounterAction(CombatAction):
-    """Custom action that counters the next attack."""
-
-    def __init__(self):
-        super().__init__(ActionType.CUSTOM)
-        self.name = "Counter Stance"
-
-    def execute(self, source, target, context):
-        combat = context['combat_state']
-        # Mark source as countering
-        combat.data['countering'] = source.id
-
-        return ActionResult(
-            success=True,
-            message=f"{source.name} prepares to counter!"
-        )
-
-# Register custom action
-hero.register_action("counter", lambda entity: CounterAction())
-```
-
-### Data-Driven Content
-
-```python
-from barebones_rpg.loaders import ItemLoader, EntityLoader, QuestLoader
-
-# Load content from files
-items = ItemLoader.load_items("data/items.json")
-npcs = EntityLoader.load_npcs("data/npcs.yaml")
-quests = QuestLoader.load_quests("data/quests.json")
-
-# Combine with code
-for item in items:
-    # Add custom behavior to loaded items
-    if item.name == "Magic Sword":
-        item.on_use = lambda target, ctx: target.heal(10)
-```
-
-## Rendering
-
-The framework includes a Pygame-based renderer, but rendering is abstracted so you can implement your own:
-
-```python
-from barebones_rpg import PygameRenderer, PygameGameLoop
-
-# Use Pygame renderer
-renderer = PygameRenderer(800, 600, "My RPG")
-loop = PygameGameLoop(game, renderer)
-loop.run()
-
-# Or implement your own renderer
-class CustomRenderer(Renderer):
-    def initialize(self): ...
-    def clear(self, color): ...
-    def draw_text(self, text, x, y, color, size): ...
-    # ... implement abstract methods
-```
-
-## Examples
-
-Check the `barebones_rpg/examples/` directory for complete examples:
-
-- **simple_combat_example.py**: Basic combat demonstration
-- **mini_rpg.py**: Complete mini-game with dialog, quests, world, and combat
-- **tile_based_example.py**: Advanced tile-based game with click-to-move, action points, and turn-based combat
-- **save_load_example.py**: Demonstrates the save/load system with callback serialization
-
-## Extensibility
-
-Every system is designed to be extended:
-
-- **Custom Entities**: Inherit from `Entity`, `Character`, `NPC`, or `Enemy`
-- **Custom Items**: Inherit from `Item` or use `on_use` callbacks
-- **Custom Actions**: Inherit from `CombatAction`
-- **Custom Objectives**: Inherit from `QuestObjective`
-- **Custom Renderers**: Inherit from `Renderer`
-- **Event Hooks**: Subscribe to any event type
-- **System Registration**: Add your own systems to the game
-
-## Design Philosophy
-
-1. **Code-First**: The primary API is Python code, not data files
-2. **Flexibility**: Support both manual and procedural content creation
-3. **Extensibility**: Everything can be overridden or extended
-4. **Simplicity**: Clean, understandable code with minimal magic
-5. **No Content**: Framework provides mechanics, you provide the game
-
-## AI System
-
-The framework provides a flexible AI interface for implementing custom NPC/enemy behavior. The AI system is designed to be completely generic, supporting any approach you want to use.
-
-### Key Components
-
-- **AIInterface**: Abstract base class for all AI implementations
-- **AIContext**: Context object with entity state, nearby entities, location, etc.
-- **AIAction**: Action object returned by AI (attack, move, wait, flee, use_skill, etc.)
-- **AIRegistry**: Registry for sharing AI instances across multiple entities (memory efficient)
-- **AISystem**: Helper for executing AI decisions
-
-### Creating Custom AI
-
-Implement the `AIInterface` and register it for use by multiple entities:
-
-```python
-from barebones_rpg.entities import AIInterface, AIContext, AIAction, AIRegistry
-
-class MyCustomAI(AIInterface):
-    def decide_action(self, context: AIContext) -> Optional[AIAction]:
-        # Your AI logic here - could be:
-        # - State machine
-        # - Behavior tree
-        # - Utility-based AI
-        # - LLM API call
-        # - Or anything else!
-        
-        if context.nearby_entities:
-            target = context.nearby_entities[0]
-            distance = abs(context.entity.position[0] - target.position[0]) + abs(context.entity.position[1] - target.position[1])
-            
-            if distance <= 1:
-                return AIAction(action_type="attack", target=target)
-            return AIAction(action_type="move", target_position=target.position)
-        
-        return AIAction(action_type="wait")
-
-# Register the AI (shared across all entities that use it)
-AIRegistry.register("my_ai", MyCustomAI())
-
-# Create entities using the AI
-goblin1 = Enemy(name="Goblin 1", ai_type="my_ai")
-goblin2 = Enemy(name="Goblin 2", ai_type="my_ai")  # Shares same AI instance
-```
-
-### Examples
-
-The framework includes reference implementations:
-- `SimplePathfindingAI`: Basic pathfinding and attacking
-- `TacticalAI`: Health-based behavior with fleeing
-- See `examples/custom_ai_example.py` for state machine and mock LLM examples
-
-## Future Enhancements
-
-- Additional combat system types (real-time, tactical)
-- Network/multiplayer support
-- More rendering backends (terminal, web)
-- Tileset and sprite management
-- Sound/music system
-- Plugin system
-
-## Documentation
-
-Comprehensive documentation is available built with Sphinx, featuring:
-
-- **Getting Started Guide**: Quick introduction and installation
-- **Core Concepts**: Architecture and design patterns
-- **API Reference**: Complete auto-generated API documentation from docstrings
-- **Tutorials**: Step-by-step guides for building features
-- **Examples**: Detailed breakdowns of example games
-- **Guides**: In-depth coverage of specific topics
-
-### Viewing Documentation
-
-After building, open `sphinx_docs/_build/html/index.html` in your web browser.
-
-Or view online at [your-docs-url] (if hosted).
-
-### Building Documentation
-
-Install documentation dependencies:
-
-```bash
-# Install with doc dependencies
-uv sync --dev
-
-# Or install docs extras only
-pip install -e ".[docs]"
-```
-
-Build the documentation:
-
-```bash
-# Using the build script
-./build_docs.sh
-
-# Or using Make (from sphinx_docs directory)
-cd sphinx_docs
-make html
-
-# Or directly with Sphinx
-cd sphinx_docs
-uv run sphinx-build -b html . _build/html
-```
-
-### Auto-Rebuilding Documentation
-
-For development, you can use auto-rebuild (requires sphinx-autobuild):
-
-```bash
-pip install sphinx-autobuild
-cd sphinx_docs
-make livehtml
-```
-
-This will start a server at http://localhost:8000 that automatically rebuilds when you change files.
-
-## Contributing
-
-This is a framework designed to be extended. Feel free to:
-
-- Create your own systems
-- Extend existing classes
-- Share your implementations
-- Report issues and suggest features
 
 ## License
 
-[Add your license here]
-
-## Credits
-
-Built with Python, Pygame, and Pydantic.
+MIT License
