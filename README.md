@@ -2,6 +2,8 @@
 
 A flexible, code-first RPG framework for building turn-based games with support for procedural generation and AI-driven content.
 
+**[Documentation](https://piercegov.github.io/barebones_rpg/)**
+
 ## What is this?
 
 Barebones RPG is a Python framework designed to be a foundation for creating RPG games. It provides all the essential systems needed for an RPG (combat, entities, items, quests, dialog, world management, etc.), but with **no content** - making it a perfect starting point for your own games.
@@ -62,7 +64,9 @@ uv run pytest --cov=barebones_rpg
 
 ## Documentation
 
-Full documentation is available in the `sphinx_docs/` directory. To build and view:
+**[View the full documentation online](https://piercegov.github.io/barebones_rpg/)**
+
+The documentation is also available locally in the `sphinx_docs/` directory. To build and view:
 
 ```bash
 ./build_docs.sh
