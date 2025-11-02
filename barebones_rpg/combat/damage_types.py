@@ -262,4 +262,3 @@ class DamageTypeRegistry(metaclass=Singleton):
         instance._warned_types.clear()
         instance._lenient_mode = True
         instance.__init__()
-
