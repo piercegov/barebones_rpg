@@ -49,6 +49,24 @@ uv run black .
 uv run mypy barebones_rpg
 ```
 
+### Documentation
+```bash
+# Build Sphinx documentation
+./build_docs.sh
+
+# Or use Make
+cd sphinx_docs && make html
+
+# Or directly with Sphinx
+cd sphinx_docs && uv run sphinx-build -b html . _build/html
+
+# Auto-rebuilding server (requires sphinx-autobuild)
+cd sphinx_docs && make livehtml
+
+# Clean build artifacts
+cd sphinx_docs && make clean
+```
+
 ## Architecture
 
 ### Core Design Pattern

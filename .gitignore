@@ -11,3 +11,15 @@ wheels/
 venv/
 env/
 .cursor/
+
+# Sphinx documentation
+sphinx_docs/_build/
+sphinx_docs/_static/
+sphinx_docs/_templates/
+
+# Coverage reports
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+.pytest_cache/
