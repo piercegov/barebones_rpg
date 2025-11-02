@@ -16,8 +16,8 @@ Overview
 
 Barebones RPG is a Python framework designed to be a foundation for creating RPG games. It provides all the essential systems needed for an RPG, but with **no content** - making it a perfect starting point for your own games and stories.
 
-✨ Key Features
-~~~~~~~~~~~~~~~
+Key Features
+~~~~~~~~~~~~
 
 - **Code-First Design**: Primary interface is Python classes and functions for programmatic game creation
 - **Fully Extensible**: Hooks, events, and overridable behavior throughout
@@ -28,8 +28,8 @@ Barebones RPG is a Python framework designed to be a foundation for creating RPG
 - **Rendering Abstraction**: Pygame-based UI with clean separation from game logic
 - **AI-Ready**: Designed to easily integrate with LLMs for dynamic content generation
 
-🚀 Quick Start
---------------
+Quick Start
+-----------
 
 Installation
 ~~~~~~~~~~~~
@@ -68,8 +68,8 @@ Basic Example
    )
    combat.start()
 
-📚 Documentation Sections
--------------------------
+Documentation Sections
+----------------------
 
 .. toctree::
    :maxdepth: 2
