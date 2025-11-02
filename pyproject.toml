@@ -4,15 +4,46 @@ version = "0.1.0"
 description = "A flexible, code-first RPG framework for building turn-based games with support for procedural generation and AI-driven content"
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Pierce Governale", email = "piercegovernale@gmail.com"}
+]
+keywords = [
+    "rpg",
+    "game",
+    "framework",
+    "turn-based",
+    "procedural-generation",
+    "game-development",
+    "pygame",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment :: Role-Playing",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: pygame",
+]
 dependencies = [
     "pygame>=2.5.0",
     "pydantic>=2.0.0",
     "pyyaml>=6.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/piercegov/barebones_rpg"
+Documentation = "https://piercegov.github.io/barebones_rpg/"
+Repository = "https://github.com/piercegov/barebones_rpg"
+"Bug Tracker" = "https://github.com/piercegov/barebones_rpg/issues"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
     "black>=23.0.0",
     "mypy>=1.0.0",
 ]
@@ -30,6 +61,7 @@ build-backend = "hatchling.build"
 [tool.uv]
 dev-dependencies = [
     "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
     "black>=23.0.0",
     "mypy>=1.0.0",
     "sphinx>=7.0.0",

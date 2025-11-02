@@ -1,5 +1,10 @@
 # Barebones RPG Framework
 
+[![PyPI version](https://badge.fury.io/py/barebones-rpg.svg)](https://badge.fury.io/py/barebones-rpg)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation](https://img.shields.io/badge/docs-online-green.svg)](https://piercegov.github.io/barebones_rpg/)
+
 A flexible, code-first RPG framework for building turn-based games with support for procedural generation and AI-driven content.
 
 **[Documentation](https://piercegov.github.io/barebones_rpg/)**
@@ -16,24 +21,21 @@ The framework is code-first (Python classes and functions), fully extensible (ho
 
 - Python 3.11+
 
-### Setup
+### For Users
+
+```bash
+# Install from PyPI
+pip install barebones-rpg
+```
+
+### For Development
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/PierceGov/barebones_rpg.git
 cd barebones_rpg
 
 # Install with uv (recommended)
-uv sync
-
-# Or with pip
-pip install -e .
-```
-
-### Development Setup
-
-```bash
-# Install with dev dependencies
 uv sync --dev
 
 # Or with pip
@@ -120,6 +122,10 @@ barebones_rpg/
 └── examples/       # Example games
 ```
 
+## Contributing
+
+Contributions are welcome!
+
 ## License
 
-MIT License
+MIT License - See [LICENSE.md](LICENSE.md) for details
