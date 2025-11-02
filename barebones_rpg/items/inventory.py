@@ -218,14 +218,14 @@ class Inventory(BaseModel):
             "auto_stack": self.auto_stack,
             "items": [item.to_dict() for item in self.items],
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Inventory":
         """Create inventory from dictionary.
-        
+
         Args:
             data: Dictionary representation
-            
+
         Returns:
             Inventory instance
         """
@@ -233,14 +233,14 @@ class Inventory(BaseModel):
             max_slots=data.get("max_slots", 20),
             max_weight=data.get("max_weight", -1),
             auto_stack=data.get("auto_stack", True),
-            gold=data.get("gold", 0)
+            gold=data.get("gold", 0),
         )
-        
+
         # Load items
         for item_data in data.get("items", []):
             item = Item.from_dict(item_data)
             inventory.items.append(item)
-        
+
         return inventory
 
 
@@ -351,10 +351,10 @@ class Equipment(BaseModel):
             True if slot is empty
         """
         return self.slots.get(slot.value) is None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert equipment to dictionary.
-        
+
         Returns:
             Dictionary representation
         """
@@ -364,23 +364,23 @@ class Equipment(BaseModel):
                 for slot_name, item in self.slots.items()
             }
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Equipment":
         """Create equipment from dictionary.
-        
+
         Args:
             data: Dictionary representation
-            
+
         Returns:
             Equipment instance
         """
         equipment = cls()
-        
+
         # Load equipped items
         for slot_name, item_data in data.get("slots", {}).items():
             if item_data:
                 item = Item.from_dict(item_data)
                 equipment.slots[slot_name] = item
-        
+
         return equipment

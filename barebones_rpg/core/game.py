@@ -75,11 +75,12 @@ class Game:
 
         # Game data storage (accessible to all systems)
         self.data: Dict[str, Any] = {}
-        
+
         # Save manager
         from .save_manager import SaveManager
+
         self.save_manager = SaveManager(self.config.save_directory)
-        
+
         # Registries for serializable objects
         self._entities: Dict[str, Any] = {}
         self._items: Dict[str, Any] = {}
@@ -105,82 +106,82 @@ class Game:
             The system instance or None if not found
         """
         return self._systems.get(name)
-    
+
     def register_entity(self, entity: Any) -> None:
         """Register an entity for saving/loading.
-        
+
         Args:
             entity: Entity to register
         """
         if hasattr(entity, "id"):
             self._entities[entity.id] = entity
-    
+
     def register_item(self, item: Any) -> None:
         """Register an item for saving/loading.
-        
+
         Args:
             item: Item to register
         """
         if hasattr(item, "id"):
             self._items[item.id] = item
-    
+
     def register_party(self, party: Any) -> None:
         """Register a party for saving/loading.
-        
+
         Args:
             party: Party to register
         """
         if hasattr(party, "name"):
             self._parties[party.name] = party
-    
+
     def register_quest(self, quest: Any) -> None:
         """Register a quest for saving/loading.
-        
+
         Args:
             quest: Quest to register
         """
         if hasattr(quest, "id"):
             self._quests[quest.id] = quest
-    
+
     def get_entity(self, entity_id: str) -> Any:
         """Get a registered entity by ID.
-        
+
         Args:
             entity_id: Entity ID
-            
+
         Returns:
             Entity or None if not found
         """
         return self._entities.get(entity_id)
-    
+
     def get_item(self, item_id: str) -> Any:
         """Get a registered item by ID.
-        
+
         Args:
             item_id: Item ID
-            
+
         Returns:
             Item or None if not found
         """
         return self._items.get(item_id)
-    
+
     def get_party(self, party_name: str) -> Any:
         """Get a registered party by name.
-        
+
         Args:
             party_name: Party name
-            
+
         Returns:
             Party or None if not found
         """
         return self._parties.get(party_name)
-    
+
     def get_quest(self, quest_id: str) -> Any:
         """Get a registered quest by ID.
-        
+
         Args:
             quest_id: Quest ID
-            
+
         Returns:
             Quest or None if not found
         """
@@ -273,7 +274,7 @@ class Game:
             Dictionary containing the game state
         """
         from .serialization import CallbackRegistry
-        
+
         save_data = {
             "save_name": save_name,
             "clock_time": self.clock_time,
@@ -321,6 +322,7 @@ class Game:
 
         # Load entities
         from ..entities.entity import Entity
+
         entity_data = save_data.get("entities", {})
         self._entities.clear()
         for entity_id, data in entity_data.items():
@@ -332,6 +334,7 @@ class Game:
 
         # Load items
         from ..items.item import Item
+
         item_data = save_data.get("items", {})
         self._items.clear()
         for item_id, data in item_data.items():
@@ -343,6 +346,7 @@ class Game:
 
         # Load parties
         from ..party.party import Party
+
         party_data = save_data.get("parties", {})
         self._parties.clear()
         for party_name, data in party_data.items():
@@ -362,31 +366,31 @@ class Game:
         for name, system in self._systems.items():
             if hasattr(system, "load") and name in system_data:
                 system.load(system_data[name])
-    
+
     def save_to_file(self, save_name: str = "default") -> bool:
         """Save the game to a file.
-        
+
         Args:
             save_name: Name of the save file
-            
+
         Returns:
             True if save was successful
-            
+
         Example:
             >>> game.save_to_file("quicksave")
         """
         save_data = self.save_game(save_name)
         return self.save_manager.save(save_name, save_data)
-    
+
     def load_from_file(self, save_name: str) -> bool:
         """Load the game from a file.
-        
+
         Args:
             save_name: Name of the save file to load
-            
+
         Returns:
             True if load was successful
-            
+
         Example:
             >>> game.load_from_file("quicksave")
         """
@@ -395,21 +399,21 @@ class Game:
             self.load_game(save_data)
             return True
         return False
-    
+
     def list_saves(self) -> list[str]:
         """List all available save files.
-        
+
         Returns:
             List of save names
         """
         return self.save_manager.list_saves()
-    
+
     def delete_save(self, save_name: str) -> bool:
         """Delete a save file.
-        
+
         Args:
             save_name: Name of the save to delete
-            
+
         Returns:
             True if deletion was successful
         """

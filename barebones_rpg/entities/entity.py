@@ -228,15 +228,15 @@ class Entity(BaseModel):
             Dictionary representation of entity
         """
         data = self.model_dump(exclude={"inventory", "equipment"})
-        
+
         # Serialize inventory if present
         if self.inventory is not None:
             data["inventory"] = self.inventory.to_dict()
-        
+
         # Serialize equipment if present
         if self.equipment is not None:
             data["equipment"] = self.equipment.to_dict()
-        
+
         return data
 
     @classmethod
@@ -250,25 +250,25 @@ class Entity(BaseModel):
             Entity instance
         """
         from ..items import Inventory, Equipment
-        
+
         # Make a copy to avoid modifying original
         data = data.copy()
-        
+
         # Handle inventory
         inventory_data = data.pop("inventory", None)
         equipment_data = data.pop("equipment", None)
-        
+
         # Create entity
         entity = cls(**data)
-        
+
         # Restore inventory if present
         if inventory_data:
             entity.inventory = Inventory.from_dict(inventory_data)
-        
+
         # Restore equipment if present
         if equipment_data:
             entity.equipment = Equipment.from_dict(equipment_data)
-        
+
         return entity
 
 
