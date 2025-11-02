@@ -192,12 +192,51 @@ class Item(BaseModel):
         Returns:
             Dictionary representation
         """
+        from ..core.serialization import serialize_callback, encode_enum
+        
         data = self.model_dump(exclude={"on_use"})
+        
+        # Serialize callback
         if self.on_use:
-            # Store reference to the function name if possible
-            if hasattr(self.on_use, "__name__"):
-                data["on_use_name"] = self.on_use.__name__
+            callback_key = serialize_callback(self.on_use)
+            if callback_key:
+                data["on_use_callback"] = callback_key
+        
+        # Encode enums
+        if "item_type" in data:
+            data["item_type"] = encode_enum(data["item_type"])
+        if "equip_slot" in data and data["equip_slot"] is not None:
+            data["equip_slot"] = encode_enum(data["equip_slot"])
+        
         return data
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Item":
+        """Create item from dictionary.
+        
+        Args:
+            data: Dictionary representation
+            
+        Returns:
+            Item instance
+        """
+        from ..core.serialization import deserialize_callback, decode_enum
+        
+        # Make a copy to avoid modifying original
+        data = data.copy()
+        
+        # Decode enums
+        if "item_type" in data and isinstance(data["item_type"], str):
+            data["item_type"] = decode_enum(ItemType, data["item_type"])
+        if "equip_slot" in data and isinstance(data["equip_slot"], str):
+            data["equip_slot"] = decode_enum(EquipSlot, data["equip_slot"])
+        
+        # Deserialize callback
+        callback_key = data.pop("on_use_callback", None)
+        if callback_key:
+            data["on_use"] = deserialize_callback(callback_key)
+        
+        return cls(**data)
 
 
 # Predefined item creation helpers

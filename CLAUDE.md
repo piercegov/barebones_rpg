@@ -114,6 +114,60 @@ Enemy loot table format: `[{"item": "Name" or Item, "chance": 0.0-1.0, "quantity
 - pydantic >= 2.0.0
 - pyyaml >= 6.0
 
+## Save/Load System
+
+The framework includes a comprehensive save/load system with callback serialization support.
+
+### Key Components
+- **SaveManager**: Handles JSON file I/O, directory management, and versioning
+- **CallbackRegistry**: Manages serialization of callback functions by symbolic names
+- **Game Registration**: Entities, items, parties, and quests can be registered for automatic serialization
+
+### Basic Usage
+```python
+from barebones_rpg.core import Game, GameConfig, CallbackRegistry
+
+# 1. Register callbacks before creating items/quests
+def heal_50(entity, context):
+    entity.heal(50)
+
+CallbackRegistry.register("heal_50", heal_50)
+
+# 2. Configure save directory
+config = GameConfig(save_directory="saves")
+game = Game(config)
+
+# 3. Register game objects
+hero = Character(name="Hero", stats=Stats(hp=100, atk=15))
+game.register_entity(hero)
+
+# 4. Save and load
+game.save_to_file("my_save")
+game.load_from_file("my_save")
+```
+
+### Callback Serialization
+Callbacks in items, quests, and other systems are automatically serialized by name:
+- Register callbacks with `CallbackRegistry.register(name, callback)` before creating objects
+- Callbacks are stored as symbolic names in save files
+- On load, callbacks are restored from the registry
+- Unregistered callbacks trigger auto-registration with a warning
+
+### Extending Save System
+Custom systems can implement `save()` and `load()` methods:
+```python
+class MySystem:
+    def save(self) -> Dict[str, Any]:
+        return {"my_data": self.data}
+    
+    def load(self, data: Dict[str, Any]) -> None:
+        self.data = data.get("my_data")
+
+# Register with game
+game.register_system("my_system", my_system)
+# Automatically saved/loaded with game state
+```
+
 ## Development Patterns
 
 ### Creating Custom Content

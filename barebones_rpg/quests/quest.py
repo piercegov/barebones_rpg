@@ -125,6 +125,72 @@ class QuestObjective(BaseModel):
             Progress string like "3/5"
         """
         return f"{self.current_count}/{self.target_count}"
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert objective to dictionary for saving.
+        
+        Returns:
+            Dictionary representation
+        """
+        from ..core.serialization import serialize_callback, encode_enum
+        
+        data = self.model_dump(exclude={"condition", "on_progress", "on_complete"})
+        
+        # Serialize callbacks
+        if self.condition:
+            callback_key = serialize_callback(self.condition)
+            if callback_key:
+                data["condition_callback"] = callback_key
+        
+        if self.on_progress:
+            callback_key = serialize_callback(self.on_progress)
+            if callback_key:
+                data["on_progress_callback"] = callback_key
+        
+        if self.on_complete:
+            callback_key = serialize_callback(self.on_complete)
+            if callback_key:
+                data["on_complete_callback"] = callback_key
+        
+        # Encode enums
+        if "objective_type" in data:
+            data["objective_type"] = encode_enum(data["objective_type"])
+        
+        return data
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "QuestObjective":
+        """Create objective from dictionary.
+        
+        Args:
+            data: Dictionary representation
+            
+        Returns:
+            QuestObjective instance
+        """
+        from ..core.serialization import deserialize_callback, decode_enum
+        
+        # Make a copy to avoid modifying original
+        data = data.copy()
+        
+        # Decode enum
+        if "objective_type" in data and isinstance(data["objective_type"], str):
+            data["objective_type"] = decode_enum(ObjectiveType, data["objective_type"])
+        
+        # Deserialize callbacks
+        condition_key = data.pop("condition_callback", None)
+        if condition_key:
+            data["condition"] = deserialize_callback(condition_key)
+        
+        on_progress_key = data.pop("on_progress_callback", None)
+        if on_progress_key:
+            data["on_progress"] = deserialize_callback(on_progress_key)
+        
+        on_complete_key = data.pop("on_complete_callback", None)
+        if on_complete_key:
+            data["on_complete"] = deserialize_callback(on_complete_key)
+        
+        return cls(**data)
 
 
 class Quest(BaseModel):
@@ -480,6 +546,88 @@ class Quest(BaseModel):
                     self.check_completion(events)
 
         events.subscribe(EventType.DEATH, on_death)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert quest to dictionary for saving.
+        
+        Returns:
+            Dictionary representation
+        """
+        from ..core.serialization import serialize_callback, encode_enum
+        
+        data = self.model_dump(exclude={"on_start", "on_complete", "on_fail", "objectives"})
+        
+        # Serialize callbacks
+        if self.on_start:
+            callback_key = serialize_callback(self.on_start)
+            if callback_key:
+                data["on_start_callback"] = callback_key
+        
+        if self.on_complete:
+            callback_key = serialize_callback(self.on_complete)
+            if callback_key:
+                data["on_complete_callback"] = callback_key
+        
+        if self.on_fail:
+            callback_key = serialize_callback(self.on_fail)
+            if callback_key:
+                data["on_fail_callback"] = callback_key
+        
+        # Serialize objectives
+        data["objectives"] = [obj.to_dict() for obj in self.objectives]
+        
+        # Encode enum
+        if "status" in data:
+            data["status"] = encode_enum(data["status"])
+        
+        return data
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], auto_register: bool = False) -> "Quest":
+        """Create quest from dictionary.
+        
+        Args:
+            data: Dictionary representation
+            auto_register: If True, register to QuestManager (default: False to avoid duplicates)
+            
+        Returns:
+            Quest instance
+        """
+        from ..core.serialization import deserialize_callback, decode_enum
+        
+        # Make a copy to avoid modifying original
+        data = data.copy()
+        
+        # Decode enum
+        if "status" in data and isinstance(data["status"], str):
+            data["status"] = decode_enum(QuestStatus, data["status"])
+        
+        # Deserialize callbacks
+        on_start_key = data.pop("on_start_callback", None)
+        if on_start_key:
+            data["on_start"] = deserialize_callback(on_start_key)
+        
+        on_complete_key = data.pop("on_complete_callback", None)
+        if on_complete_key:
+            data["on_complete"] = deserialize_callback(on_complete_key)
+        
+        on_fail_key = data.pop("on_fail_callback", None)
+        if on_fail_key:
+            data["on_fail"] = deserialize_callback(on_fail_key)
+        
+        # Deserialize objectives
+        objectives_data = data.pop("objectives", [])
+        objectives = [QuestObjective.from_dict(obj_data) for obj_data in objectives_data]
+        data["objectives"] = objectives
+        
+        # Create quest without auto-registering if requested
+        if not auto_register:
+            # Temporarily bypass auto-registration
+            quest = object.__new__(cls)
+            BaseModel.__init__(quest, **data)
+            return quest
+        else:
+            return cls(**data)
 
 
 class QuestManager(BaseModel):
