@@ -1,0 +1,9 @@
+# Ensure markdown files are treated as text
+*.md text eol=lf
+
+# Ensure Python files are treated as text
+*.py text eol=lf
+
+# Ensure RST files are treated as text
+*.rst text eol=lf
+
