@@ -4,10 +4,10 @@ This module provides AI behavior for NPCs and enemies, including
 pathfinding-based movement and decision making using the AIInterface.
 """
 
-from typing import Optional
+from typing import Optional, Dict, Any
 from barebones_rpg.entities.entity import Entity
 from barebones_rpg.world.tilemap_pathfinding import TilemapPathfinder
-from barebones_rpg.entities.ai_interface import AIInterface, AIContext, AIAction
+from barebones_rpg.entities.ai_interface import AIInterface, AIContext
 
 
 class SimplePathfindingAI(AIInterface):
@@ -38,7 +38,7 @@ class SimplePathfindingAI(AIInterface):
         self.attack_range = attack_range
         self.max_moves = max_moves
 
-    def decide_action(self, context: AIContext) -> Optional[AIAction]:
+    def decide_action(self, context: AIContext) -> dict:
         """Decide what action to take based on context.
 
         This implementation:
@@ -51,13 +51,13 @@ class SimplePathfindingAI(AIInterface):
             context: AI context with entity and surroundings
 
         Returns:
-            AIAction describing what to do
+            Dict with action information
         """
         entity = context.entity
-        location = context.location
+        location = context.metadata.get("location")
 
         if not context.nearby_entities:
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
         target = context.nearby_entities[0]
 
@@ -66,30 +66,30 @@ class SimplePathfindingAI(AIInterface):
         distance = abs(ex - tx) + abs(ey - ty)
 
         if distance <= self.attack_range:
-            return AIAction(action_type="attack", target=target)
+            return {"action": "attack", "target": target}
 
         if not location:
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
         path = self.pathfinder.find_path(entity.position, target.position)
 
         if not path or len(path) <= 1:
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
         next_pos = path[1]
 
         if not location.is_walkable(next_pos[0], next_pos[1]):
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
         entity_at_pos = location.get_entity_at(next_pos[0], next_pos[1])
         if entity_at_pos is not None:
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
-        return AIAction(
-            action_type="move",
-            target_position=next_pos,
-            parameters={"max_moves": self.max_moves},
-        )
+        return {
+            "action": "move",
+            "position": next_pos,
+            "max_moves": self.max_moves,
+        }
 
 
 class TacticalAI(AIInterface):
@@ -129,7 +129,7 @@ class TacticalAI(AIInterface):
         self.attack_range = attack_range
         self.max_moves = max_moves
 
-    def decide_action(self, context: AIContext) -> Optional[AIAction]:
+    def decide_action(self, context: AIContext) -> dict:
         """Decide what action to take based on context.
 
         This implementation considers health status:
@@ -140,19 +140,19 @@ class TacticalAI(AIInterface):
             context: AI context with entity and surroundings
 
         Returns:
-            AIAction describing what to do
+            Dict with action information
         """
         entity = context.entity
 
         if self.should_flee(entity):
             if context.nearby_entities:
                 threat = context.nearby_entities[0]
-                return AIAction(
-                    action_type="flee",
-                    target=threat,
-                    parameters={"max_moves": self.max_moves},
-                )
-            return AIAction(action_type="wait")
+                return {
+                    "action": "flee",
+                    "target": threat,
+                    "max_moves": self.max_moves,
+                }
+            return {"action": "wait"}
 
         simple_ai = SimplePathfindingAI(
             self.pathfinder, self.attack_range, self.max_moves

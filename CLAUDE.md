@@ -73,10 +73,10 @@ cd sphinx_docs && make clean
 The framework uses an **event-driven architecture** with a central `EventManager` that enables loose coupling between systems. The `Game` class acts as the central hub coordinating all systems through an event pub-sub pattern.
 
 ### System Organization
-- **core/**: Event system (`EventManager`) and game engine (`Game`, `GameState`, `GameConfig`), generic `Registry` base class
+- **core/**: Event system (`EventManager`) and game engine (`Game`, `GameState`, `GameConfig`), base classes (`Registry`, `Manager`)
 - **entities/**: Entity base classes (`Entity`, `Character`, `NPC`, `Enemy`) with stats and leveling systems, AI interface (`AIInterface`, `AIContext`, `AIAction`, `AIRegistry`, `AISystem`)
-- **combat/**: Turn-based combat system with action framework (`Combat`, `CombatAction`, `AttackAction`)
-- **items/**: Item system with inventory, equipment, and loot drops (`Item`, `Inventory`, `Equipment`, `LootRegistry`, `LootDrop`)
+- **combat/**: Turn-based combat system with action framework (`Combat`, `CombatAction`, `AttackAction`, `DamageTypeManager`)
+- **items/**: Item system with inventory, equipment, and loot drops (`Item`, `Inventory`, `Equipment`, `LootManager`, `LootDrop`)
 - **quests/**: Quest tracking with objectives (`Quest`, `QuestObjective`, `QuestManager`)
 - **dialog/**: Conversation trees with choices (`DialogTree`, `DialogNode`, `DialogSession`)
 - **world/**: World/map management (`World`, `Location`, `Tile`)
@@ -93,6 +93,11 @@ The framework uses an **event-driven architecture** with a central `EventManager
 **Code-First Design**: The primary API is Python code, not data files. Items, entities, quests, and dialogs can be created programmatically, making it ideal for procedural generation and AI-driven content.
 
 **Extensibility Through Inheritance**: All core classes (`Entity`, `Item`, `CombatAction`, etc.) are designed to be extended. Custom behavior is added through inheritance or callbacks rather than modifying framework code.
+
+**Simplified Pattern System**:
+- **Managers** (`*Manager`): Singleton managers using `metaclass=Singleton`. Track global state and coordinate gameplay systems. Auto-register callbacks for items/quests. Examples: `QuestManager`, `LootManager`, `DamageTypeManager`
+- **Utilities**: Per-instance classes with flexible naming. Examples: `EventManager`, `SaveManager`, `StatsManager`
+- **Direct Assignment**: For simple cases like AI, assign instances directly to entities rather than using registries
 
 ## Important Implementation Notes
 
@@ -117,10 +122,10 @@ Game logic is completely separate from rendering. The `Renderer` abstract class 
 
 ### Loot System
 The loot system supports hybrid data-driven and code-first approaches:
-- **LootRegistry**: Global registry for mapping item names to templates or factory functions
-- **Hybrid Support**: Loot tables can reference items by string name (registry lookup) or use Item objects directly
+- **LootManager**: Singleton manager for mapping item names to templates or factory functions
+- **Hybrid Support**: Loot tables can reference items by string name (manager lookup) or use Item objects directly
 - **Automatic Drops**: Combat system automatically rolls loot tables when enemies die and publishes `ITEM_DROPPED` events
-- **Unique Items**: Items with `unique=True` only drop once per game (tracked by LootRegistry)
+- **Unique Items**: Items with `unique=True` only drop once per game (tracked by LootManager)
 - **Manual Collection**: Framework handles drop generation, but users must subscribe to events or call `combat.get_dropped_loot()` to add items to player inventory
 
 Enemy loot table format: `[{"item": "Name" or Item, "chance": 0.0-1.0, "quantity": N}]`
@@ -128,39 +133,46 @@ Enemy loot table format: `[{"item": "Name" or Item, "chance": 0.0-1.0, "quantity
 ### AI System
 The framework provides a flexible AI interface system for entity behavior:
 - **AIInterface**: Abstract base class that all AI implementations must inherit from
-- **AIContext**: Context object passed to AI containing entity state, nearby entities, location, etc.
-- **AIAction**: Action object returned by AI describing what the entity wants to do
-- **AIRegistry**: Global registry for sharing AI instances across multiple entities (memory efficient)
-- **AISystem**: Helper system for executing AI and building contexts
+- **AIContext**: Context object passed to AI containing entity state, nearby entities, and custom metadata
 
-Users implement custom AI by inheriting from `AIInterface` and implementing `decide_action(context)`. The AI system supports any approach: state machines, behavior trees, utility AI, LLM-based decisions, or any custom logic.
+Users implement custom AI by inheriting from `AIInterface` and implementing `decide_action(context)` which returns a simple dict. The AI system supports any approach: state machines, behavior trees, utility AI, LLM-based decisions, or any custom logic.
 
 Example:
 ```python
-from barebones_rpg.entities import AIInterface, AIContext, AIAction, AIRegistry, Enemy, Stats
+from barebones_rpg.entities import AIInterface, AIContext, Enemy, Stats
 
 class AggressiveMeleeAI(AIInterface):
-    def decide_action(self, context: AIContext) -> Optional[AIAction]:
+    def decide_action(self, context: AIContext) -> dict:
         if context.nearby_entities:
             target = context.nearby_entities[0]
             distance = abs(context.entity.position[0] - target.position[0]) + abs(context.entity.position[1] - target.position[1])
             if distance <= 1:
-                return AIAction(action_type="attack", target=target)
-            return AIAction(action_type="move", target_position=target.position)
-        return AIAction(action_type="wait")
+                return {"action": "attack", "target": target}
+            return {"action": "move", "position": target.position}
+        return {"action": "wait"}
 
-# Register once, use for many entities
-AIRegistry.register("aggressive_melee", AggressiveMeleeAI())
+# Create AI instance and assign to entities
+ai = AggressiveMeleeAI()
 goblin1 = Enemy(
     name="Goblin 1",
-    ai_type="aggressive_melee",
+    ai=ai,
     stats=Stats(strength=8, constitution=6, base_max_hp=20, hp=30)
 )
 goblin2 = Enemy(
     name="Goblin 2",
-    ai_type="aggressive_melee",
+    ai=ai,  # Can share same AI instance
     stats=Stats(strength=8, constitution=6, base_max_hp=20, hp=30)
-)  # Shares same AI instance
+)
+
+# In game loop, call AI directly:
+context = AIContext(
+    entity=goblin1,
+    nearby_entities=[player],
+    metadata={"location": current_location, "combat": combat_instance}
+)
+action = goblin1.ai.decide_action(context)
+if action["action"] == "attack":
+    combat.attack(goblin1, action["target"])
 ```
 
 ## Project Requirements
@@ -181,13 +193,15 @@ The framework includes a comprehensive save/load system with callback serializat
 
 ### Basic Usage
 ```python
-from barebones_rpg.core import Game, GameConfig, CallbackRegistry
+from barebones_rpg.core import Game, GameConfig, QuestManager
+from barebones_rpg.items import LootManager, create_consumable
 
-# 1. Register callbacks before creating items/quests
+# 1. Register items with LootManager (auto-registers callbacks!)
 def heal_50(entity, context):
     entity.heal(50)
 
-CallbackRegistry.register("heal_50", heal_50)
+potion = create_consumable("Health Potion", on_use=heal_50, value=20)
+LootManager().register("health_potion", potion)
 
 # 2. Configure save directory
 config = GameConfig(save_directory="saves")
@@ -197,17 +211,22 @@ game = Game(config)
 hero = Character(name="Hero", stats=Stats(hp=100, atk=15))
 game.register_entity(hero)
 
-# 4. Save and load
+# 4. Create quests and add to QuestManager (auto-registers callbacks!)
+quest = Quest(name="My Quest", on_complete=lambda q: print("Done!"))
+QuestManager().add_quest(quest)  # Callbacks auto-registered here
+
+# 5. Save and load
 game.save_to_file("my_save")
 game.load_from_file("my_save")
 ```
 
 ### Callback Serialization
-Callbacks in items, quests, and other systems are automatically serialized by name:
-- Register callbacks with `CallbackRegistry.register(name, callback)` before creating objects
+Callbacks in items and quests are automatically serialized when registered:
+- Register items with `LootManager().register(name, item)` - callbacks auto-registered
+- Add quests to `QuestManager().add_quest(quest)` - callbacks auto-registered
 - Callbacks are stored as symbolic names in save files
-- On load, callbacks are restored from the registry
-- Unregistered callbacks trigger auto-registration with a warning
+- On load, callbacks are restored automatically
+- No manual `CallbackRegistry.register()` needed!
 
 ### Extending Save System
 Custom systems can implement `save()` and `load()` methods:
@@ -258,5 +277,27 @@ class CounterAction(CombatAction):
         pass
 ```
 
+### Choosing the Right Pattern
+
+**Use `metaclass=Singleton` and `*Manager` naming when:**
+- You need a singleton global instance
+- The system tracks runtime state (e.g., unique item drops, active quests)
+- Initialization logic is needed (via `__init__`)
+- Save/load functionality may be needed (duck-typed, not enforced)
+- Examples: `QuestManager`, `LootManager`, `DamageTypeManager`
+- **Key feature**: Auto-registers callbacks when items/quests are added
+
+**Use `Registry[T]` base class sparingly:**
+- Only if you need truly stateless name-to-object lookups
+- No initialization or runtime state
+- Most use cases are now covered by direct assignment (e.g., AI instances)
+- Consider whether a simple dict would be clearer
+
+**Use regular classes/direct assignment:**
+- Multiple instances are needed
+- Each instance serves a specific context
+- Simpler and more explicit than registries
+- Examples: AI instances (assigned directly to entities), per-game event buses, per-entity managers
+
 ### Testing Integration
-When testing systems, always mock or provide the `EventManager` since most systems require it for proper operation.
+When testing systems, always mock or provide the `EventManager` since most systems require it for proper operation. For Manager-based singletons, use the `reset()` class method in test fixtures to ensure clean state between tests. For Quest tests, explicitly call `QuestManager().add_quest(quest)` since auto-registration has been removed.

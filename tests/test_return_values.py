@@ -58,21 +58,26 @@ def test_quest_add_objective_returns_true():
 
 def test_quest_manager_add_quest_returns_true():
     """Adding a quest to manager should return True."""
-    from barebones_rpg.quests.quest import _get_quest_manager
+    from barebones_rpg.quests.quest import QuestManager
 
     # Get the singleton manager
-    manager = _get_quest_manager()
+    manager = QuestManager()
 
-    # Create a quest with a specific ID to test (auto-registers)
+    # Create a quest with a specific ID to test
     quest = Quest(
         id="test_quest_return_value_123", name="Test Quest", description="Test"
     )
 
-    # Check it was auto-registered
-    result = manager.get_quest("test_quest_return_value_123")
-
-    assert result is not None
-    assert result.name == "Test Quest"
+    # Explicitly add the quest to the manager
+    result = manager.add_quest(quest)
+    
+    # Check that add_quest returned True
+    assert result is True
+    
+    # Verify the quest is registered
+    retrieved = manager.get_quest("test_quest_return_value_123")
+    assert retrieved is not None
+    assert retrieved.name == "Test Quest"
 
 
 def test_dialog_tree_add_node_returns_true():

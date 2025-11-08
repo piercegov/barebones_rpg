@@ -18,8 +18,7 @@ from barebones_rpg.core.events import EventType, Event
 from barebones_rpg.entities.entity import Character, NPC, Enemy
 from barebones_rpg.entities.stats import Stats
 from barebones_rpg.entities.ai import SimplePathfindingAI
-from barebones_rpg.entities.ai_interface import AIContext, AIRegistry
-from barebones_rpg.entities.ai_system import AISystem
+from barebones_rpg.entities.ai_interface import AIContext
 from barebones_rpg.world.world import Location
 from barebones_rpg.world.tilemap_pathfinding import TilemapPathfinder
 from barebones_rpg.world.action_points import APManager
@@ -37,7 +36,7 @@ from barebones_rpg.dialog.dialog import (
     DialogConditions,
 )
 from barebones_rpg.dialog.dialog_renderer import DialogRenderer
-from barebones_rpg.quests.quest import Quest, QuestObjective, ObjectiveType
+from barebones_rpg.quests.quest import Quest, QuestObjective, ObjectiveType, QuestManager
 
 
 # Constants
@@ -101,9 +100,8 @@ class TileBasedGame:
         self.dialog_renderer.dialog_box_padding = 40
         self.dialog_renderer.choice_padding = 20
 
-        # AI system setup
-        self.ai_system = AISystem()
-        AIRegistry.register("goblin_melee", SimplePathfindingAI(self.pathfinder))
+        # AI setup
+        self.goblin_ai = SimplePathfindingAI(self.pathfinder)
 
         # Game state
         self.player: Optional[Character] = None
@@ -212,7 +210,7 @@ class TileBasedGame:
                 base_max_hp=20,
                 hp=30,
             ),
-            ai_type="goblin_melee",
+            ai=self.goblin_ai,
             faction="enemy",
             exp_reward=20,
             gold_reward=10,
@@ -227,6 +225,9 @@ class TileBasedGame:
             exp_reward=50,
             gold_reward=25,
         )
+        
+        # Add to QuestManager (optional, but needed for manager-based lookups)
+        QuestManager().add_quest(self.goblin_quest)
 
         # Use enemy ID for unique target tracking (enables retroactive completion)
         self.goblin_quest.add_objective(
@@ -577,37 +578,34 @@ class TileBasedGame:
         for enemy in enemies:
             print(f"\n{enemy.name}'s turn:")
 
+            # Skip if enemy has no AI
+            if not enemy.ai:
+                print(f"  {enemy.name} has no AI, skipping turn")
+                continue
+
             # Create AI context for the enemy
             context = AIContext(
-                entity=enemy, nearby_entities=[self.player], location=self.location
+                entity=enemy,
+                nearby_entities=[self.player],
+                metadata={"location": self.location}
             )
 
-            # Get AI decision
-            action = self.ai_system.process_entity(enemy, context)
+            # Get AI decision directly from the enemy's AI
+            action = enemy.ai.decide_action(context)
 
-            if action and action.action_type == "attack":
-                self._start_combat(enemy, action.target)
+            if action and action.get("action") == "attack":
+                self._start_combat(enemy, action.get("target"))
                 attacked = True
-            elif action and action.action_type == "move":
+            elif action and action.get("action") == "move":
                 # Execute the move
-                if action.target_position:
-                    if self.location.is_walkable(
-                        action.target_position[0], action.target_position[1]
-                    ):
-                        if (
-                            self.location.get_entity_at(
-                                action.target_position[0], action.target_position[1]
-                            )
-                            is None
-                        ):
+                target_pos = action.get("position")
+                if target_pos:
+                    if self.location.is_walkable(target_pos[0], target_pos[1]):
+                        if self.location.get_entity_at(target_pos[0], target_pos[1]) is None:
                             self.location.remove_entity(enemy)
-                            self.location.add_entity(
-                                enemy,
-                                action.target_position[0],
-                                action.target_position[1],
-                            )
-                            enemy.position = action.target_position
-                            print(f"  {enemy.name} moves to {action.target_position}")
+                            self.location.add_entity(enemy, target_pos[0], target_pos[1])
+                            enemy.position = target_pos
+                            print(f"  {enemy.name} moves to {target_pos}")
                 attacked = False
             else:
                 attacked = False

@@ -31,3 +31,4 @@ See [PUBLISHING.md](../../PUBLISHING.md) for complete setup instructions, includ
 
 All workflows use **trusted publishing** (OIDC) instead of API tokens, which is more secure. No secrets need to be stored in the repository for PyPI publishing.
 
+

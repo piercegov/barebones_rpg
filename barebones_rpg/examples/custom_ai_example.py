@@ -19,9 +19,6 @@ from barebones_rpg.entities import (
     Character,
     AIInterface,
     AIContext,
-    AIAction,
-    AIRegistry,
-    AISystem,
     Stats,
 )
 
@@ -48,8 +45,7 @@ class StateMachineAI(AIInterface):
 
     Example usage:
         >>> ai = StateMachineAI(patrol_points=[(5, 5), (10, 10)])
-        >>> AIRegistry.register("patrol_guard", ai)
-        >>> guard = Enemy(name="Guard", ai_type="patrol_guard")
+        >>> guard = Enemy(name="Guard", ai=ai)
     """
 
     def __init__(
@@ -74,7 +70,7 @@ class StateMachineAI(AIInterface):
         self.flee_threshold = flee_threshold
         self.chase_range = chase_range
 
-    def decide_action(self, context: AIContext) -> Optional[AIAction]:
+    def decide_action(self, context: AIContext) -> dict:
         """Decide action based on current state and context."""
         entity = context.entity
 
@@ -83,7 +79,7 @@ class StateMachineAI(AIInterface):
 
         # Execute state behavior
         if self.state == AIState.IDLE:
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
         elif self.state == AIState.PATROL:
             return self._patrol_behavior(context)
@@ -100,7 +96,7 @@ class StateMachineAI(AIInterface):
         elif self.state == AIState.FLEE:
             return self._flee_behavior(context)
 
-        return AIAction(action_type="wait")
+        return {"action": "wait"}
 
     def _update_state(self, context: AIContext):
         """Update state based on conditions."""
@@ -137,10 +133,10 @@ class StateMachineAI(AIInterface):
             else:
                 self.state = AIState.IDLE
 
-    def _patrol_behavior(self, context: AIContext) -> AIAction:
+    def _patrol_behavior(self, context: AIContext) -> dict:
         """Patrol between waypoints."""
         if not self.patrol_points:
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
         target_point = self.patrol_points[self.current_patrol_index]
 
@@ -151,37 +147,37 @@ class StateMachineAI(AIInterface):
             )
             target_point = self.patrol_points[self.current_patrol_index]
 
-        return AIAction(action_type="move", target_position=target_point)
+        return {"action": "move", "position": target_point}
 
-    def _guard_behavior(self, context: AIContext) -> AIAction:
+    def _guard_behavior(self, context: AIContext) -> dict:
         """Return to guard position."""
         if context.entity.position == self.guard_position:
-            return AIAction(action_type="wait")
-        return AIAction(action_type="move", target_position=self.guard_position)
+            return {"action": "wait"}
+        return {"action": "move", "position": self.guard_position}
 
-    def _chase_behavior(self, context: AIContext) -> AIAction:
+    def _chase_behavior(self, context: AIContext) -> dict:
         """Chase the nearest enemy."""
         if not context.nearby_entities:
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
         target = context.nearby_entities[0]
-        return AIAction(action_type="move", target_position=target.position)
+        return {"action": "move", "position": target.position}
 
-    def _attack_behavior(self, context: AIContext) -> AIAction:
+    def _attack_behavior(self, context: AIContext) -> dict:
         """Attack the nearest enemy."""
         if not context.nearby_entities:
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
         target = context.nearby_entities[0]
-        return AIAction(action_type="attack", target=target)
+        return {"action": "attack", "target": target}
 
-    def _flee_behavior(self, context: AIContext) -> AIAction:
+    def _flee_behavior(self, context: AIContext) -> dict:
         """Flee from nearest threat."""
         if not context.nearby_entities:
-            return AIAction(action_type="wait")
+            return {"action": "wait"}
 
         threat = context.nearby_entities[0]
-        return AIAction(action_type="flee", target=threat, parameters={"run_speed": 2})
+        return {"action": "flee", "target": threat, "run_speed": 2}
 
     def _distance(self, pos1: tuple[int, int], pos2: tuple[int, int]) -> int:
         """Calculate Manhattan distance."""
@@ -199,8 +195,7 @@ class MockLLMAI(AIInterface):
 
     Example usage:
         >>> ai = MockLLMAI(personality="aggressive warrior")
-        >>> AIRegistry.register("smart_boss", ai)
-        >>> boss = Enemy(name="Boss", ai_type="smart_boss")
+        >>> boss = Enemy(name="Boss", ai=ai)
     """
 
     def __init__(self, personality: str = "neutral", temperature: float = 0.7):
@@ -214,7 +209,7 @@ class MockLLMAI(AIInterface):
         self.temperature = temperature
         self.decision_history: list[str] = []
 
-    def decide_action(self, context: AIContext) -> Optional[AIAction]:
+    def decide_action(self, context: AIContext) -> dict:
         """Decide action using mock LLM reasoning."""
         # In real implementation, you'd call an LLM API here with a prompt like:
         #
@@ -275,69 +270,51 @@ class MockLLMAI(AIInterface):
 
         return "wait"
 
-    def _parse_decision(self, decision: str, context: AIContext) -> AIAction:
-        """Parse the mock LLM decision into an AIAction."""
+    def _parse_decision(self, decision: str, context: AIContext) -> dict:
+        """Parse the mock LLM decision into an action dict."""
         if decision == "attack" and context.nearby_entities:
-            return AIAction(
-                action_type="attack",
-                target=context.nearby_entities[0],
-                parameters={
-                    "reasoning": f"As a {self.personality}, I choose to attack"
-                },
-            )
+            return {
+                "action": "attack",
+                "target": context.nearby_entities[0],
+                "reasoning": f"As a {self.personality}, I choose to attack",
+            }
 
         elif decision == "move" and context.nearby_entities:
             target = context.nearby_entities[0]
-            return AIAction(
-                action_type="move",
-                target_position=target.position,
-                parameters={
-                    "reasoning": f"Moving toward target as a {self.personality}"
-                },
-            )
+            return {
+                "action": "move",
+                "position": target.position,
+                "reasoning": f"Moving toward target as a {self.personality}",
+            }
 
         elif decision == "flee" and context.nearby_entities:
-            return AIAction(
-                action_type="flee",
-                target=context.nearby_entities[0],
-                parameters={"reasoning": "Low health, retreating to survive"},
-            )
+            return {
+                "action": "flee",
+                "target": context.nearby_entities[0],
+                "reasoning": "Low health, retreating to survive",
+            }
 
         elif decision == "use_skill":
-            return AIAction(
-                action_type="use_skill",
-                parameters={
-                    "skill_name": "defensive_stance",
-                    "reasoning": "Using skill to improve survivability",
-                },
-            )
+            return {
+                "action": "use_skill",
+                "skill_name": "defensive_stance",
+                "reasoning": "Using skill to improve survivability",
+            }
 
-        return AIAction(
-            action_type="wait",
-            parameters={"reasoning": "Observing the situation"},
-        )
+        return {
+            "action": "wait",
+            "reasoning": "Observing the situation",
+        }
 
 
 def main():
     """Demonstrate custom AI implementations."""
     print("=== Custom AI Example ===\n")
 
-    # Setup AI system
-    ai_system = AISystem()
-
-    # Register state machine AIs
+    # Create AI instances
     patrol_ai = StateMachineAI(patrol_points=[(5, 5), (10, 5), (10, 10), (5, 10)])
     guard_ai = StateMachineAI(guard_position=(15, 15))
-
-    AIRegistry.register("patrol_guard", patrol_ai)
-    AIRegistry.register("static_guard", guard_ai)
-
-    # Register mock LLM AIs
     aggressive_ai = MockLLMAI(personality="aggressive warrior")
-    defensive_ai = MockLLMAI(personality="defensive tactician")
-
-    AIRegistry.register("aggressive_boss", aggressive_ai)
-    AIRegistry.register("defensive_boss", defensive_ai)
 
     # Create test entities
     player = Character(
@@ -366,7 +343,7 @@ def main():
             hp=50,
         ),
         position=(5, 5),
-        ai_type="patrol_guard",
+        ai=patrol_ai,
     )
 
     static_guard = Enemy(
@@ -381,7 +358,7 @@ def main():
             hp=60,
         ),
         position=(14, 14),
-        ai_type="static_guard",
+        ai=guard_ai,
     )
 
     aggressive_boss = Enemy(
@@ -396,7 +373,7 @@ def main():
             hp=150,
         ),
         position=(20, 20),
-        ai_type="aggressive_boss",
+        ai=aggressive_ai,
     )
 
     # Simulate a few turns
@@ -408,19 +385,22 @@ def main():
         print(f"--- Turn {turn + 1} ---")
 
         for enemy in enemies:
-            context = AIContext(entity=enemy, nearby_entities=[player], location=None)
+            # Build context
+            context = AIContext(entity=enemy, nearby_entities=[player])
 
-            action = ai_system.process_entity(enemy, context)
+            # Call AI directly
+            if enemy.ai:
+                action = enemy.ai.decide_action(context)
 
-            if action:
-                print(f"{enemy.name} ({enemy.ai_type}):")
-                print(f"  Action: {action.action_type}")
-                if action.target:
-                    print(f"  Target: {action.target.name}")
-                if action.target_position:
-                    print(f"  Position: {action.target_position}")
-                if action.parameters:
-                    print(f"  Parameters: {action.parameters}")
+                if action:
+                    print(f"{enemy.name}:")
+                    print(f"  Action: {action.get('action', 'unknown')}")
+                    if action.get("target"):
+                        print(f"  Target: {action['target'].name}")
+                    if action.get("position"):
+                        print(f"  Position: {action['position']}")
+                    if action.get("reasoning"):
+                        print(f"  Reasoning: {action['reasoning']}")
             print()
 
         print()
@@ -430,8 +410,8 @@ def main():
     print("1. AIInterface allows any AI implementation approach")
     print("2. State machines provide predictable, deterministic behavior")
     print("3. LLM-based AI can provide dynamic, contextual decisions")
-    print("4. AIRegistry allows efficient sharing of AI instances")
-    print("5. Users can mix and match different AI types in the same game")
+    print("4. Users assign AI instances directly to entities")
+    print("5. AI decisions are simple dicts that users can easily parse")
 
 
 if __name__ == "__main__":

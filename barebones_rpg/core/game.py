@@ -201,7 +201,7 @@ class Game:
         """
         from ..quests.quest import QuestManager
 
-        return QuestManager.instance()
+        return QuestManager()
 
     def start(self) -> None:
         """Start the game and initialize all systems."""

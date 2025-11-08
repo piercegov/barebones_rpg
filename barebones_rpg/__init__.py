@@ -21,9 +21,6 @@ from .entities import (
     TacticalAI,
     AIInterface,
     AIContext,
-    AIAction,
-    AIRegistry,
-    AISystem,
 )
 
 # Item exports
@@ -101,9 +98,6 @@ __all__ = [
     "TacticalAI",
     "AIInterface",
     "AIContext",
-    "AIAction",
-    "AIRegistry",
-    "AISystem",
     # Items
     "Item",
     "ItemType",

@@ -51,7 +51,7 @@ Let's start with a simple quest:
    ))
 
    # Access the quest manager
-   quest_manager = QuestManager.instance()
+   quest_manager = QuestManager()
 
    # Start the quest
    quest_manager.start_quest(quest.id, events=game.events)
@@ -212,7 +212,7 @@ For other objective types, update progress manually:
 .. code-block:: python
 
    # Using QuestManager helper method
-   quest_manager = QuestManager.instance()
+   quest_manager = QuestManager()
    
    # When player collects an item
    quest_manager.update_objective(
@@ -572,7 +572,7 @@ Here's a full example integrating all concepts:
    quest.check_completion(events=game.events)
 
    # Access quest manager
-   quest_manager = QuestManager.instance()
+   quest_manager = QuestManager()
    print(f"\nActive quests: {len(quest_manager.get_active_quests())}")
    print(f"Completed quests: {len(quest_manager.get_completed_quests())}")
 

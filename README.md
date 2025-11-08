@@ -110,6 +110,18 @@ combat = Combat(
     events=game.events
 )
 combat.start()
+
+# Example with custom AI
+from barebones_rpg import AIInterface, AIContext
+
+class SimpleAI(AIInterface):
+    def decide_action(self, context: AIContext) -> dict:
+        if context.nearby_entities:
+            return {"action": "attack", "target": context.nearby_entities[0]}
+        return {"action": "wait"}
+
+# Assign AI directly to entity
+goblin.ai = SimpleAI()
 ```
 
 See `barebones_rpg/examples/` for complete working examples.

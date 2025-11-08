@@ -6,7 +6,7 @@ from barebones_rpg.combat.actions import AttackAction
 from barebones_rpg.entities.entity import Character, Enemy
 from barebones_rpg.entities.stats import Stats
 from barebones_rpg.core.events import EventManager, EventType
-from barebones_rpg.items import Item, ItemType, LootRegistry
+from barebones_rpg.items import Item, ItemType, LootManager
 
 
 @pytest.fixture
@@ -292,11 +292,11 @@ def test_victory_callback_executed():
 def test_item_dropped_event_published():
     """Test that ITEM_DROPPED event is published when enemy with loot dies."""
     # Clear registry before test
-    LootRegistry.clear()
+    LootManager().clear()
 
     # Setup item in registry
     bone = Item(name="Goblin Bone", item_type=ItemType.MATERIAL, value=5)
-    LootRegistry.register("Goblin Bone", bone)
+    LootManager().register("Goblin Bone", bone)
 
     # Create enemy with loot table
     hero = Character(
@@ -350,17 +350,17 @@ def test_item_dropped_event_published():
     assert dropped_items[0].name == "Goblin Bone"
 
     # Cleanup
-    LootRegistry.clear()
+    LootManager().clear()
 
 
 def test_get_dropped_loot():
     """Test that dropped loot can be retrieved via get_dropped_loot()."""
     # Clear registry before test
-    LootRegistry.clear()
+    LootManager().clear()
 
     # Setup item in registry
     bone = Item(name="Goblin Bone", item_type=ItemType.MATERIAL, value=5)
-    LootRegistry.register("Goblin Bone", bone)
+    LootManager().register("Goblin Bone", bone)
 
     # Create enemy with loot table
     hero = Character(
@@ -411,7 +411,7 @@ def test_get_dropped_loot():
     assert dropped_loot[0].source == enemy
 
     # Cleanup
-    LootRegistry.clear()
+    LootManager().clear()
 
 
 def test_no_loot_drops_when_enemy_has_no_loot_table():
@@ -470,13 +470,13 @@ def test_no_loot_drops_when_enemy_has_no_loot_table():
 def test_multiple_enemies_drop_loot():
     """Test that multiple enemies can drop loot in the same combat."""
     # Clear registry before test
-    LootRegistry.clear()
+    LootManager().clear()
 
     # Setup items in registry
     bone = Item(name="Goblin Bone", item_type=ItemType.MATERIAL, value=5)
     scale = Item(name="Goblin Scale", item_type=ItemType.MATERIAL, value=10)
-    LootRegistry.register("Goblin Bone", bone)
-    LootRegistry.register("Goblin Scale", scale)
+    LootManager().register("Goblin Bone", bone)
+    LootManager().register("Goblin Scale", scale)
 
     # Create hero
     hero = Character(
@@ -541,15 +541,15 @@ def test_multiple_enemies_drop_loot():
     assert len(dropped_loot) >= 1  # At least one enemy died
 
     # Cleanup
-    LootRegistry.clear()
+    LootManager().clear()
 
 
 def test_weapon_damage_type_affects_damage():
     """Test that weapon damage types are properly applied in combat."""
-    from barebones_rpg.combat.damage_types import DamageTypeRegistry
+    from barebones_rpg.combat.damage_types import DamageTypeManager
     from barebones_rpg.items import create_weapon
 
-    DamageTypeRegistry.reset()
+    DamageTypeManager.reset()
 
     # Create hero with fire weapon
     hero = Character(
@@ -605,10 +605,10 @@ def test_weapon_damage_type_affects_damage():
 
 def test_skill_damage_type_with_resistance():
     """Test that skill damage types interact with resistances."""
-    from barebones_rpg.combat.damage_types import DamageTypeRegistry
+    from barebones_rpg.combat.damage_types import DamageTypeManager
     from barebones_rpg.combat import create_skill_action
 
-    DamageTypeRegistry.reset()
+    DamageTypeManager.reset()
 
     hero = Character(
         name="Mage",
@@ -662,13 +662,13 @@ def test_skill_damage_type_with_resistance():
 
 def test_custom_damage_type_in_combat():
     """Test that custom damage types work in combat."""
-    from barebones_rpg.combat.damage_types import DamageTypeRegistry
+    from barebones_rpg.combat.damage_types import DamageTypeManager
     from barebones_rpg.items import create_weapon
 
-    DamageTypeRegistry.reset()
+    DamageTypeManager.reset()
 
     # Register a custom damage type
-    DamageTypeRegistry.register("necrotic", color="green", description="Death magic")
+    DamageTypeManager().register("necrotic", color="green", description="Death magic")
 
     hero = Character(
         name="Necromancer",
@@ -719,10 +719,10 @@ def test_custom_damage_type_in_combat():
 
 def test_aoe_skill_with_different_resistances():
     """Test AOE skill hitting targets with different resistances."""
-    from barebones_rpg.combat.damage_types import DamageTypeRegistry
+    from barebones_rpg.combat.damage_types import DamageTypeManager
     from barebones_rpg.combat import create_skill_action
 
-    DamageTypeRegistry.reset()
+    DamageTypeManager.reset()
 
     mage = Character(
         name="Mage",

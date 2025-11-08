@@ -4,12 +4,13 @@ This module provides a flexible quest system for tracking player progress,
 objectives, and rewards.
 """
 
-from typing import Optional, List, Dict, Any, Callable, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Callable
 from enum import Enum, auto
 from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from ..core.events import EventManager, Event, EventType
+from ..core.singleton import Singleton
 
 
 class QuestStatus(Enum):
@@ -254,10 +255,13 @@ class Quest(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
     def __init__(self, **data):
-        """Initialize quest and auto-register to QuestManager."""
+        """Initialize quest.
+        
+        Note: Quests are not automatically registered to QuestManager.
+        Call QuestManager().add_quest(quest) explicitly if you want to use
+        the quest manager.
+        """
         super().__init__(**data)
-        # Auto-register to singleton QuestManager
-        _get_quest_manager().add_quest(self)
 
     def add_objective(self, objective: QuestObjective) -> bool:
         """Add an objective to the quest.
@@ -634,40 +638,39 @@ class Quest(BaseModel):
             return cls(**data)
 
 
-class QuestManager(BaseModel):
+class QuestManager(metaclass=Singleton):
     """Manages all quests in the game (Singleton).
 
-    This is a framework-managed singleton. Access via QuestManager.instance()
-    or through game.quests property.
+    This is a framework-managed singleton. Access by instantiating directly: QuestManager()
 
     Example:
         >>> quest = Quest(name="Tutorial Quest")  # Auto-registers
-        >>> QuestManager.instance().start_quest(quest.id)
+        >>> QuestManager().start_quest(quest.id)
         >>> # Or via game instance:
         >>> game.quests.start_quest(quest.id)
     """
 
-    quests: Dict[str, Quest] = Field(default_factory=dict, description="All quests")
-    active_quests: List[str] = Field(
-        default_factory=list, description="Active quest IDs"
-    )
-    completed_quests: List[str] = Field(
-        default_factory=list, description="Completed quest IDs"
-    )
-
-    model_config = {"arbitrary_types_allowed": True}
-
-    # Type hints for dynamically added class methods
-    if TYPE_CHECKING:
-
-        @classmethod
-        def instance(cls) -> "QuestManager": ...
-
-        @classmethod
-        def reset(cls) -> None: ...
+    def __init__(self):
+        """Initialize the quest manager."""
+        self.quests: Dict[str, Quest] = {}
+        self.active_quests: List[str] = []
+        self.completed_quests: List[str] = []
+    
+    @classmethod
+    def reset(cls) -> None:
+        """Reset manager to initial state (for testing).
+        
+        Clears the singleton instance, causing the next access to create
+        a fresh instance with default initialization.
+        """
+        if cls in Singleton._instances:
+            del Singleton._instances[cls]
 
     def add_quest(self, quest: Quest) -> bool:
         """Add a quest to the manager.
+        
+        Automatically registers any callbacks (on_start, on_complete, on_fail) to
+        the CallbackRegistry for serialization support.
 
         Args:
             quest: Quest to add
@@ -675,6 +678,34 @@ class QuestManager(BaseModel):
         Returns:
             True if quest was added successfully
         """
+        from ..core.serialization import CallbackRegistry
+        
+        # Auto-register quest callbacks
+        if quest.on_start:
+            CallbackRegistry.register(f"quest.{quest.id}.on_start", quest.on_start)
+        if quest.on_complete:
+            CallbackRegistry.register(f"quest.{quest.id}.on_complete", quest.on_complete)
+        if quest.on_fail:
+            CallbackRegistry.register(f"quest.{quest.id}.on_fail", quest.on_fail)
+        
+        # Auto-register objective callbacks
+        for i, objective in enumerate(quest.objectives):
+            if objective.condition:
+                CallbackRegistry.register(
+                    f"quest.{quest.id}.objective.{i}.condition",
+                    objective.condition
+                )
+            if objective.on_progress:
+                CallbackRegistry.register(
+                    f"quest.{quest.id}.objective.{i}.on_progress",
+                    objective.on_progress
+                )
+            if objective.on_complete:
+                CallbackRegistry.register(
+                    f"quest.{quest.id}.objective.{i}.on_complete",
+                    objective.on_complete
+                )
+        
         self.quests[quest.id] = quest
         return True
 
@@ -814,7 +845,7 @@ class QuestManager(BaseModel):
         """Save quest manager state.
 
         Returns:
-            Dictionary representation
+            Dictionary representation including quest state
         """
         return {
             "active_quests": self.active_quests,
@@ -826,47 +857,7 @@ class QuestManager(BaseModel):
         """Load quest manager state.
 
         Args:
-            data: Saved data
+            data: Saved data containing quest tracking
         """
         self.active_quests = data.get("active_quests", [])
         self.completed_quests = data.get("completed_quests", [])
-
-
-# Singleton implementation - stored outside class to avoid Pydantic field conflicts
-_quest_manager_instance: Optional[QuestManager] = None
-
-
-def _get_quest_manager() -> QuestManager:
-    """Get or create the QuestManager singleton instance.
-
-    Returns:
-        The QuestManager singleton instance
-    """
-    global _quest_manager_instance
-    if _quest_manager_instance is None:
-        _quest_manager_instance = QuestManager()
-    return _quest_manager_instance
-
-
-def _reset_quest_manager() -> None:
-    """Reset the QuestManager singleton instance.
-
-    Useful for testing or when you need to reset quest state.
-    """
-    global _quest_manager_instance
-    _quest_manager_instance = None
-
-
-# Add class methods to QuestManager after definition
-def _instance_method(cls) -> "QuestManager":
-    return _get_quest_manager()
-
-
-def _reset_method(cls) -> None:
-    _reset_quest_manager()
-
-
-if not TYPE_CHECKING:
-    # These are added dynamically at runtime but are defined as stubs for type checking
-    QuestManager.instance = classmethod(_instance_method)  # type: ignore[method-assign]
-    QuestManager.reset = classmethod(_reset_method)  # type: ignore[method-assign]

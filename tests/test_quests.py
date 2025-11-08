@@ -7,7 +7,6 @@ from barebones_rpg.quests.quest import (
     QuestStatus,
     ObjectiveType,
     QuestManager,
-    _reset_quest_manager,
 )
 from barebones_rpg.core.events import EventManager, EventType
 
@@ -15,9 +14,9 @@ from barebones_rpg.core.events import EventManager, EventType
 @pytest.fixture(autouse=True)
 def reset_quest_manager():
     """Reset QuestManager singleton before each test."""
-    _reset_quest_manager()
+    QuestManager.reset()
     yield
-    _reset_quest_manager()
+    QuestManager.reset()
 
 
 def test_objective_increment_beyond_target_marks_complete():
@@ -66,7 +65,7 @@ def test_quest_completes_when_all_objectives_complete():
 def test_quest_manager_tracks_active_vs_completed():
     """QuestManager should track active vs completed quests."""
     events = EventManager()
-    manager = QuestManager.instance()
+    manager = QuestManager()
 
     quest = Quest(name="Test Quest")
     objective = QuestObjective(
@@ -75,6 +74,9 @@ def test_quest_manager_tracks_active_vs_completed():
         target_count=1,
     )
     quest.add_objective(objective)
+    
+    # Explicitly add quest to manager (no longer auto-registered)
+    manager.add_quest(quest)
 
     manager.start_quest(quest.id, events)
 
@@ -122,6 +124,9 @@ def test_quest_status_transitions():
         target_count=1,
     )
     quest.add_objective(objective)
+    
+    # Explicitly add quest to manager (no longer auto-registered)
+    QuestManager().add_quest(quest)
 
     assert quest.status == QuestStatus.NOT_STARTED
 
@@ -246,7 +251,7 @@ def test_objective_on_progress_callback():
 def test_quest_manager_update_objective():
     """QuestManager update_objective should update matching objectives."""
     events = EventManager()
-    manager = QuestManager.instance()
+    manager = QuestManager()
 
     quest = Quest(name="Hunt Quest")
     objective = QuestObjective(
@@ -256,6 +261,9 @@ def test_quest_manager_update_objective():
         target_count=5,
     )
     quest.add_objective(objective)
+    
+    # Explicitly add quest to manager (no longer auto-registered)
+    manager.add_quest(quest)
 
     manager.start_quest(quest.id, events)
 
@@ -270,10 +278,14 @@ def test_quest_manager_update_objective():
 def test_quest_manager_get_active_quests():
     """QuestManager should return list of active quests."""
     events = EventManager()
-    manager = QuestManager.instance()
+    manager = QuestManager()
 
     quest1 = Quest(name="Quest 1")
     quest2 = Quest(name="Quest 2")
+    
+    # Explicitly add quests to manager (no longer auto-registered)
+    manager.add_quest(quest1)
+    manager.add_quest(quest2)
 
     manager.start_quest(quest1.id, events)
     manager.start_quest(quest2.id, events)
@@ -287,9 +299,12 @@ def test_quest_manager_get_active_quests():
 
 def test_quest_manager_get_quest_by_name():
     """QuestManager should find quests by name."""
-    manager = QuestManager.instance()
+    manager = QuestManager()
 
     quest = Quest(name="Unique Quest Name")
+    
+    # Explicitly add quest to manager (no longer auto-registered)
+    manager.add_quest(quest)
 
     found = manager.get_quest_by_name("Unique Quest Name")
 
@@ -356,19 +371,26 @@ def test_quest_is_active():
 
 def test_quest_manager_singleton():
     """QuestManager should be a singleton."""
-    manager1 = QuestManager.instance()
-    manager2 = QuestManager.instance()
+    manager1 = QuestManager()
+    manager2 = QuestManager()
 
     assert manager1 is manager2
 
 
-def test_quest_auto_registers_to_manager():
-    """Quest should auto-register to QuestManager on creation."""
-    manager = QuestManager.instance()
+def test_quest_explicit_registration_to_manager():
+    """Quest should be explicitly registered to QuestManager."""
+    manager = QuestManager()
 
-    quest = Quest(name="Auto-registered Quest")
-
-    found = manager.get_quest(quest.id)
-
-    assert found is not None
-    assert found.id == quest.id
+    quest = Quest(name="Explicitly-registered Quest")
+    
+    # Quest should NOT be auto-registered
+    found_before = manager.get_quest(quest.id)
+    assert found_before is None
+    
+    # Explicitly add quest to manager
+    manager.add_quest(quest)
+    
+    # Now it should be found
+    found_after = manager.get_quest(quest.id)
+    assert found_after is not None
+    assert found_after.id == quest.id

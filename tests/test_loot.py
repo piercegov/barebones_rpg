@@ -4,7 +4,7 @@ import pytest
 from barebones_rpg.items import (
     Item,
     ItemType,
-    LootRegistry,
+    LootManager,
     LootDrop,
     roll_loot_table,
     create_loot_entry,
@@ -16,17 +16,17 @@ from barebones_rpg.entities import Enemy, Stats
 @pytest.fixture(autouse=True)
 def clear_registry():
     """Clear the loot registry before each test."""
-    LootRegistry.clear()
+    LootManager().clear()
     yield
-    LootRegistry.clear()
+    LootManager().clear()
 
 
 def test_loot_registry_register_and_get():
     """Test registering and retrieving items from the registry."""
     bone = Item(name="Bone", item_type=ItemType.MATERIAL, value=5)
-    LootRegistry.register("Bone", bone)
+    LootManager().register("Bone", bone)
 
-    retrieved = LootRegistry.get("Bone")
+    retrieved = LootManager().get("Bone")
     assert retrieved is not None
     assert retrieved.name == "Bone"
     assert retrieved.value == 5
@@ -35,29 +35,29 @@ def test_loot_registry_register_and_get():
 
 def test_loot_registry_get_nonexistent():
     """Test getting a non-existent item returns None."""
-    result = LootRegistry.get("DoesNotExist")
+    result = LootManager().get("DoesNotExist")
     assert result is None
 
 
 def test_loot_registry_has():
     """Test checking if an item is registered."""
     bone = Item(name="Bone", item_type=ItemType.MATERIAL, value=5)
-    LootRegistry.register("Bone", bone)
+    LootManager().register("Bone", bone)
 
-    assert LootRegistry.has("Bone")
-    assert not LootRegistry.has("DoesNotExist")
+    assert LootManager().has("Bone")
+    assert not LootManager().has("DoesNotExist")
 
 
 def test_loot_registry_clear():
     """Test clearing the registry."""
     bone = Item(name="Bone", item_type=ItemType.MATERIAL, value=5)
-    LootRegistry.register("Bone", bone)
+    LootManager().register("Bone", bone)
 
-    assert LootRegistry.has("Bone")
+    assert LootManager().has("Bone")
 
-    LootRegistry.clear()
+    LootManager().clear()
 
-    assert not LootRegistry.has("Bone")
+    assert not LootManager().has("Bone")
 
 
 def test_loot_registry_with_factory_function():
@@ -66,10 +66,10 @@ def test_loot_registry_with_factory_function():
     def create_bone():
         return Item(name="Bone", item_type=ItemType.MATERIAL, value=5)
 
-    LootRegistry.register("Bone", create_bone)
+    LootManager().register("Bone", create_bone)
 
-    item1 = LootRegistry.get("Bone")
-    item2 = LootRegistry.get("Bone")
+    item1 = LootManager().get("Bone")
+    item2 = LootManager().get("Bone")
 
     assert item1 is not None
     assert item2 is not None
@@ -82,9 +82,9 @@ def test_loot_registry_factory_returns_none():
     def create_nothing():
         return None
 
-    LootRegistry.register("Nothing", create_nothing)
+    LootManager().register("Nothing", create_nothing)
 
-    result = LootRegistry.get("Nothing")
+    result = LootManager().get("Nothing")
     assert result is None
 
 
@@ -93,12 +93,12 @@ def test_loot_registry_unique_item():
     unique_sword = Item(
         name="Legendary Sword", item_type=ItemType.WEAPON, unique=True, base_damage=50
     )
-    LootRegistry.register("Legendary Sword", unique_sword)
+    LootManager().register("Legendary Sword", unique_sword)
 
-    first_drop = LootRegistry.get("Legendary Sword")
+    first_drop = LootManager().get("Legendary Sword")
     assert first_drop is not None
 
-    second_drop = LootRegistry.get("Legendary Sword")
+    second_drop = LootManager().get("Legendary Sword")
     assert second_drop is None  # Already dropped
 
 
@@ -107,21 +107,21 @@ def test_loot_registry_reset_unique_tracking():
     unique_sword = Item(
         name="Legendary Sword", item_type=ItemType.WEAPON, unique=True, base_damage=50
     )
-    LootRegistry.register("Legendary Sword", unique_sword)
+    LootManager().register("Legendary Sword", unique_sword)
 
-    first_drop = LootRegistry.get("Legendary Sword")
+    first_drop = LootManager().get("Legendary Sword")
     assert first_drop is not None
 
-    LootRegistry.reset_unique_tracking()
+    LootManager().reset_unique_tracking()
 
-    second_drop = LootRegistry.get("Legendary Sword")
+    second_drop = LootManager().get("Legendary Sword")
     assert second_drop is not None  # Can drop again after reset
 
 
 def test_roll_loot_table_with_string_items():
     """Test rolling on a loot table with string item references."""
     bone = Item(name="Bone", item_type=ItemType.MATERIAL, value=5)
-    LootRegistry.register("Bone", bone)
+    LootManager().register("Bone", bone)
 
     loot_table = [{"item": "Bone", "chance": 1.0}]  # 100% drop
 
@@ -150,7 +150,7 @@ def test_roll_loot_table_with_mixed_entries():
     bone = Item(name="Bone", item_type=ItemType.MATERIAL, value=5)
     scale = Item(name="Scale", item_type=ItemType.MATERIAL, value=10)
 
-    LootRegistry.register("Bone", bone)
+    LootManager().register("Bone", bone)
 
     loot_table = [
         {"item": "Bone", "chance": 1.0},
@@ -167,7 +167,7 @@ def test_roll_loot_table_with_mixed_entries():
 def test_roll_loot_table_probability():
     """Test that probability works correctly (statistical test)."""
     bone = Item(name="Bone", item_type=ItemType.MATERIAL, value=5)
-    LootRegistry.register("Bone", bone)
+    LootManager().register("Bone", bone)
 
     loot_table = [{"item": "Bone", "chance": 0.5}]  # 50% drop
 
@@ -313,7 +313,7 @@ def test_loot_table_respects_max_stack():
 
 
 def test_unique_item_only_drops_once_with_registry():
-    """Test that unique items registered in LootRegistry only drop once."""
+    """Test that unique items registered in LootManager only drop once."""
     # Create and register a unique item
     legendary_sword = Item(
         name="Legendary Sword",
@@ -322,7 +322,7 @@ def test_unique_item_only_drops_once_with_registry():
         base_damage=50,
         value=10000,
     )
-    LootRegistry.register("Legendary Sword", legendary_sword)
+    LootManager().register("Legendary Sword", legendary_sword)
 
     # Create loot table with 100% drop chance
     loot_table = [{"item": "Legendary Sword", "chance": 1.0}]
@@ -378,7 +378,7 @@ def test_multiple_enemies_with_same_unique_drop():
         stat_modifiers={"atk": 10, "defense": 10},
         value=5000,
     )
-    LootRegistry.register("Ring of Power", unique_ring)
+    LootManager().register("Ring of Power", unique_ring)
 
     # Create 3 bosses that all have 100% chance to drop the ring
     boss1_loot = [{"item": "Ring of Power", "chance": 1.0}]

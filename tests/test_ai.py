@@ -2,7 +2,7 @@
 
 import pytest
 from barebones_rpg.entities.ai import SimplePathfindingAI, TacticalAI
-from barebones_rpg.entities.ai_interface import AIContext, AIAction
+from barebones_rpg.entities.ai_interface import AIContext
 from barebones_rpg.world.world import Location, Tile
 from barebones_rpg.world.tilemap_pathfinding import TilemapPathfinder
 from barebones_rpg.entities.entity import Entity, Character, Enemy
@@ -123,12 +123,12 @@ def test_simple_ai_attack_in_range(
 
     ai = SimplePathfindingAI(pathfinder)
     context = AIContext(
-        entity=enemy_entity, nearby_entities=[player_entity], location=simple_location
+        entity=enemy_entity, nearby_entities=[player_entity], metadata={"location": simple_location}
     )
     action = ai.decide_action(context)
 
-    assert action.action_type == "attack"
-    assert action.target == player_entity
+    assert action["action"] == "attack"
+    assert action["target"] == player_entity
 
 
 def test_simple_ai_move_toward_target(
@@ -142,12 +142,12 @@ def test_simple_ai_move_toward_target(
 
     ai = SimplePathfindingAI(pathfinder)
     context = AIContext(
-        entity=enemy_entity, nearby_entities=[player_entity], location=simple_location
+        entity=enemy_entity, nearby_entities=[player_entity], metadata={"location": simple_location}
     )
     action = ai.decide_action(context)
 
-    assert action.action_type == "move"
-    assert action.target_position is not None
+    assert action["action"] == "move"
+    assert action.get("position") is not None
 
 
 def test_simple_ai_wait_no_path(
@@ -158,11 +158,11 @@ def test_simple_ai_wait_no_path(
     context = AIContext(
         entity=enemy_entity,
         nearby_entities=[player_entity],
-        location=None,  # No location
+        metadata={},  # No location
     )
     action = ai.decide_action(context)
 
-    assert action.action_type == "wait"
+    assert action["action"] == "wait"
 
 
 def test_simple_ai_custom_attack_range(
@@ -176,12 +176,12 @@ def test_simple_ai_custom_attack_range(
 
     ai = SimplePathfindingAI(pathfinder, attack_range=2)
     context = AIContext(
-        entity=enemy_entity, nearby_entities=[player_entity], location=simple_location
+        entity=enemy_entity, nearby_entities=[player_entity], metadata={"location": simple_location}
     )
     action = ai.decide_action(context)
 
-    assert action.action_type == "attack"
-    assert action.target == player_entity
+    assert action["action"] == "attack"
+    assert action["target"] == player_entity
 
 
 def test_tactical_ai_initialization(pathfinder):
@@ -239,12 +239,12 @@ def test_tactical_ai_decide_attack(
 
     ai = TacticalAI(pathfinder)
     context = AIContext(
-        entity=enemy_entity, nearby_entities=[player_entity], location=simple_location
+        entity=enemy_entity, nearby_entities=[player_entity], metadata={"location": simple_location}
     )
     action = ai.decide_action(context)
 
-    assert action.action_type == "attack"
-    assert action.target == player_entity
+    assert action["action"] == "attack"
+    assert action["target"] == player_entity
 
 
 def test_tactical_ai_decide_flee(
@@ -260,12 +260,12 @@ def test_tactical_ai_decide_flee(
     context = AIContext(
         entity=weak_enemy_entity,
         nearby_entities=[player_entity],
-        location=simple_location,
+        metadata={"location": simple_location},
     )
     action = ai.decide_action(context)
 
-    assert action.action_type == "flee"
-    assert action.target == player_entity
+    assert action["action"] == "flee"
+    assert action["target"] == player_entity
 
 
 def test_tactical_ai_set_behavior(pathfinder):

@@ -12,6 +12,9 @@ from ..core.events import EventManager, Event, EventType
 
 if TYPE_CHECKING:
     from ..items import Inventory, Equipment
+    from .ai_interface import AIInterface
+else:
+    AIInterface = Any  # Runtime fallback to avoid circular imports
 
 
 class Entity(BaseModel):
@@ -59,8 +62,8 @@ class Entity(BaseModel):
     )
 
     # AI
-    ai_type: Optional[str] = Field(
-        default=None, description="AI type (registry key) for this entity's behavior"
+    ai: Optional["AIInterface"] = Field(
+        default=None, description="AI instance for this entity's behavior"
     )
 
     # Metadata
@@ -112,10 +115,10 @@ class Entity(BaseModel):
             - Negative resistance increases damage (-0.5 = 50% extra damage, i.e., weakness)
             - Both defense and resistance can be applied simultaneously
         """
-        from ..combat.damage_types import DamageTypeRegistry
+        from ..combat.damage_types import DamageTypeManager
 
         # Ensure damage type is registered (auto-registers in lenient mode)
-        DamageTypeRegistry.ensure_registered(damage_type)
+        DamageTypeManager().ensure_registered(damage_type)
 
         # Get defense based on damage type
         if damage_type == "physical":

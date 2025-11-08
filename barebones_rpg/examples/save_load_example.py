@@ -2,16 +2,16 @@
 
 This example shows how to:
 - Configure save directory
-- Register callbacks for serialization
+- Use LootManager for automatic callback registration
 - Save and load game state
 - Manage multiple save files
 """
 
-from barebones_rpg.core import Game, GameConfig, CallbackRegistry
+from barebones_rpg.core import Game, GameConfig
 from barebones_rpg.entities import Character, Enemy, Stats
-from barebones_rpg.items import create_weapon, create_consumable, create_armor
+from barebones_rpg.items import create_weapon, create_consumable, create_armor, LootManager
 from barebones_rpg.party import Party
-from barebones_rpg.quests import Quest, QuestObjective, ObjectiveType
+from barebones_rpg.quests import Quest, QuestObjective, ObjectiveType, QuestManager
 
 
 # Define callbacks that will be used in items/quests
@@ -40,12 +40,15 @@ def main():
     """Run the save/load example."""
     print("=== Barebones RPG Save/Load Example ===\n")
 
-    # Step 1: Register callbacks before creating items/quests
-    print("1. Registering callbacks...")
-    CallbackRegistry.register("heal_potion", heal_potion)
-    CallbackRegistry.register("mana_potion", mana_potion)
-    CallbackRegistry.register("quest_complete", quest_complete_callback)
-    print(f"   Registered: {CallbackRegistry.get_all_names()}\n")
+    # Step 1: Register items with LootManager (auto-registers callbacks!)
+    print("1. Registering items with LootManager...")
+    health_pot = create_consumable("Health Potion", on_use=heal_potion, value=20)
+    mana_pot = create_consumable("Mana Potion", on_use=mana_potion, value=15)
+    
+    # When you register items, callbacks are automatically registered
+    LootManager().register("health_potion", health_pot)
+    LootManager().register("mana_potion", mana_pot)
+    print("   ✓ Items registered (callbacks auto-registered!)\n")
 
     # Step 2: Create game with custom save directory
     print("2. Creating game with custom save directory...")
@@ -66,15 +69,11 @@ def main():
     hero.init_inventory()
     hero.inventory.add_gold(500)
 
-    # Add items to hero's inventory
+    # Add items to hero's inventory (get from LootManager)
     hero.inventory.add_item(create_weapon("Iron Sword", base_damage=10, value=50))
     hero.inventory.add_item(create_armor("Leather Armor", defense=5, value=30))
-    hero.inventory.add_item(
-        create_consumable("Health Potion", on_use=heal_potion, value=20)
-    )
-    hero.inventory.add_item(
-        create_consumable("Mana Potion", on_use=mana_potion, value=15)
-    )
+    hero.inventory.add_item(LootManager().get("health_potion"))
+    hero.inventory.add_item(LootManager().get("mana_potion"))
 
     # Register hero
     game.register_entity(hero)
@@ -90,7 +89,7 @@ def main():
     game.register_party(party)
     print(f"   Created party: {party.name} with {party.size()} members")
 
-    # Create quest
+    # Create quest and add to QuestManager (auto-registers callbacks!)
     quest = Quest(
         name="Goblin Extermination",
         description="Clear the goblin camp",
@@ -107,6 +106,8 @@ def main():
             current_count=2,  # Already killed 2
         )
     )
+    # Add to QuestManager - this auto-registers callbacks
+    QuestManager().add_quest(quest)
     game.register_quest(quest)
     print(
         f"   Created quest: {quest.name} ({quest.get_progress_percentage()*100:.0f}% complete)\n"
@@ -203,11 +204,12 @@ def main():
 
     print("=== Example Complete ===")
     print("\nKey Takeaways:")
-    print("1. Register callbacks with CallbackRegistry before creating items/quests")
-    print("2. Configure save_directory in GameConfig")
-    print("3. Register entities, items, parties, and quests with game.register_*()")
-    print("4. Use game.save_to_file() and game.load_from_file() for persistence")
-    print("5. Callbacks are automatically serialized and restored")
+    print("1. Register items with LootManager - callbacks are auto-registered!")
+    print("2. Add quests to QuestManager - callbacks are auto-registered!")
+    print("3. Configure save_directory in GameConfig")
+    print("4. Register entities, parties, and quests with game.register_*()")
+    print("5. Use game.save_to_file() and game.load_from_file() for persistence")
+    print("6. Callbacks are automatically serialized and restored")
 
 
 if __name__ == "__main__":

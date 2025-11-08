@@ -2,20 +2,20 @@
 
 import pytest
 import warnings
-from barebones_rpg.combat.damage_types import DamageTypeRegistry, DamageTypeMetadata
+from barebones_rpg.combat.damage_types import DamageTypeManager, DamageTypeMetadata
 from barebones_rpg.entities import Entity, Enemy, Stats
 
 
 @pytest.fixture
 def reset_registry():
-    """Reset the registry before each test."""
-    DamageTypeRegistry.reset()
+    """Reset the manager before each test."""
+    DamageTypeManager.reset()
     yield
-    DamageTypeRegistry.reset()
+    DamageTypeManager.reset()
 
 
-class TestDamageTypeRegistry:
-    """Tests for the DamageTypeRegistry."""
+class TestDamageTypeManager:
+    """Tests for the DamageTypeManager."""
 
     def test_common_types_preregistered(self, reset_registry):
         """Test that common damage types are pre-registered."""
@@ -30,16 +30,16 @@ class TestDamageTypeRegistry:
             "holy",
         ]
         for damage_type in common_types:
-            assert DamageTypeRegistry.is_registered(damage_type)
+            assert DamageTypeManager().is_registered(damage_type)
 
     def test_register_custom_type(self, reset_registry):
         """Test registering a custom damage type."""
-        DamageTypeRegistry.register(
+        DamageTypeManager().register(
             "necrotic", color="green", description="Death magic"
         )
 
-        assert DamageTypeRegistry.is_registered("necrotic")
-        metadata = DamageTypeRegistry.get_metadata("necrotic")
+        assert DamageTypeManager().is_registered("necrotic")
+        metadata = DamageTypeManager().get_metadata("necrotic")
         assert metadata is not None
         assert metadata.name == "necrotic"
         assert metadata.color == "green"
@@ -47,58 +47,58 @@ class TestDamageTypeRegistry:
 
     def test_register_with_tags(self, reset_registry):
         """Test registering with tags."""
-        DamageTypeRegistry.register("arcane", tags=["magical", "rare"])
+        DamageTypeManager().register("arcane", tags=["magical", "rare"])
 
-        metadata = DamageTypeRegistry.get_metadata("arcane")
+        metadata = DamageTypeManager().get_metadata("arcane")
         assert "magical" in metadata.tags
         assert "rare" in metadata.tags
 
     def test_register_with_custom_metadata(self, reset_registry):
         """Test registering with custom metadata fields."""
-        DamageTypeRegistry.register("quantum", special_effect="phase", power_level=9000)
+        DamageTypeManager().register("quantum", special_effect="phase", power_level=9000)
 
-        metadata = DamageTypeRegistry.get_metadata("quantum")
+        metadata = DamageTypeManager().get_metadata("quantum")
         assert metadata.custom["special_effect"] == "phase"
         assert metadata.custom["power_level"] == 9000
 
     def test_get_all_types(self, reset_registry):
         """Test getting all registered types."""
-        all_types = DamageTypeRegistry.get_all()
+        all_types = DamageTypeManager().get_all()
         assert "physical" in all_types
         assert "fire" in all_types
         assert len(all_types) >= 8
 
     def test_get_all_with_metadata(self, reset_registry):
         """Test getting all types with metadata."""
-        all_meta = DamageTypeRegistry.get_all_with_metadata()
+        all_meta = DamageTypeManager().get_all_with_metadata()
         assert isinstance(all_meta, dict)
         assert isinstance(all_meta["fire"], DamageTypeMetadata)
         assert all_meta["fire"].color == "red"
 
     def test_lenient_mode_auto_registers(self, reset_registry):
         """Test that lenient mode auto-registers unknown types with warning."""
-        DamageTypeRegistry.set_lenient_mode(True)
+        DamageTypeManager().set_lenient_mode(True)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            DamageTypeRegistry.ensure_registered("unknown_type")
+            DamageTypeManager().ensure_registered("unknown_type")
             assert len(w) == 1
             assert "Auto-registering" in str(w[0].message)
 
-        assert DamageTypeRegistry.is_registered("unknown_type")
+        assert DamageTypeManager().is_registered("unknown_type")
 
     def test_strict_mode_raises_error(self, reset_registry):
         """Test that strict mode raises error for unknown types."""
-        DamageTypeRegistry.set_lenient_mode(False)
+        DamageTypeManager().set_lenient_mode(False)
 
         with pytest.raises(ValueError, match="not registered"):
-            DamageTypeRegistry.ensure_registered("unregistered_type")
+            DamageTypeManager().ensure_registered("unregistered_type")
 
     def test_ensure_registered_no_warning_for_existing(self, reset_registry):
         """Test that ensure_registered doesn't warn for already registered types."""
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            DamageTypeRegistry.ensure_registered("fire")
+            DamageTypeManager().ensure_registered("fire")
             assert len(w) == 0
 
 

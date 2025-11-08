@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import random
 
 from .item import Item
-from .loot_registry import LootRegistry
+from .loot_manager import LootManager
 
 
 @dataclass
@@ -46,7 +46,7 @@ def roll_loot_table(
     ]
     ```
 
-    For string item names, the LootRegistry is used to retrieve the item template.
+    For string item names, the LootManager is used to retrieve the item template.
     For Item objects, a deep copy is created. Each entry is rolled independently,
     so multiple items can drop from a single table.
 
@@ -58,10 +58,10 @@ def roll_loot_table(
         List of LootDrop objects for items that successfully dropped
 
     Example:
-        >>> from barebones_rpg.items import roll_loot_table, LootRegistry, create_material
+        >>> from barebones_rpg.items import roll_loot_table, LootManager, create_material
         >>>
-        >>> # Setup registry
-        >>> LootRegistry.register("Bone", create_material("Bone", value=5))
+        >>> # Setup manager
+        >>> LootManager().register("Bone", create_material("Bone", value=5))
         >>>
         >>> # Define loot table
         >>> loot_table = [
@@ -103,10 +103,10 @@ def roll_loot_table(
         item: Optional[Item] = None
 
         if isinstance(item_ref, str):
-            # Look up in registry
-            item = LootRegistry.get(item_ref)
+            # Look up in manager
+            item = LootManager().get(item_ref)
             if item is None:
-                # Item not found in registry, skip
+                # Item not found in manager, skip
                 continue
         elif isinstance(item_ref, Item):
             # Direct item object - make a deep copy and generate new ID

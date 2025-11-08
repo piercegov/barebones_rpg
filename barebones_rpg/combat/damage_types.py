@@ -1,6 +1,6 @@
-"""Damage type system with registry for flexible damage types and resistances.
+"""Damage type system with manager for flexible damage types and resistances.
 
-This module provides a registry pattern for damage types, allowing games to
+This module provides a singleton manager for damage types, allowing games to
 register custom damage types with metadata while maintaining flexibility.
 """
 
@@ -28,10 +28,10 @@ class DamageTypeMetadata(BaseModel):
     model_config = {"extra": "allow"}  # Allow additional fields
 
 
-class DamageTypeRegistry(metaclass=Singleton):
-    """Global registry for damage types.
+class DamageTypeManager(metaclass=Singleton):
+    """Global manager for damage types (Singleton).
 
-    This registry manages all damage types in the game. It supports:
+    This manager handles all damage types in the game. It supports:
     - Pre-registration of common types
     - Metadata attachment (colors, descriptions, tags)
     - Lenient mode (auto-registers unknown types)
@@ -39,19 +39,19 @@ class DamageTypeRegistry(metaclass=Singleton):
 
     Example:
         >>> # Register a custom damage type
-        >>> DamageTypeRegistry.register("necrotic", color="green", description="Death magic")
+        >>> DamageTypeManager().register("necrotic", color="green", description="Death magic")
         >>>
         >>> # Check if registered
-        >>> DamageTypeRegistry.is_registered("necrotic")
+        >>> DamageTypeManager().is_registered("necrotic")
         True
         >>>
         >>> # Get metadata
-        >>> meta = DamageTypeRegistry.get_metadata("necrotic")
+        >>> meta = DamageTypeManager().get_metadata("necrotic")
         >>> print(meta.color)
         green
         >>>
         >>> # Get all registered types
-        >>> types = DamageTypeRegistry.get_all()
+        >>> types = DamageTypeManager().get_all()
         >>> print(types)
         ['physical', 'magic', 'fire', 'ice', 'poison', 'lightning', 'dark', 'holy', 'necrotic']
     """
@@ -134,9 +134,8 @@ class DamageTypeRegistry(metaclass=Singleton):
         )
         self._types[damage_type] = metadata
 
-    @classmethod
     def register(
-        cls,
+        self,
         damage_type: str,
         color: Optional[str] = None,
         description: Optional[str] = None,
@@ -152,11 +151,9 @@ class DamageTypeRegistry(metaclass=Singleton):
             tags: List of classification tags
             **kwargs: Additional custom metadata
         """
-        instance = cls()
-        instance._register_instance(damage_type, color, description, tags, **kwargs)
+        self._register_instance(damage_type, color, description, tags, **kwargs)
 
-    @classmethod
-    def is_registered(cls, damage_type: str) -> bool:
+    def is_registered(self, damage_type: str) -> bool:
         """Check if a damage type is registered.
 
         Args:
@@ -165,11 +162,9 @@ class DamageTypeRegistry(metaclass=Singleton):
         Returns:
             True if registered
         """
-        instance = cls()
-        return damage_type in instance._types
+        return damage_type in self._types
 
-    @classmethod
-    def get_metadata(cls, damage_type: str) -> Optional[DamageTypeMetadata]:
+    def get_metadata(self, damage_type: str) -> Optional[DamageTypeMetadata]:
         """Get metadata for a damage type.
 
         Args:
@@ -178,31 +173,25 @@ class DamageTypeRegistry(metaclass=Singleton):
         Returns:
             Metadata object or None if not registered
         """
-        instance = cls()
-        return instance._types.get(damage_type)
+        return self._types.get(damage_type)
 
-    @classmethod
-    def get_all(cls) -> List[str]:
+    def get_all(self) -> List[str]:
         """Get all registered damage types.
 
         Returns:
             List of damage type names
         """
-        instance = cls()
-        return list(instance._types.keys())
+        return list(self._types.keys())
 
-    @classmethod
-    def get_all_with_metadata(cls) -> Dict[str, DamageTypeMetadata]:
+    def get_all_with_metadata(self) -> Dict[str, DamageTypeMetadata]:
         """Get all damage types with their metadata.
 
         Returns:
             Dictionary mapping damage type names to metadata
         """
-        instance = cls()
-        return dict(instance._types)
+        return dict(self._types)
 
-    @classmethod
-    def ensure_registered(cls, damage_type: str) -> None:
+    def ensure_registered(self, damage_type: str) -> None:
         """Ensure a damage type is registered, auto-registering if in lenient mode.
 
         This is called internally when an unknown damage type is encountered.
@@ -215,31 +204,28 @@ class DamageTypeRegistry(metaclass=Singleton):
         Raises:
             ValueError: If damage type not registered and not in lenient mode
         """
-        instance = cls()
-
-        if cls.is_registered(damage_type):
+        if self.is_registered(damage_type):
             return
 
-        if instance._lenient_mode:
+        if self._lenient_mode:
             # Auto-register with warning (only warn once per type)
-            if damage_type not in instance._warned_types:
+            if damage_type not in self._warned_types:
                 warnings.warn(
                     f"Damage type '{damage_type}' not registered. Auto-registering in lenient mode. "
-                    f"Consider pre-registering with DamageTypeRegistry.register('{damage_type}', ...)",
+                    f"Consider pre-registering with DamageTypeManager().register('{damage_type}', ...)",
                     UserWarning,
                     stacklevel=3,
                 )
-                instance._warned_types.add(damage_type)
+                self._warned_types.add(damage_type)
 
-            cls.register(damage_type, description="Auto-registered damage type")
+            self.register(damage_type, description="Auto-registered damage type")
         else:
             raise ValueError(
                 f"Damage type '{damage_type}' not registered. "
-                f"Register it with DamageTypeRegistry.register('{damage_type}', ...)"
+                f"Register it with DamageTypeManager().register('{damage_type}', ...)"
             )
 
-    @classmethod
-    def set_lenient_mode(cls, lenient: bool) -> None:
+    def set_lenient_mode(self, lenient: bool) -> None:
         """Set lenient mode on/off.
 
         In lenient mode, unknown damage types are auto-registered with a warning.
@@ -248,17 +234,14 @@ class DamageTypeRegistry(metaclass=Singleton):
         Args:
             lenient: True for lenient mode, False for strict mode
         """
-        instance = cls()
-        instance._lenient_mode = lenient
-
+        self._lenient_mode = lenient
+    
     @classmethod
     def reset(cls) -> None:
-        """Reset the registry to initial state.
-
-        This is primarily for testing purposes.
+        """Reset manager to initial state (for testing).
+        
+        Clears the singleton instance, causing the next access to create
+        a fresh instance with default initialization.
         """
-        instance = cls()
-        instance._types.clear()
-        instance._warned_types.clear()
-        instance._lenient_mode = True
-        type(instance).__init__(instance)
+        if cls in Singleton._instances:
+            del Singleton._instances[cls]
