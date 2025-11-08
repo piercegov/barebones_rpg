@@ -27,10 +27,10 @@ Loot System
    :undoc-members:
    :show-inheritance:
 
-Loot Registry
--------------
+Loot Manager
+------------
 
-.. automodule:: barebones_rpg.items.loot_registry
+.. automodule:: barebones_rpg.items.loot_manager
    :members:
    :undoc-members:
    :show-inheritance:

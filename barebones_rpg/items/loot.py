@@ -16,11 +16,6 @@ from .loot_manager import LootManager
 class LootDrop:
     """Represents an item that has been dropped.
 
-    Attributes:
-        item: The dropped Item instance
-        source: Entity or object that dropped the item (optional)
-        quantity: Number of items dropped (for stackable items)
-
     Example:
         >>> from barebones_rpg.items import LootDrop, create_material
         >>> bone = create_material("Bone", value=5)
@@ -28,8 +23,11 @@ class LootDrop:
     """
 
     item: Item
+    """The dropped Item instance"""
     source: Optional[Any] = None
+    """Entity or object that dropped the item (optional)"""
     quantity: int = 1
+    """Number of items dropped (for stackable items)"""
 
 
 def roll_loot_table(
@@ -37,14 +35,13 @@ def roll_loot_table(
 ) -> List[LootDrop]:
     """Roll on a loot table to determine which items drop.
 
-    The loot table should be a list of dictionaries with the following format:
-    ```python
-    [
-        {"item": "Goblin Bone", "chance": 0.3},  # 30% drop chance, lookup by name
-        {"item": bone_item, "chance": 0.5},      # 50% drop chance, direct Item object
-        {"item": "Rare Gem", "chance": 0.05}     # 5% drop chance
-    ]
-    ```
+    The loot table should be a list of dictionaries with the following format::
+
+        [
+            {"item": "Goblin Bone", "chance": 0.3},  # 30% drop chance, lookup by name
+            {"item": bone_item, "chance": 0.5},      # 50% drop chance, direct Item object
+            {"item": "Rare Gem", "chance": 0.05}     # 5% drop chance
+        ]
 
     For string item names, the LootManager is used to retrieve the item template.
     For Item objects, a deep copy is created. Each entry is rolled independently,
