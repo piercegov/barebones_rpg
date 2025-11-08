@@ -1,6 +1,6 @@
 [project]
 name = "barebones-rpg"
-version = "0.1.0"
+version = "0.2.0"
 description = "A flexible, code-first RPG framework for building turn-based games with support for procedural generation and AI-driven content"
 readme = "README.md"
 requires-python = ">=3.11"

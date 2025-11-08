@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-11-08
+
+### Changed
+- Simplified callback serialization system (no longer requires manual decorator registration)
+- Streamlined AI interface and registration system
+
 ### Added
-- Initial PyPI package metadata
-- Publishing documentation
+- Quest system tutorial in documentation
+
+### Improved
+- Documentation updates and clarifications throughout the framework
 
 ## [0.1.0] - 2025-11-02
 
@@ -29,7 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example games demonstrating framework features
 - Full test coverage with pytest
 
-[Unreleased]: https://github.com/PierceGov/barebones_rpg/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/PierceGov/barebones_rpg/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/PierceGov/barebones_rpg/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/PierceGov/barebones_rpg/releases/tag/v0.1.0
+
 
 
