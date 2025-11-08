@@ -55,7 +55,9 @@ class TestDamageTypeManager:
 
     def test_register_with_custom_metadata(self, reset_registry):
         """Test registering with custom metadata fields."""
-        DamageTypeManager().register("quantum", special_effect="phase", power_level=9000)
+        DamageTypeManager().register(
+            "quantum", special_effect="phase", power_level=9000
+        )
 
         metadata = DamageTypeManager().get_metadata("quantum")
         assert metadata.custom["special_effect"] == "phase"

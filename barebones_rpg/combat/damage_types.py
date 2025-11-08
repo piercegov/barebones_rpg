@@ -235,11 +235,11 @@ class DamageTypeManager(metaclass=Singleton):
             lenient: True for lenient mode, False for strict mode
         """
         self._lenient_mode = lenient
-    
+
     @classmethod
     def reset(cls) -> None:
         """Reset manager to initial state (for testing).
-        
+
         Clears the singleton instance, causing the next access to create
         a fresh instance with default initialization.
         """

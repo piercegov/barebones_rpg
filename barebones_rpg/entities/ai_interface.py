@@ -15,9 +15,9 @@ if TYPE_CHECKING:
 
 class AIContext(BaseModel):
     """Context information for AI decision making.
-    
+
     Provides common fields and a metadata dict for custom context.
-    
+
     Example:
         >>> context = AIContext(
         ...     entity=goblin,
@@ -28,12 +28,11 @@ class AIContext(BaseModel):
 
     entity: Any = Field(description="The entity making the decision")
     nearby_entities: List[Any] = Field(
-        default_factory=list, 
-        description="Entities within perception range"
+        default_factory=list, description="Entities within perception range"
     )
     metadata: Dict[str, Any] = Field(
-        default_factory=dict, 
-        description="Custom context data (location, combat, world, etc.)"
+        default_factory=dict,
+        description="Custom context data (location, combat, world, etc.)",
     )
 
     model_config = {"arbitrary_types_allowed": True}
@@ -41,7 +40,7 @@ class AIContext(BaseModel):
 
 class AIInterface(ABC):
     """Base interface for AI implementations.
-    
+
     Implement decide_action() to create custom AI behavior.
     Users can implement this for any AI approach:
     - Simple state machines
@@ -49,7 +48,7 @@ class AIInterface(ABC):
     - Utility-based AI
     - LLM-based decision making
     - Rule-based systems
-    
+
     Example:
         >>> class AggressiveMeleeAI(AIInterface):
         ...     def decide_action(self, context: AIContext) -> dict:
@@ -71,7 +70,7 @@ class AIInterface(ABC):
         Returns:
             Dict with "action" key and action-specific data.
             Common actions: "attack", "move", "use_skill", "use_item", "wait", "flee"
-            
+
             Examples:
                 {"action": "attack", "target": enemy}
                 {"action": "move", "position": (10, 5)}

@@ -123,7 +123,9 @@ def test_simple_ai_attack_in_range(
 
     ai = SimplePathfindingAI(pathfinder)
     context = AIContext(
-        entity=enemy_entity, nearby_entities=[player_entity], metadata={"location": simple_location}
+        entity=enemy_entity,
+        nearby_entities=[player_entity],
+        metadata={"location": simple_location},
     )
     action = ai.decide_action(context)
 
@@ -142,7 +144,9 @@ def test_simple_ai_move_toward_target(
 
     ai = SimplePathfindingAI(pathfinder)
     context = AIContext(
-        entity=enemy_entity, nearby_entities=[player_entity], metadata={"location": simple_location}
+        entity=enemy_entity,
+        nearby_entities=[player_entity],
+        metadata={"location": simple_location},
     )
     action = ai.decide_action(context)
 
@@ -176,7 +180,9 @@ def test_simple_ai_custom_attack_range(
 
     ai = SimplePathfindingAI(pathfinder, attack_range=2)
     context = AIContext(
-        entity=enemy_entity, nearby_entities=[player_entity], metadata={"location": simple_location}
+        entity=enemy_entity,
+        nearby_entities=[player_entity],
+        metadata={"location": simple_location},
     )
     action = ai.decide_action(context)
 
@@ -239,7 +245,9 @@ def test_tactical_ai_decide_attack(
 
     ai = TacticalAI(pathfinder)
     context = AIContext(
-        entity=enemy_entity, nearby_entities=[player_entity], metadata={"location": simple_location}
+        entity=enemy_entity,
+        nearby_entities=[player_entity],
+        metadata={"location": simple_location},
     )
     action = ai.decide_action(context)
 

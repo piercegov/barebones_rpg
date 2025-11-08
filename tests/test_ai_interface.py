@@ -195,6 +195,8 @@ class TestEntityAI:
         enemy = Enemy(
             name="Enemy",
             ai=ai,
-            stats=Stats(strength=10, constitution=10, intelligence=10, dexterity=10, charisma=10)
+            stats=Stats(
+                strength=10, constitution=10, intelligence=10, dexterity=10, charisma=10
+            ),
         )
         assert enemy.ai is ai

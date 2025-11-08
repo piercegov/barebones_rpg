@@ -9,7 +9,12 @@ This example shows how to:
 
 from barebones_rpg.core import Game, GameConfig
 from barebones_rpg.entities import Character, Enemy, Stats
-from barebones_rpg.items import create_weapon, create_consumable, create_armor, LootManager
+from barebones_rpg.items import (
+    create_weapon,
+    create_consumable,
+    create_armor,
+    LootManager,
+)
 from barebones_rpg.party import Party
 from barebones_rpg.quests import Quest, QuestObjective, ObjectiveType, QuestManager
 
@@ -44,7 +49,7 @@ def main():
     print("1. Registering items with LootManager...")
     health_pot = create_consumable("Health Potion", on_use=heal_potion, value=20)
     mana_pot = create_consumable("Mana Potion", on_use=mana_potion, value=15)
-    
+
     # When you register items, callbacks are automatically registered
     LootManager().register("health_potion", health_pot)
     LootManager().register("mana_potion", mana_pot)

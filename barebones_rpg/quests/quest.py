@@ -256,7 +256,7 @@ class Quest(BaseModel):
 
     def __init__(self, **data):
         """Initialize quest.
-        
+
         Note: Quests are not automatically registered to QuestManager.
         Call QuestManager().add_quest(quest) explicitly if you want to use
         the quest manager.
@@ -655,11 +655,11 @@ class QuestManager(metaclass=Singleton):
         self.quests: Dict[str, Quest] = {}
         self.active_quests: List[str] = []
         self.completed_quests: List[str] = []
-    
+
     @classmethod
     def reset(cls) -> None:
         """Reset manager to initial state (for testing).
-        
+
         Clears the singleton instance, causing the next access to create
         a fresh instance with default initialization.
         """
@@ -668,7 +668,7 @@ class QuestManager(metaclass=Singleton):
 
     def add_quest(self, quest: Quest) -> bool:
         """Add a quest to the manager.
-        
+
         Automatically registers any callbacks (on_start, on_complete, on_fail) to
         the CallbackRegistry for serialization support.
 
@@ -679,33 +679,32 @@ class QuestManager(metaclass=Singleton):
             True if quest was added successfully
         """
         from ..core.serialization import CallbackRegistry
-        
+
         # Auto-register quest callbacks
         if quest.on_start:
             CallbackRegistry.register(f"quest.{quest.id}.on_start", quest.on_start)
         if quest.on_complete:
-            CallbackRegistry.register(f"quest.{quest.id}.on_complete", quest.on_complete)
+            CallbackRegistry.register(
+                f"quest.{quest.id}.on_complete", quest.on_complete
+            )
         if quest.on_fail:
             CallbackRegistry.register(f"quest.{quest.id}.on_fail", quest.on_fail)
-        
+
         # Auto-register objective callbacks
         for i, objective in enumerate(quest.objectives):
             if objective.condition:
                 CallbackRegistry.register(
-                    f"quest.{quest.id}.objective.{i}.condition",
-                    objective.condition
+                    f"quest.{quest.id}.objective.{i}.condition", objective.condition
                 )
             if objective.on_progress:
                 CallbackRegistry.register(
-                    f"quest.{quest.id}.objective.{i}.on_progress",
-                    objective.on_progress
+                    f"quest.{quest.id}.objective.{i}.on_progress", objective.on_progress
                 )
             if objective.on_complete:
                 CallbackRegistry.register(
-                    f"quest.{quest.id}.objective.{i}.on_complete",
-                    objective.on_complete
+                    f"quest.{quest.id}.objective.{i}.on_complete", objective.on_complete
                 )
-        
+
         self.quests[quest.id] = quest
         return True
 

@@ -74,7 +74,7 @@ def test_quest_manager_tracks_active_vs_completed():
         target_count=1,
     )
     quest.add_objective(objective)
-    
+
     # Explicitly add quest to manager (no longer auto-registered)
     manager.add_quest(quest)
 
@@ -124,7 +124,7 @@ def test_quest_status_transitions():
         target_count=1,
     )
     quest.add_objective(objective)
-    
+
     # Explicitly add quest to manager (no longer auto-registered)
     QuestManager().add_quest(quest)
 
@@ -261,7 +261,7 @@ def test_quest_manager_update_objective():
         target_count=5,
     )
     quest.add_objective(objective)
-    
+
     # Explicitly add quest to manager (no longer auto-registered)
     manager.add_quest(quest)
 
@@ -282,7 +282,7 @@ def test_quest_manager_get_active_quests():
 
     quest1 = Quest(name="Quest 1")
     quest2 = Quest(name="Quest 2")
-    
+
     # Explicitly add quests to manager (no longer auto-registered)
     manager.add_quest(quest1)
     manager.add_quest(quest2)
@@ -302,7 +302,7 @@ def test_quest_manager_get_quest_by_name():
     manager = QuestManager()
 
     quest = Quest(name="Unique Quest Name")
-    
+
     # Explicitly add quest to manager (no longer auto-registered)
     manager.add_quest(quest)
 
@@ -382,14 +382,14 @@ def test_quest_explicit_registration_to_manager():
     manager = QuestManager()
 
     quest = Quest(name="Explicitly-registered Quest")
-    
+
     # Quest should NOT be auto-registered
     found_before = manager.get_quest(quest.id)
     assert found_before is None
-    
+
     # Explicitly add quest to manager
     manager.add_quest(quest)
-    
+
     # Now it should be found
     found_after = manager.get_quest(quest.id)
     assert found_after is not None

@@ -36,7 +36,12 @@ from barebones_rpg.dialog.dialog import (
     DialogConditions,
 )
 from barebones_rpg.dialog.dialog_renderer import DialogRenderer
-from barebones_rpg.quests.quest import Quest, QuestObjective, ObjectiveType, QuestManager
+from barebones_rpg.quests.quest import (
+    Quest,
+    QuestObjective,
+    ObjectiveType,
+    QuestManager,
+)
 
 
 # Constants
@@ -225,7 +230,7 @@ class TileBasedGame:
             exp_reward=50,
             gold_reward=25,
         )
-        
+
         # Add to QuestManager (optional, but needed for manager-based lookups)
         QuestManager().add_quest(self.goblin_quest)
 
@@ -587,7 +592,7 @@ class TileBasedGame:
             context = AIContext(
                 entity=enemy,
                 nearby_entities=[self.player],
-                metadata={"location": self.location}
+                metadata={"location": self.location},
             )
 
             # Get AI decision directly from the enemy's AI
@@ -601,9 +606,14 @@ class TileBasedGame:
                 target_pos = action.get("position")
                 if target_pos:
                     if self.location.is_walkable(target_pos[0], target_pos[1]):
-                        if self.location.get_entity_at(target_pos[0], target_pos[1]) is None:
+                        if (
+                            self.location.get_entity_at(target_pos[0], target_pos[1])
+                            is None
+                        ):
                             self.location.remove_entity(enemy)
-                            self.location.add_entity(enemy, target_pos[0], target_pos[1])
+                            self.location.add_entity(
+                                enemy, target_pos[0], target_pos[1]
+                            )
                             enemy.position = target_pos
                             print(f"  {enemy.name} moves to {target_pos}")
                 attacked = False

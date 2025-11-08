@@ -70,10 +70,10 @@ def test_quest_manager_add_quest_returns_true():
 
     # Explicitly add the quest to the manager
     result = manager.add_quest(quest)
-    
+
     # Check that add_quest returned True
     assert result is True
-    
+
     # Verify the quest is registered
     retrieved = manager.get_quest("test_quest_return_value_123")
     assert retrieved is not None

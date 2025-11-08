@@ -48,7 +48,7 @@ class LootManager(metaclass=Singleton):
         self, name: str, item_or_factory: Union[Item, Callable[[], Optional[Item]]]
     ) -> None:
         """Register an item template or factory function.
-        
+
         Automatically registers any callbacks (on_use) to the CallbackRegistry
         for serialization support.
 
@@ -62,12 +62,12 @@ class LootManager(metaclass=Singleton):
             >>> LootManager().register("Random Weapon", lambda: create_weapon(...))
         """
         from ..core.serialization import CallbackRegistry
-        
+
         # Auto-register callbacks for Item instances
         if isinstance(item_or_factory, Item):
             if item_or_factory.on_use:
                 CallbackRegistry.register(f"{name}.on_use", item_or_factory.on_use)
-        
+
         self._registry[name] = item_or_factory
 
     def get(self, name: str) -> Optional[Item]:
@@ -166,14 +166,13 @@ class LootManager(metaclass=Singleton):
             data: Saved data containing dropped unique items
         """
         self._dropped_uniques = set(data.get("dropped_uniques", []))
-    
+
     @classmethod
     def reset(cls) -> None:
         """Reset manager to initial state (for testing).
-        
+
         Clears the singleton instance, causing the next access to create
         a fresh instance with default initialization.
         """
         if cls in Singleton._instances:
             del Singleton._instances[cls]
-
