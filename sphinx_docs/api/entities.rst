@@ -27,14 +27,6 @@ AI Interface
    :undoc-members:
    :show-inheritance:
 
-AI System
----------
-
-.. automodule:: barebones_rpg.entities.ai_system
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 AI Implementations
 ------------------
 

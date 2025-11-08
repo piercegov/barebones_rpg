@@ -34,7 +34,7 @@ Let's start with a simple quest:
 
    from barebones_rpg import Quest, QuestObjective, ObjectiveType, QuestManager
 
-   # Create a quest (automatically registers with QuestManager)
+   # Create a quest
    quest = Quest(
        name="Goblin Trouble",
        description="The goblins are threatening the village!",
@@ -50,8 +50,9 @@ Let's start with a simple quest:
        target_count=5
    ))
 
-   # Access the quest manager
+   # Access the quest manager and add the quest
    quest_manager = QuestManager()
+   quest_manager.add_quest(quest)
 
    # Start the quest
    quest_manager.start_quest(quest.id, events=game.events)
@@ -59,9 +60,10 @@ Let's start with a simple quest:
 Key Points
 ~~~~~~~~~~
 
-- **Auto-Registration**: Quests automatically register with the ``QuestManager`` singleton when created
+- **Explicit Registration**: Quests must be explicitly added to ``QuestManager`` with ``add_quest()``
 - **Quest IDs**: Each quest gets a unique ID generated automatically
 - **Rewards**: Set ``exp_reward``, ``gold_reward``, and ``item_rewards`` when creating the quest
+- **Optional Manager**: You can manage quests yourself without using ``QuestManager`` if desired
 
 Quest Objectives
 ----------------

@@ -158,43 +158,50 @@ AI Integration
 
 .. code-block:: python
 
-   from barebones_rpg.entities import AIInterface, AIAction
+   from barebones_rpg.entities import AIInterface, AIContext
 
    class TacticalTileAI(AIInterface):
-       def decide_action(self, context):
-           """Make decisions based on tile positions."""
+       def decide_action(self, context: AIContext) -> dict:
+           """Make decisions based on tile positions.
+           
+           Returns a dict with 'action' key and action-specific data.
+           """
            entity = context.entity
            targets = context.nearby_entities
            
            if not targets:
-               return AIAction(action_type="wait")
+               return {"action": "wait"}
            
            target = targets[0]
            
            # Calculate tile distance
-           distance = abs(entity.position[0] - target.position[0]) + \\
+           distance = abs(entity.position[0] - target.position[0]) + \
                      abs(entity.position[1] - target.position[1])
            
            # Attack if in range
            if distance <= 1:
-               if context.custom_data.get("ap", 0) >= 3:
-                   return AIAction(
-                       action_type="attack",
-                       target=target,
-                       data={"ap_cost": 3}
-                   )
+               if context.metadata.get("ap", 0) >= 3:
+                   return {
+                       "action": "attack",
+                       "target": target,
+                       "ap_cost": 3
+                   }
            
            # Move closer
            path = find_path(entity.position, target.position)
            if path and len(path) > 1:
                next_pos = path[1]
-               return AIAction(
-                   action_type="move",
-                   target_position=next_pos,
-                   data={"ap_cost": 1}
-               )
+               return {
+                   "action": "move",
+                   "position": next_pos,
+                   "ap_cost": 1
+               }
            
-           return AIAction(action_type="wait")
+           return {"action": "wait"}
+   
+   # Create AI instance and assign to entity
+   tactical_ai = TacticalTileAI()
+   goblin = Enemy(name="Goblin", ai=tactical_ai)
 
 Rendering System
 ~~~~~~~~~~~~~~~~

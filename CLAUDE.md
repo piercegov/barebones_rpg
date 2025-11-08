@@ -73,8 +73,8 @@ cd sphinx_docs && make clean
 The framework uses an **event-driven architecture** with a central `EventManager` that enables loose coupling between systems. The `Game` class acts as the central hub coordinating all systems through an event pub-sub pattern.
 
 ### System Organization
-- **core/**: Event system (`EventManager`) and game engine (`Game`, `GameState`, `GameConfig`), base classes (`Registry`, `Manager`)
-- **entities/**: Entity base classes (`Entity`, `Character`, `NPC`, `Enemy`) with stats and leveling systems, AI interface (`AIInterface`, `AIContext`, `AIAction`, `AIRegistry`, `AISystem`)
+- **core/**: Event system (`EventManager`) and game engine (`Game`, `GameState`, `GameConfig`), base classes (`Registry`, `Singleton`)
+- **entities/**: Entity base classes (`Entity`, `Character`, `NPC`, `Enemy`) with stats and leveling systems, AI interface (`AIInterface`, `AIContext`)
 - **combat/**: Turn-based combat system with action framework (`Combat`, `CombatAction`, `AttackAction`, `DamageTypeManager`)
 - **items/**: Item system with inventory, equipment, and loot drops (`Item`, `Inventory`, `Equipment`, `LootManager`, `LootDrop`)
 - **quests/**: Quest tracking with objectives (`Quest`, `QuestObjective`, `QuestManager`)

@@ -474,36 +474,39 @@ Implement custom AI for NPCs and enemies:
 
 .. code-block:: python
 
-   from barebones_rpg.entities import (
-       AIInterface, AIContext, AIAction, AIRegistry
-   )
+   from barebones_rpg.entities import AIInterface, AIContext
 
    class AggressiveMeleeAI(AIInterface):
-       def decide_action(self, context: AIContext):
-           """Make AI decision based on context."""
+       def decide_action(self, context: AIContext) -> dict:
+           """Make AI decision based on context.
+           
+           Returns a dict with 'action' key and action-specific data.
+           """
            if context.nearby_entities:
                target = context.nearby_entities[0]
+               # Get location from metadata
+               location = context.metadata.get("location")
+               
                distance = self._calculate_distance(
                    context.entity.position,
                    target.position
                )
                
                if distance <= 1:
-                   return AIAction(
-                       action_type="attack",
-                       target=target
-                   )
-               return AIAction(
-                   action_type="move",
-                   target_position=target.position
-               )
+                   return {
+                       "action": "attack",
+                       "target": target
+                   }
+               return {
+                   "action": "move",
+                   "position": target.position
+               }
            
-           return AIAction(action_type="wait")
+           return {"action": "wait"}
 
-   # Register and use
-   AIRegistry.register("aggressive_melee", AggressiveMeleeAI())
-   
-   goblin = Enemy(name="Goblin", ai_type="aggressive_melee")
+   # Create AI instance and assign directly to entity
+   aggressive_ai = AggressiveMeleeAI()
+   goblin = Enemy(name="Goblin", ai=aggressive_ai)
 
 Save and Load
 -------------
@@ -511,17 +514,26 @@ Save and Load
 Persistent Game State
 ~~~~~~~~~~~~~~~~~~~~~
 
-The framework includes comprehensive save/load functionality:
+The framework includes comprehensive save/load functionality with automatic
+callback registration:
 
 .. code-block:: python
 
-   from barebones_rpg import CallbackRegistry
+   from barebones_rpg import Game, GameConfig
+   from barebones_rpg.items import create_consumable, LootManager
 
-   # Register callbacks for serialization
+   # Define callback
    def heal_50(entity, context):
        entity.heal(50)
+       return 50
 
-   CallbackRegistry.register("heal_50", heal_50)
+   # Register item - callbacks are automatically registered for serialization
+   health_potion = create_consumable(
+       "Health Potion",
+       on_use=heal_50,
+       value=50
+   )
+   LootManager().register("Health Potion", health_potion)
 
    # Configure save directory
    config = GameConfig(save_directory="saves")
