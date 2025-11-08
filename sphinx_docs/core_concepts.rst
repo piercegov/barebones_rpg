@@ -255,6 +255,11 @@ Items come in different types with various properties:
        value=25
    )
 
+.. note::
+   **Best Practice**: For items with callbacks (like consumables with ``on_use``), 
+   register them with ``LootManager`` to enable automatic callback serialization 
+   for save/load. See the Loot System section below.
+
 Inventory Management
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -262,13 +267,20 @@ Entities can have inventory and equipment systems:
 
 .. code-block:: python
 
+   from barebones_rpg.items import LootManager
+
    # Initialize inventory and equipment
    hero.init_inventory(max_slots=20)
    hero.init_equipment()
 
-   # Manage items
+   # Add items to inventory
+   # For items without callbacks, create directly
    hero.inventory.add_item(sword)
-   hero.inventory.add_item(potion, quantity=5)
+   
+   # For items with callbacks, get from LootManager (if registered)
+   potion = LootManager().get("health_potion")
+   if potion:
+       hero.inventory.add_item(potion)
 
    # Equip items
    old_weapon = hero.equipment.equip(sword)
@@ -279,31 +291,48 @@ Entities can have inventory and equipment systems:
 Loot System
 ~~~~~~~~~~~
 
-The loot system supports automatic drops when enemies are defeated:
+The ``LootManager`` is the **recommended way** to manage items, especially those with 
+callbacks. It provides:
+
+- **Automatic callback registration** for save/load serialization
+- **Template-based item creation** (instances are created when needed)
+- **String-based references** in loot tables
+- **Unique item tracking** to prevent duplicate drops
 
 .. code-block:: python
 
-   from barebones_rpg import LootRegistry
+   from barebones_rpg.items import LootManager, create_consumable, create_weapon
 
-   # Register items for string-based references
-   LootRegistry.register("Gold Coin", gold_coin)
+   # Define callback
+   def heal_effect(entity, context):
+       entity.heal(50)
+       return 50
+
+   # Create item templates
+   health_potion = create_consumable(
+       "Health Potion",
+       on_use=heal_effect,  # Callback will be auto-registered!
+       stackable=True,
+       value=50
+   )
    
-   # Create enemy with loot table
+   rare_sword = create_weapon("Legendary Blade", base_damage=25, value=1000)
+   
+   # Register with LootManager (callbacks auto-registered for serialization)
+   LootManager().register("health_potion", health_potion)
+   LootManager().register("rare_sword", rare_sword)
+   
+   # Get item instances when needed
+   potion = LootManager().get("health_potion")
+   hero.inventory.add_item(potion)
+   
+   # Use in loot tables
    boss = Enemy(
        name="Boss",
-       stats=Stats(
-           strength=25,
-           constitution=20,
-           dexterity=15,
-           intelligence=10,
-           charisma=10,
-           base_max_hp=150,
-           hp=200
-       ),
+       stats=Stats(hp=200, max_hp=200, atk=25, defense=20),
        loot_table=[
-           {"item": "Gold Coin", "chance": 1.0, 
-            "min_quantity": 10, "max_quantity": 20},
-           {"item": rare_sword, "chance": 0.1}  # Direct object reference
+           {"item": "health_potion", "chance": 0.3},
+           {"item": "rare_sword", "chance": 0.05}
        ]
    )
 

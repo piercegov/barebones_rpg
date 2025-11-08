@@ -221,12 +221,20 @@ game.load_from_file("my_save")
 ```
 
 ### Callback Serialization
-Callbacks in items and quests are automatically serialized when registered:
-- Register items with `LootManager().register(name, item)` - callbacks auto-registered
-- Add quests to `QuestManager().add_quest(quest)` - callbacks auto-registered
+Callbacks in items and quests are automatically serialized **only when registered with managers**:
+
+**Automatic Registration (Recommended)**:
+- Register items with `LootManager().register(name, item)` → `on_use` callbacks auto-registered
+- Add quests with `QuestManager().add_quest(quest)` → all quest callbacks auto-registered
 - Callbacks are stored as symbolic names in save files
 - On load, callbacks are restored automatically
-- No manual `CallbackRegistry.register()` needed!
+
+**Manual Registration Required**:
+- Items created directly without `LootManager` must have callbacks manually registered:
+  ```python
+  CallbackRegistry.register("my_callback", my_callback_function)
+  ```
+- **Important**: If you add items to inventory without going through `LootManager`, their callbacks won't serialize unless manually registered!
 
 ### Extending Save System
 Custom systems can implement `save()` and `load()` methods:
