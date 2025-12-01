@@ -52,8 +52,10 @@ class TestDataLoader:
         loaded = DataLoader.load_file(yml_path)
         assert loaded == data
 
-        # Test unsupported extension raises ValueError
-        with pytest.raises(ValueError, match="Unsupported file format"):
+        # Test unsupported extension raises ConfigurationError
+        from barebones_rpg.core.exceptions import ConfigurationError
+
+        with pytest.raises(ConfigurationError, match="Unsupported file format"):
             DataLoader.load_file(os.path.join(temp_dir, "test.txt"))
 
     def test_file_errors(self, temp_dir):

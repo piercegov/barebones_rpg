@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional, List
 import warnings
 from pydantic import BaseModel, Field
 from ..core.singleton import Singleton
+from ..core.exceptions import CombatError
 
 
 class DamageTypeMetadata(BaseModel):
@@ -220,7 +221,7 @@ class DamageTypeManager(metaclass=Singleton):
 
             self.register(damage_type, description="Auto-registered damage type")
         else:
-            raise ValueError(
+            raise CombatError(
                 f"Damage type '{damage_type}' not registered. "
                 f"Register it with DamageTypeManager().register('{damage_type}', ...)"
             )

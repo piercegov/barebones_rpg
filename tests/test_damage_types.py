@@ -90,10 +90,12 @@ class TestDamageTypeManager:
         assert DamageTypeManager().is_registered("unknown_type")
 
     def test_strict_mode_raises_error(self, reset_registry):
-        """Test that strict mode raises error for unknown types."""
+        """Test that strict mode raises CombatError for unknown types."""
+        from barebones_rpg.core.exceptions import CombatError
+
         DamageTypeManager().set_lenient_mode(False)
 
-        with pytest.raises(ValueError, match="not registered"):
+        with pytest.raises(CombatError, match="not registered"):
             DamageTypeManager().ensure_registered("unregistered_type")
 
     def test_ensure_registered_no_warning_for_existing(self, reset_registry):

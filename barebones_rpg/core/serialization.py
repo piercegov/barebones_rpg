@@ -4,10 +4,13 @@ This module provides utilities for serializing game state, including a callback
 registry for handling function references in saved data.
 """
 
+import logging
 from typing import Callable, Dict, Any, Optional, List, Union, Type
 from enum import Enum
 import importlib
 import warnings
+
+logger = logging.getLogger(__name__)
 
 
 class CallbackRegistry:
@@ -104,6 +107,11 @@ class CallbackRegistry:
             cls.register(auto_name, callback)
             return auto_name
 
+        # Callback cannot be serialized at all - log error
+        logger.error(
+            f"Callback {callback!r} cannot be serialized: missing __name__ or __module__. "
+            f"The callback will be lost during save/load."
+        )
         return None
 
     @classmethod
@@ -121,7 +129,14 @@ class CallbackRegistry:
         """
         if name is None:
             return None
-        return cls.get(name)
+        callback = cls.get(name)
+        if callback is None:
+            logger.error(
+                f"Callback '{name}' not found in registry. "
+                f"The callback will be None after load. "
+                f"Ensure the callback is registered before loading."
+            )
+        return callback
 
     @classmethod
     def clear(cls) -> None:

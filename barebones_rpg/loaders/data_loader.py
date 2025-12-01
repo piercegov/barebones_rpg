@@ -9,6 +9,7 @@ import yaml  # type: ignore[import-untyped]
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
+from ..core.exceptions import ConfigurationError
 from ..entities import Stats, Character, NPC, Enemy
 from ..items import (
     Item,
@@ -73,7 +74,7 @@ class DataLoader:
         elif path.suffix.lower() == ".json":
             return DataLoader.load_json(file_path)
         else:
-            raise ValueError(f"Unsupported file format: {path.suffix}")
+            raise ConfigurationError(f"Unsupported file format: {path.suffix}")
 
     @staticmethod
     def save_json(data: Dict[str, Any], file_path: str, indent: int = 2) -> None:

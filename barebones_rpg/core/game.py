@@ -10,6 +10,7 @@ from enum import Enum, auto
 from dataclasses import dataclass, field
 
 from .events import EventManager, Event, EventType
+from .exceptions import SerializationError
 
 logger = logging.getLogger(__name__)
 
@@ -410,6 +411,9 @@ class Game:
         Returns:
             True if save was successful
 
+        Raises:
+            SerializationError: If the save data cannot be serialized or written
+
         Example:
             >>> game.save_to_file("quicksave")
         """
@@ -424,6 +428,9 @@ class Game:
 
         Returns:
             True if load was successful
+
+        Raises:
+            SerializationError: If the save file is corrupted or unreadable
 
         Example:
             >>> game.load_from_file("quicksave")
