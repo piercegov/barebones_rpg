@@ -26,7 +26,7 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 | Area | Current State | Gap |
 |------|---------------|-----|
 | Rendering system | 0 tests | `pygame_renderer.py`, `ui_components.py`, `click_to_move.py` untested |
-| Data loaders | 0 tests | JSON/YAML loading in `loaders/data_loader.py` untested |
+| ~~Data loaders~~ | ~~13 tests~~ | ~~Covered~~ - `DataLoader`, `ItemLoader`, `EntityLoader`, `DialogLoader`, `QuestLoader` |
 | Events system | 9 tests | Missing tests for multiple subscribers, exception handling, event filtering |
 | World system | 12 tests | Missing complex pathfinding and multi-location traversal tests |
 
@@ -157,6 +157,7 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 - ~~Logging framework~~ - Now uses `logging` module in `game.py` and `save_manager.py`
 - ~~Quest loading~~ - Implemented via `QuestManager` as single source of truth
 - ~~Silent loot failures~~ - Now logs warnings for invalid loot entries in `loot.py`
+- ~~Data loader tests~~ - 13 tests covering all loader classes in `tests/test_loaders.py`
 
 ---
 
@@ -165,5 +166,5 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 1. ~~Replace `print()` with `logging` module~~ (DONE)
 2. ~~Add validation warnings to loot system~~ (DONE)
 3. ~~Implement quest loading~~ (DONE - uses QuestManager)
-4. Add basic tests for loaders
+4. ~~Add basic tests for loaders~~ (DONE - 13 tests in `test_loaders.py`)
 5. Standardize type hint style
