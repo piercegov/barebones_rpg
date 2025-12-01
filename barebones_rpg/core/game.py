@@ -4,11 +4,14 @@ This module provides the main Game class that manages the game loop,
 state, and coordinates all systems.
 """
 
+import logging
 from typing import Optional, Any, Dict, TYPE_CHECKING
 from enum import Enum, auto
 from dataclasses import dataclass, field
 
 from .events import EventManager, Event, EventType
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ..quests.quest import QuestManager
@@ -330,7 +333,7 @@ class Game:
                 entity = Entity.from_dict(data)
                 self._entities[entity_id] = entity
             except Exception as e:
-                print(f"Warning: Could not load entity {entity_id}: {e}")
+                logger.warning(f"Could not load entity {entity_id}: {e}")
 
         # Load items
         from ..items.item import Item
@@ -342,7 +345,7 @@ class Game:
                 item = Item(**data)
                 self._items[item_id] = item
             except Exception as e:
-                print(f"Warning: Could not load item {item_id}: {e}")
+                logger.warning(f"Could not load item {item_id}: {e}")
 
         # Load parties
         from ..party.party import Party
@@ -354,12 +357,12 @@ class Game:
                 party = Party.from_dict(data, self._entities)
                 self._parties[party_name] = party
             except Exception as e:
-                print(f"Warning: Could not load party {party_name}: {e}")
+                logger.warning(f"Could not load party {party_name}: {e}")
 
         # Load quests (handled by QuestManager singleton)
         quest_data = save_data.get("quests", {})
         if quest_data:
-            print("Warning: Quest loading not fully implemented yet")
+            logger.warning("Quest loading not fully implemented yet")
 
         # Load system states
         system_data = save_data.get("systems", {})

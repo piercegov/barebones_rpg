@@ -5,10 +5,13 @@ including JSON serialization, file I/O, and directory management.
 """
 
 import json
+import logging
 import os
 from typing import Dict, Any, Optional
 from pathlib import Path
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 class SaveManager:
@@ -84,7 +87,7 @@ class SaveManager:
             return True
 
         except Exception as e:
-            print(f"Error saving game: {e}")
+            logger.error(f"Error saving game: {e}")
             return False
 
     def load(self, save_name: str) -> Optional[Dict[str, Any]]:
@@ -103,7 +106,7 @@ class SaveManager:
             save_path = self._get_save_path(save_name)
 
             if not save_path.exists():
-                print(f"Save file not found: {save_path}")
+                logger.warning(f"Save file not found: {save_path}")
                 return None
 
             with open(save_path, "r", encoding="utf-8") as f:
@@ -111,15 +114,15 @@ class SaveManager:
 
             # Validate version (for now just warn)
             if full_data.get("version") != self.SAVE_VERSION:
-                print(
-                    f"Warning: Save file version mismatch. "
+                logger.warning(
+                    f"Save file version mismatch. "
                     f"Expected {self.SAVE_VERSION}, got {full_data.get('version')}"
                 )
 
             return full_data.get("data", {})
 
         except Exception as e:
-            print(f"Error loading game: {e}")
+            logger.error(f"Error loading game: {e}")
             return None
 
     def delete(self, save_name: str) -> bool:
@@ -138,7 +141,7 @@ class SaveManager:
                 return True
             return False
         except Exception as e:
-            print(f"Error deleting save: {e}")
+            logger.error(f"Error deleting save: {e}")
             return False
 
     def list_saves(self) -> list[str]:
@@ -160,7 +163,7 @@ class SaveManager:
                 saves.append(save_name)
             return sorted(saves)
         except Exception as e:
-            print(f"Error listing saves: {e}")
+            logger.error(f"Error listing saves: {e}")
             return []
 
     def get_save_info(self, save_name: str) -> Optional[Dict[str, Any]]:
@@ -189,7 +192,7 @@ class SaveManager:
             }
 
         except Exception as e:
-            print(f"Error getting save info: {e}")
+            logger.error(f"Error getting save info: {e}")
             return None
 
     def exists(self, save_name: str) -> bool:
