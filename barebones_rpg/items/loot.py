@@ -6,7 +6,10 @@ dropped items.
 
 from typing import List, Dict, Any, Optional, Union
 from dataclasses import dataclass
+import logging
 import random
+
+logger = logging.getLogger(__name__)
 
 from .item import Item
 from .loot_manager import LootManager
@@ -73,12 +76,17 @@ def roll_loot_table(
     """
     drops: List[LootDrop] = []
 
-    for entry in loot_table:
+    for idx, entry in enumerate(loot_table):
         # Validate entry format
         if not isinstance(entry, dict):
+            logger.warning(
+                f"Loot entry {idx}: Expected dict, got {type(entry).__name__}"
+            )
             continue
 
         if "item" not in entry or "chance" not in entry:
+            missing = [k for k in ["item", "chance"] if k not in entry]
+            logger.warning(f"Loot entry {idx}: Missing required keys {missing}")
             continue
 
         item_ref = entry["item"]
@@ -88,8 +96,15 @@ def roll_loot_table(
         try:
             chance = float(chance)
             if chance < 0 or chance > 1:
+                logger.warning(
+                    f"Loot entry {idx}: Chance {chance} outside valid range [0, 1]"
+                )
                 continue
         except (TypeError, ValueError):
+            logger.warning(
+                f"Loot entry {idx}: Invalid chance value {entry['chance']!r}, "
+                "expected float"
+            )
             continue
 
         # Roll for this item
@@ -103,7 +118,9 @@ def roll_loot_table(
             # Look up in manager
             item = LootManager().get(item_ref)
             if item is None:
-                # Item not found in manager, skip
+                logger.warning(
+                    f"Loot entry {idx}: Item '{item_ref}' not found in LootManager"
+                )
                 continue
         elif isinstance(item_ref, Item):
             # Direct item object - make a deep copy and generate new ID
@@ -112,7 +129,10 @@ def roll_loot_table(
             item = item_ref.model_copy(deep=True)
             item.id = str(uuid4())  # Generate new ID for the copy
         else:
-            # Unknown item reference type
+            logger.warning(
+                f"Loot entry {idx}: Invalid item reference type "
+                f"{type(item_ref).__name__}, expected str or Item"
+            )
             continue
 
         # Determine quantity (support optional "quantity" or "min_quantity"/"max_quantity")

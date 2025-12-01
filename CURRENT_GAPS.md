@@ -13,11 +13,9 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 ### ~~2. No Logging Framework~~ (RESOLVED)
 - **Status**: Fixed - `game.py` and `save_manager.py` now use `logging.getLogger(__name__)`
 
-### 3. Silent Failures in Loot System
-- **Location**: `barebones_rpg/items/loot.py:76-93`
-- **Issue**: Invalid loot entries are silently skipped with `continue` statements—no errors, no warnings
-- **Impact**: Users won't know their loot tables have configuration errors until items fail to drop
-- **Fix**: Add warning logs or raise exceptions for invalid loot entries
+### ~~3. Silent Failures in Loot System~~ (RESOLVED)
+- **Status**: Fixed - `roll_loot_table()` now logs warnings via `logging.getLogger(__name__)` for all invalid loot entries
+- **Changes**: Added `logger.warning()` calls for: non-dict entries, missing keys, invalid chance values, out-of-range chances, items not found in LootManager, and invalid item reference types
 
 ---
 
@@ -149,7 +147,7 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 
 | Priority | Count | Key Items |
 |----------|-------|-----------|
-| High | 1 | Silent loot failures |
+| High | 0 | All resolved |
 | Medium | 4 | Test coverage, input handling, custom exceptions, StatusEffect |
 | Architecture | 3 | Mixed patterns, type hints, event ordering |
 | Missing Features | 4 | Dialog state machine, equipment, party resources, event cleanup |
@@ -158,13 +156,14 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 ### Resolved
 - ~~Logging framework~~ - Now uses `logging` module in `game.py` and `save_manager.py`
 - ~~Quest loading~~ - Implemented via `QuestManager` as single source of truth
+- ~~Silent loot failures~~ - Now logs warnings for invalid loot entries in `loot.py`
 
 ---
 
 ## Quick Wins
 
 1. ~~Replace `print()` with `logging` module~~ (DONE)
-2. Add validation warnings to loot system
+2. ~~Add validation warnings to loot system~~ (DONE)
 3. ~~Implement quest loading~~ (DONE - uses QuestManager)
 4. Add basic tests for loaders
 5. Standardize type hint style
