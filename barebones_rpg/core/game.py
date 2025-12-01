@@ -88,7 +88,6 @@ class Game:
         self._entities: Dict[str, Any] = {}
         self._items: Dict[str, Any] = {}
         self._parties: Dict[str, Any] = {}
-        self._quests: Dict[str, Any] = {}
 
     def register_system(self, name: str, system: Any) -> None:
         """Register a game system (combat, world, etc.).
@@ -140,11 +139,23 @@ class Game:
     def register_quest(self, quest: Any) -> None:
         """Register a quest for saving/loading.
 
+        .. deprecated::
+            Use ``QuestManager().add_quest(quest)`` instead.
+            QuestManager is the single source of truth for quests.
+
         Args:
             quest: Quest to register
         """
-        if hasattr(quest, "id"):
-            self._quests[quest.id] = quest
+        import warnings
+
+        from ..quests.quest import QuestManager
+
+        warnings.warn(
+            "game.register_quest() is deprecated. Use QuestManager().add_quest() directly.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        QuestManager().add_quest(quest)
 
     def get_entity(self, entity_id: str) -> Any:
         """Get a registered entity by ID.
@@ -188,7 +199,9 @@ class Game:
         Returns:
             Quest or None if not found
         """
-        return self._quests.get(quest_id)
+        from ..quests.quest import QuestManager
+
+        return QuestManager().get_quest(quest_id)
 
     @property
     def quests(self) -> "QuestManager":
@@ -278,6 +291,9 @@ class Game:
         """
         from .serialization import CallbackRegistry
 
+        from ..quests.quest import QuestManager
+
+        quest_manager = QuestManager()
         save_data = {
             "save_name": save_name,
             "clock_time": self.clock_time,
@@ -298,10 +314,10 @@ class Game:
                 party_name: party.to_dict() if hasattr(party, "to_dict") else {}
                 for party_name, party in self._parties.items()
             },
-            # Save registered quests
+            # Save quests from QuestManager (single source of truth)
             "quests": {
-                quest_id: quest.to_dict() if hasattr(quest, "to_dict") else {}
-                for quest_id, quest in self._quests.items()
+                quest_id: quest.to_dict()
+                for quest_id, quest in quest_manager.quests.items()
             },
             # Systems can implement their own save methods
             "systems": {
@@ -359,10 +375,25 @@ class Game:
             except Exception as e:
                 logger.warning(f"Could not load party {party_name}: {e}")
 
-        # Load quests (handled by QuestManager singleton)
+        # Load quests into QuestManager (single source of truth)
+        from ..quests.quest import Quest, QuestManager, QuestStatus
+
         quest_data = save_data.get("quests", {})
-        if quest_data:
-            logger.warning("Quest loading not fully implemented yet")
+        quest_manager = QuestManager()
+        quest_manager.quests.clear()
+        quest_manager.active_quests.clear()
+        quest_manager.completed_quests.clear()
+
+        for quest_id, data in quest_data.items():
+            try:
+                quest = Quest.from_dict(data, auto_register=True)
+                # Rebuild tracking lists from quest status
+                if quest.status == QuestStatus.ACTIVE:
+                    quest_manager.active_quests.append(quest_id)
+                elif quest.status == QuestStatus.COMPLETED:
+                    quest_manager.completed_quests.append(quest_id)
+            except Exception as e:
+                logger.warning(f"Could not load quest {quest_id}: {e}")
 
         # Load system states
         system_data = save_data.get("systems", {})

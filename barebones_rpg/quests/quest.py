@@ -628,14 +628,15 @@ class Quest(BaseModel):
         ]
         data["objectives"] = objectives
 
-        # Create quest without auto-registering if requested
-        if not auto_register:
-            # Temporarily bypass auto-registration
-            quest = object.__new__(cls)
-            BaseModel.__init__(quest, **data)
-            return quest
-        else:
-            return cls(**data)
+        # Create quest - bypass normal __init__ to avoid any side effects
+        quest = object.__new__(cls)
+        BaseModel.__init__(quest, **data)
+
+        # Register with QuestManager if requested
+        if auto_register:
+            QuestManager().add_quest(quest)
+
+        return quest
 
 
 class QuestManager(metaclass=Singleton):

@@ -550,6 +550,7 @@ callback registration:
 
    from barebones_rpg import Game, GameConfig
    from barebones_rpg.items import create_consumable, LootManager
+   from barebones_rpg.quests import QuestManager
 
    # Define callback
    def heal_50(entity, context):
@@ -568,10 +569,10 @@ callback registration:
    config = GameConfig(save_directory="saves")
    game = Game(config)
 
-   # Register objects
+   # Register objects for save/load
    game.register_entity(hero)
-   game.register_item(magic_sword)
-   game.register_quest(main_quest)
+   # Quests are managed by QuestManager (single source of truth)
+   QuestManager().add_quest(main_quest)
 
    # Save and load
    game.save_to_file("my_save")

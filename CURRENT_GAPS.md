@@ -6,16 +6,14 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 
 ## High Priority Issues
 
-### 1. Incomplete Quest Loading
-- **Location**: `barebones_rpg/core/game.py:362`
-- **Issue**: Quest loading is explicitly skipped during `load_game()` with a warning message
-- **Impact**: Saved games lose all quest progress
-- **Fix**: Implement full quest serialization/deserialization following the pattern used for entities and items
+### ~~1. Incomplete Quest Loading~~ (RESOLVED)
+- **Status**: Fixed - Quest loading now fully implemented via `QuestManager` as single source of truth
+- **Changes**: `Game.load_game()` deserializes quests into `QuestManager`, rebuilds active/completed tracking lists from quest status. `game.register_quest()` deprecated in favor of `QuestManager().add_quest()`.
 
 ### ~~2. No Logging Framework~~ (RESOLVED)
 - **Status**: Fixed - `game.py` and `save_manager.py` now use `logging.getLogger(__name__)`
 
-### 2. Silent Failures in Loot System
+### 3. Silent Failures in Loot System
 - **Location**: `barebones_rpg/items/loot.py:76-93`
 - **Issue**: Invalid loot entries are silently skipped with `continue` statements—no errors, no warnings
 - **Impact**: Users won't know their loot tables have configuration errors until items fail to drop
@@ -151,7 +149,7 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 
 | Priority | Count | Key Items |
 |----------|-------|-----------|
-| High | 2 | Quest loading, silent loot failures |
+| High | 1 | Silent loot failures |
 | Medium | 4 | Test coverage, input handling, custom exceptions, StatusEffect |
 | Architecture | 3 | Mixed patterns, type hints, event ordering |
 | Missing Features | 4 | Dialog state machine, equipment, party resources, event cleanup |
@@ -159,6 +157,7 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 
 ### Resolved
 - ~~Logging framework~~ - Now uses `logging` module in `game.py` and `save_manager.py`
+- ~~Quest loading~~ - Implemented via `QuestManager` as single source of truth
 
 ---
 
@@ -166,6 +165,6 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 
 1. ~~Replace `print()` with `logging` module~~ (DONE)
 2. Add validation warnings to loot system
-3. Implement quest loading (follows existing entity/item patterns)
+3. ~~Implement quest loading~~ (DONE - uses QuestManager)
 4. Add basic tests for loaders
 5. Standardize type hint style

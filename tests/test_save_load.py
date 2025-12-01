@@ -20,7 +20,13 @@ from barebones_rpg.items import (
     Inventory,
 )
 from barebones_rpg.party import Party
-from barebones_rpg.quests import Quest, QuestObjective, ObjectiveType, QuestStatus
+from barebones_rpg.quests import (
+    Quest,
+    QuestObjective,
+    ObjectiveType,
+    QuestStatus,
+    QuestManager,
+)
 
 
 class TestCallbackRegistry:
@@ -435,3 +441,133 @@ class TestGameSaveLoad:
         assert game2.clock_time == 123.45
         assert game2.data["custom_flag"] is True
         assert game2.data["player_name"] == "TestPlayer"
+
+    def test_quest_save_load_via_game(self):
+        """Test quest save/load through Game using QuestManager as single source of truth."""
+        config = GameConfig(save_directory=self.temp_dir)
+        game = Game(config)
+
+        # Reset QuestManager for clean state
+        QuestManager.reset()
+
+        # Define a callback for testing
+        def on_quest_complete(quest):
+            pass
+
+        CallbackRegistry.register("test_on_complete", on_quest_complete)
+
+        # Create quest with objectives and callbacks
+        quest = Quest(
+            name="Dragon Slayer",
+            description="Defeat the dragon terrorizing the village",
+            exp_reward=500,
+            gold_reward=200,
+            status=QuestStatus.ACTIVE,
+            on_complete=on_quest_complete,
+        )
+        quest.add_objective(
+            QuestObjective(
+                description="Find the dragon's lair",
+                objective_type=ObjectiveType.REACH_LOCATION,
+                target="Dragon Lair",
+                current_count=1,
+                target_count=1,
+                completed=True,
+            )
+        )
+        quest.add_objective(
+            QuestObjective(
+                description="Defeat the dragon",
+                objective_type=ObjectiveType.KILL_ENEMY,
+                target="Dragon",
+                current_count=0,
+                target_count=1,
+            )
+        )
+
+        # Add quest to QuestManager (single source of truth)
+        QuestManager().add_quest(quest)
+
+        # Note: add_quest() doesn't update tracking lists - that's done by start_quest()
+        # But status=ACTIVE is set, so on load, tracking lists will be rebuilt from status
+
+        # Save game
+        game.save_to_file("quest_test")
+
+        # Reset QuestManager to simulate fresh load
+        QuestManager.reset()
+        assert len(QuestManager().quests) == 0
+
+        # Load game
+        game2 = Game(config)
+        success = game2.load_from_file("quest_test")
+        assert success
+
+        # Verify quest was loaded
+        quest_manager = QuestManager()
+        assert len(quest_manager.quests) == 1
+
+        # Verify quest data
+        loaded_quest = quest_manager.get_quest(quest.id)
+        assert loaded_quest is not None
+        assert loaded_quest.name == "Dragon Slayer"
+        assert loaded_quest.description == "Defeat the dragon terrorizing the village"
+        assert loaded_quest.exp_reward == 500
+        assert loaded_quest.gold_reward == 200
+        assert loaded_quest.status == QuestStatus.ACTIVE
+
+        # Verify objectives
+        assert len(loaded_quest.objectives) == 2
+        assert loaded_quest.objectives[0].description == "Find the dragon's lair"
+        assert loaded_quest.objectives[0].completed is True
+        assert loaded_quest.objectives[1].description == "Defeat the dragon"
+        assert loaded_quest.objectives[1].current_count == 0
+
+        # Verify tracking lists rebuilt from status
+        assert loaded_quest.id in quest_manager.active_quests
+        assert loaded_quest.id not in quest_manager.completed_quests
+
+        # Verify callback was restored
+        assert loaded_quest.on_complete is not None
+
+    def test_quest_status_tracking_on_load(self):
+        """Test that active/completed quest lists are rebuilt correctly on load."""
+        config = GameConfig(save_directory=self.temp_dir)
+        game = Game(config)
+
+        # Reset QuestManager for clean state
+        QuestManager.reset()
+
+        # Create quests with different statuses
+        active_quest = Quest(
+            name="Active Quest",
+            status=QuestStatus.ACTIVE,
+        )
+        completed_quest = Quest(
+            name="Completed Quest",
+            status=QuestStatus.COMPLETED,
+        )
+        not_started_quest = Quest(
+            name="Not Started Quest",
+            status=QuestStatus.NOT_STARTED,
+        )
+
+        # Add all quests
+        QuestManager().add_quest(active_quest)
+        QuestManager().add_quest(completed_quest)
+        QuestManager().add_quest(not_started_quest)
+
+        # Save
+        game.save_to_file("status_test")
+
+        # Reset and load
+        QuestManager.reset()
+        game2 = Game(config)
+        game2.load_from_file("status_test")
+
+        # Verify tracking lists
+        qm = QuestManager()
+        assert active_quest.id in qm.active_quests
+        assert completed_quest.id in qm.completed_quests
+        assert not_started_quest.id not in qm.active_quests
+        assert not_started_quest.id not in qm.completed_quests

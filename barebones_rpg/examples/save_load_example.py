@@ -111,9 +111,8 @@ def main():
             current_count=2,  # Already killed 2
         )
     )
-    # Add to QuestManager - this auto-registers callbacks
+    # Add to QuestManager - this auto-registers callbacks and handles save/load
     QuestManager().add_quest(quest)
-    game.register_quest(quest)
     print(
         f"   Created quest: {quest.name} ({quest.get_progress_percentage()*100:.0f}% complete)\n"
     )

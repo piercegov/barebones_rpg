@@ -189,7 +189,8 @@ The framework includes a comprehensive save/load system with callback serializat
 ### Key Components
 - **SaveManager**: Handles JSON file I/O, directory management, and versioning
 - **CallbackRegistry**: Manages serialization of callback functions by symbolic names
-- **Game Registration**: Entities, items, parties, and quests can be registered for automatic serialization
+- **Game Registration**: Entities, items, and parties can be registered for automatic serialization
+- **QuestManager**: Single source of truth for quests—handles storage, callbacks, and save/load automatically
 
 ### Basic Usage
 ```python
@@ -228,6 +229,8 @@ Callbacks in items and quests are automatically serialized **only when registere
 - Add quests with `QuestManager().add_quest(quest)` → all quest callbacks auto-registered
 - Callbacks are stored as symbolic names in save files
 - On load, callbacks are restored automatically
+
+**Note on Quests**: `QuestManager` is the single source of truth for quests. The `game.register_quest()` method is deprecated—use `QuestManager().add_quest(quest)` instead. Quests are automatically saved/loaded via QuestManager.
 
 **Manual Registration Required**:
 - Items created directly without `LootManager` must have callbacks manually registered:
@@ -309,3 +312,6 @@ class CounterAction(CombatAction):
 
 ### Testing Integration
 When testing systems, always mock or provide the `EventManager` since most systems require it for proper operation. For Manager-based singletons, use the `reset()` class method in test fixtures to ensure clean state between tests. For Quest tests, explicitly call `QuestManager().add_quest(quest)` since auto-registration has been removed.
+
+### Code Search with ast-grep
+If the `ast-grep` skill is available, prefer using ast-grep for structural code searches. It uses Abstract Syntax Tree patterns to match code based on structure rather than text, making it more precise for finding specific code constructs like function definitions, class patterns, or method calls with particular signatures.
