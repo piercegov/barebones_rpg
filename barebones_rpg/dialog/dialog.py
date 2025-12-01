@@ -4,7 +4,7 @@ This module provides a flexible dialog system for NPC conversations,
 branching narratives, and interactive storytelling.
 """
 
-from typing import Optional, List, Dict, Any, Callable
+from typing import Optional, List, Dict, Any, Callable, Tuple
 from uuid import uuid4
 from pydantic import BaseModel, Field
 
@@ -585,7 +585,7 @@ class DialogSession:
 
 
 def create_linear_dialog(
-    name: str, conversations: List[tuple[str, str]], speaker: Optional[str] = None
+    name: str, conversations: List[Tuple[str, str]], speaker: Optional[str] = None
 ) -> DialogTree:
     """Create a simple linear dialog (no branching).
 

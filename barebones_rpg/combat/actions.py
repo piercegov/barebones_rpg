@@ -3,7 +3,7 @@
 This module defines the actions that can be taken during combat.
 """
 
-from typing import Optional, Dict, Any, Callable, List
+from typing import Optional, Dict, Any, Callable, List, Tuple
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from pydantic import BaseModel, Field
@@ -107,7 +107,7 @@ class AttackAction(CombatAction):
         target: Optional[Any],
         weapon: Optional[Any],
         context: Dict[str, Any],
-    ) -> tuple[int, str]:
+    ) -> Tuple[int, str]:
         """Calculate base damage before crits and defense.
 
         Override this method to add proficiency systems or other damage modifiers.

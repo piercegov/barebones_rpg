@@ -60,10 +60,9 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 - **Issue**: No clear criteria documented for when to use which pattern
 - **Fix**: Document pattern selection criteria in CLAUDE.md
 
-### 8. Type Hint Inconsistency
-- **Location**: `barebones_rpg/combat/actions.py:110`
-- **Issue**: Uses `tuple[int, str]` (Python 3.10+ builtin syntax) while rest of codebase uses `Tuple[int, str]` from typing module
-- **Fix**: Standardize on one style throughout codebase
+### ~~8. Type Hint Inconsistency~~ (RESOLVED)
+- **Status**: Fixed - All type hints now use `typing` module (`List`, `Dict`, `Tuple`) consistently
+- **Changes**: Standardized 9 files to use `from typing import ...` syntax instead of Python 3.10+ builtin lowercase syntax
 
 ### 9. Inconsistent Event Publishing Order
 - **Issue**: Some systems publish events before state changes, others after
@@ -149,7 +148,7 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 |----------|-------|-----------|
 | High | 0 | All resolved |
 | Medium | 4 | Test coverage, input handling, custom exceptions, StatusEffect |
-| Architecture | 3 | Mixed patterns, type hints, event ordering |
+| Architecture | 2 | Mixed patterns, event ordering |
 | Missing Features | 4 | Dialog state machine, equipment, party resources, event cleanup |
 | Code Quality | 3 | Validation, error context, callback edge cases |
 
@@ -158,6 +157,7 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 - ~~Quest loading~~ - Implemented via `QuestManager` as single source of truth
 - ~~Silent loot failures~~ - Now logs warnings for invalid loot entries in `loot.py`
 - ~~Data loader tests~~ - 13 tests covering all loader classes in `tests/test_loaders.py`
+- ~~Type hint inconsistency~~ - Standardized on `typing` module throughout codebase
 
 ---
 
@@ -167,4 +167,4 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 2. ~~Add validation warnings to loot system~~ (DONE)
 3. ~~Implement quest loading~~ (DONE - uses QuestManager)
 4. ~~Add basic tests for loaders~~ (DONE - 13 tests in `test_loaders.py`)
-5. Standardize type hint style
+5. ~~Standardize type hint style~~ (DONE - using `typing` module)

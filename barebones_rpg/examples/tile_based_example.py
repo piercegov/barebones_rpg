@@ -10,7 +10,7 @@ This example demonstrates:
 - Framework tilemap utilities for simplified code
 """
 
-from typing import Optional
+from typing import Dict, List, Optional
 import pygame
 
 from barebones_rpg.core.game import Game, GameConfig
@@ -117,12 +117,12 @@ class TileBasedGame:
         # Combat
         self.in_combat = False
         self.combat: Optional[Combat] = None
-        self.combat_messages: list[str] = []
+        self.combat_messages: List[str] = []
 
         # Dialog
         self.in_dialog = False
         self.dialog_session: Optional[DialogSession] = None
-        self.dialog_trees: dict[str, DialogTree] = {}
+        self.dialog_trees: Dict[str, DialogTree] = {}
 
         # Quest
         self.goblin_quest: Optional[Quest] = None

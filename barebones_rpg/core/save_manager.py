@@ -7,7 +7,7 @@ including JSON serialization, file I/O, and directory management.
 import json
 import logging
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 from pathlib import Path
 from datetime import datetime
 
@@ -144,7 +144,7 @@ class SaveManager:
             logger.error(f"Error deleting save: {e}")
             return False
 
-    def list_saves(self) -> list[str]:
+    def list_saves(self) -> List[str]:
         """List all available save files.
 
         Returns:

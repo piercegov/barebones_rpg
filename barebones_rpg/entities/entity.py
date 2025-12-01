@@ -3,7 +3,7 @@
 This module provides the base Entity class that all game entities inherit from.
 """
 
-from typing import Optional, Dict, Any, List, TYPE_CHECKING
+from typing import Optional, Dict, Any, List, Tuple, TYPE_CHECKING
 from uuid import uuid4
 from pydantic import BaseModel, Field
 
@@ -57,7 +57,7 @@ class Entity(BaseModel):
     can_act: bool = Field(default=True, description="Whether entity can take actions")
 
     # Position (will be used by world system)
-    position: tuple[int, int] = Field(
+    position: Tuple[int, int] = Field(
         default=(0, 0), description="World position (x, y)"
     )
 

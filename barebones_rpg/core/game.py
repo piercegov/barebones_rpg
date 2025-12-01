@@ -5,7 +5,7 @@ state, and coordinates all systems.
 """
 
 import logging
-from typing import Optional, Any, Dict, TYPE_CHECKING
+from typing import Optional, Any, Dict, List, TYPE_CHECKING
 from enum import Enum, auto
 from dataclasses import dataclass, field
 
@@ -434,7 +434,7 @@ class Game:
             return True
         return False
 
-    def list_saves(self) -> list[str]:
+    def list_saves(self) -> List[str]:
         """List all available save files.
 
         Returns:

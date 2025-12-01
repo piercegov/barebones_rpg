@@ -10,7 +10,7 @@ implement any AI approach they want (behavior trees, utility AI, actual LLMs, et
 """
 
 from enum import Enum
-from typing import Optional
+from typing import List, Optional, Tuple
 import random
 
 from barebones_rpg.entities import (
@@ -50,8 +50,8 @@ class StateMachineAI(AIInterface):
 
     def __init__(
         self,
-        patrol_points: Optional[list[tuple[int, int]]] = None,
-        guard_position: Optional[tuple[int, int]] = None,
+        patrol_points: Optional[List[Tuple[int, int]]] = None,
+        guard_position: Optional[Tuple[int, int]] = None,
         flee_threshold: float = 0.25,
         chase_range: int = 5,
     ):
@@ -179,7 +179,7 @@ class StateMachineAI(AIInterface):
         threat = context.nearby_entities[0]
         return {"action": "flee", "target": threat, "run_speed": 2}
 
-    def _distance(self, pos1: tuple[int, int], pos2: tuple[int, int]) -> int:
+    def _distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
         """Calculate Manhattan distance."""
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
@@ -207,7 +207,7 @@ class MockLLMAI(AIInterface):
         """
         self.personality = personality
         self.temperature = temperature
-        self.decision_history: list[str] = []
+        self.decision_history: List[str] = []
 
     def decide_action(self, context: AIContext) -> dict:
         """Decide action using mock LLM reasoning."""

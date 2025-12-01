@@ -4,7 +4,7 @@ This module provides the stats system used by all entities (characters, NPCs, en
 Stats are flexible and can be extended for different game types.
 """
 
-from typing import Dict, Optional, Any, Callable
+from typing import Dict, List, Optional, Any, Callable
 from pydantic import BaseModel, Field
 
 
@@ -406,8 +406,8 @@ class StatsManager:
             base_stats: The base stats for the entity
         """
         self.base_stats = base_stats
-        self.status_effects: list[StatusEffect] = []
-        self._stat_change_callbacks: list[Callable] = []
+        self.status_effects: List[StatusEffect] = []
+        self._stat_change_callbacks: List[Callable] = []
 
     def get_effective_stat(self, stat_name: str, default: int = 0) -> int:
         """Get the effective value of a stat including all modifiers.

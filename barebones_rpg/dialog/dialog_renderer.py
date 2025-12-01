@@ -4,7 +4,7 @@ This module provides rendering utilities for dialog trees, including
 dialog boxes, speaker names, text with word wrapping, and choice buttons.
 """
 
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import pygame
 
 from barebones_rpg.dialog.dialog import DialogSession
@@ -63,7 +63,7 @@ class DialogRenderer:
         self.choice_bg_color = Color(50, 50, 70)
         self.choice_hover_color = Color(80, 80, 120)
 
-    def wrap_text(self, text: str, max_width: int, char_width: int = 8) -> list[str]:
+    def wrap_text(self, text: str, max_width: int, char_width: int = 8) -> List[str]:
         """Wrap text to fit within a maximum width.
 
         Args:
@@ -75,8 +75,8 @@ class DialogRenderer:
             List of wrapped lines
         """
         words = text.split()
-        lines: list[str] = []
-        current_line: list[str] = []
+        lines: List[str] = []
+        current_line: List[str] = []
         current_width = 0
 
         for word in words:
