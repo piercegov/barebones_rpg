@@ -165,6 +165,9 @@ def main():
     print(f"You see: {elder.name}")
     print(f"   {elder.description}\n")
 
+    # Create sword (given during dialog)
+    sword = create_weapon("Steel Sword", base_damage=8, value=100)
+
     # Start dialog with elder
     print("--- Conversation ---")
     session = DialogSession(elder_dialog, context={"player": hero, "game": game})
@@ -182,7 +185,7 @@ def main():
             if choices:
                 print("\nYour choices:")
                 for i, choice in enumerate(choices):
-                    print(f"  {i+1}. {choice.text}")
+                    print(f"  {i + 1}. {choice.text}")
 
                 if choice_idx < len(choices):
                     chosen = choices[choice_idx]
@@ -190,10 +193,8 @@ def main():
 
                     # Special: Give sword when quest is accepted
                     if current_node.id == "accept_quest":
-                        sword = create_weapon("Steel Sword", atk=8, value=100)
                         hero.inventory.add_item(sword)
                         print(f"\n✨ Received: {sword.name}!")
-                        hero.stats.atk += sword.stat_modifiers["atk"]
 
                     session.make_choice(choice_idx)
 
@@ -266,8 +267,9 @@ def main():
     while hero.is_alive() and goblin_chief.is_alive():
         print(f"\nTurn {battle_turn}:")
 
-        # Hero attacks
-        damage = max(1, hero.stats.atk - goblin_chief.stats.defense)
+        # Hero attacks (strength + sword base_damage - enemy defense)
+        hero_attack = hero.stats.strength + sword.base_damage
+        damage = max(1, hero_attack - goblin_chief.stats.physical_defense)
         goblin_chief.take_damage(damage)
         print(f"  ⚔️  {hero.name} attacks for {damage} damage!")
         print(
@@ -277,8 +279,8 @@ def main():
         if goblin_chief.is_dead():
             break
 
-        # Goblin attacks
-        damage = max(1, goblin_chief.stats.atk - hero.stats.defense)
+        # Goblin attacks (unarmed - just strength - hero defense)
+        damage = max(1, goblin_chief.stats.strength - hero.stats.physical_defense)
         hero.take_damage(damage)
         print(f"  💢 {goblin_chief.name} attacks for {damage} damage!")
         print(f"     {hero.name} HP: {hero.stats.hp}/{hero.stats.max_hp}")

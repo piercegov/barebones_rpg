@@ -264,7 +264,7 @@ Here's a full example showing proper save/load setup:
    game = Game(config)
    
    # 4. Create and register entities
-   hero = Character(name="Hero", stats=Stats(hp=100, max_hp=100))
+   hero = Character(name="Hero", stats=Stats(hp=100, base_max_hp=50))
    hero.init_inventory()
    hero.inventory.add_item(LootManager().get("health_potion"))
    hero.inventory.add_item(LootManager().get("iron_sword"))

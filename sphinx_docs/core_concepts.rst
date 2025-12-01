@@ -329,7 +329,7 @@ callbacks. It provides:
    # Use in loot tables
    boss = Enemy(
        name="Boss",
-       stats=Stats(hp=200, max_hp=200, atk=25, defense=20),
+       stats=Stats(hp=200, base_max_hp=150, strength=25, base_physical_defense=20),
        loot_table=[
            {"item": "health_potion", "chance": 0.3},
            {"item": "rare_sword", "chance": 0.05}

@@ -58,7 +58,8 @@ def main():
     # Step 2: Create game with custom save directory
     print("2. Creating game with custom save directory...")
     config = GameConfig(
-        title="Save/Load Demo", save_directory="demo_saves"  # Custom save directory
+        title="Save/Load Demo",
+        save_directory="demo_saves",  # Custom save directory
     )
     game = Game(config)
     print(f"   Save directory: {game.save_manager.save_directory}\n")
@@ -69,14 +70,22 @@ def main():
     # Create hero
     hero = Character(
         name="Hero",
-        stats=Stats(hp=100, max_hp=100, mp=50, max_mp=50, atk=15, defense=5, level=1),
+        stats=Stats(
+            hp=100,
+            base_max_hp=50,  # With constitution=10, max_hp = 50 + 10*5 = 100
+            mp=50,
+            base_max_mp=20,  # With intelligence=10, max_mp = 20 + 10*3 = 50
+            strength=15,
+            base_physical_defense=5,
+            level=1,
+        ),
     )
     hero.init_inventory()
     hero.inventory.add_gold(500)
 
     # Add items to hero's inventory (get from LootManager)
     hero.inventory.add_item(create_weapon("Iron Sword", base_damage=10, value=50))
-    hero.inventory.add_item(create_armor("Leather Armor", defense=5, value=30))
+    hero.inventory.add_item(create_armor("Leather Armor", physical_defense=5, value=30))
     hero.inventory.add_item(LootManager().get("health_potion"))
     hero.inventory.add_item(LootManager().get("mana_potion"))
 
@@ -114,7 +123,7 @@ def main():
     # Add to QuestManager - this auto-registers callbacks and handles save/load
     QuestManager().add_quest(quest)
     print(
-        f"   Created quest: {quest.name} ({quest.get_progress_percentage()*100:.0f}% complete)\n"
+        f"   Created quest: {quest.name} ({quest.get_progress_percentage() * 100:.0f}% complete)\n"
     )
 
     # Step 4: Set some game state
@@ -173,7 +182,7 @@ def main():
         loaded_quest = game.get_quest(quest.id)
         if loaded_quest:
             print(
-                f"   Quest: {loaded_quest.name} ({loaded_quest.get_progress_percentage()*100:.0f}% complete)"
+                f"   Quest: {loaded_quest.name} ({loaded_quest.get_progress_percentage() * 100:.0f}% complete)"
             )
 
         print(f"   Game time: {game.clock_time:.2f}s")
