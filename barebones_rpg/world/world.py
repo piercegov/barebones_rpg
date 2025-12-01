@@ -570,22 +570,35 @@ class World(BaseModel):
             return False
 
         old_location = self.get_current_location()
+
+        # Execute exit callback (still references old as current)
         if old_location and old_location.on_exit:
             old_location.on_exit(old_location)
 
-        if events and old_location:
-            events.publish(Event(EventType.LOCATION_EXITED, {"location": old_location}))
-
+        # Change state FIRST
         self.current_location_id = location_id
-
         new_location = self.get_current_location()
+
+        # Execute enter callback
         if new_location and new_location.on_enter:
             new_location.on_enter(new_location)
 
-        if events and new_location:
-            events.publish(
-                Event(EventType.LOCATION_ENTERED, {"location": new_location})
-            )
+        # THEN publish events with enriched data (handlers see updated state)
+        if events:
+            if old_location:
+                events.publish(
+                    Event(
+                        EventType.LOCATION_EXITED,
+                        {"location": old_location, "destination": new_location},
+                    )
+                )
+            if new_location:
+                events.publish(
+                    Event(
+                        EventType.LOCATION_ENTERED,
+                        {"location": new_location, "origin": old_location},
+                    )
+                )
 
         return True
 

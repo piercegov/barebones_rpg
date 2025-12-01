@@ -107,6 +107,19 @@ All major systems rely on the event system. When implementing features:
 - Publish events when significant actions occur
 - Pass the `EventManager` instance to methods that trigger events (e.g., `entity.gain_exp(100, game.events)`)
 
+### Event Publishing Order
+Events MUST be published AFTER state changes complete. This ensures handlers see consistent, up-to-date state. When an event needs to reference "before" state (e.g., which location was exited), capture it in a variable before the state change and include it in the event data.
+
+```python
+# Correct: capture old state, change state, then publish
+old_status = self.status
+self.status = QuestStatus.COMPLETED  # state change
+events.publish(Event(EventType.QUEST_COMPLETED, {
+    "quest": self,
+    "previous_status": old_status  # if handlers need it
+}))
+```
+
 ### Entity Stats
 Entities use a `StatsManager` that supports temporary stat modifiers via `StatusEffect`. Always use `stats_manager.get_effective_stat()` rather than accessing raw stat values directly.
 
@@ -314,4 +327,12 @@ class CounterAction(CombatAction):
 When testing systems, always mock or provide the `EventManager` since most systems require it for proper operation. For Manager-based singletons, use the `reset()` class method in test fixtures to ensure clean state between tests. For Quest tests, explicitly call `QuestManager().add_quest(quest)` since auto-registration has been removed.
 
 ### Code Search with ast-grep
-If the `ast-grep` skill is available, prefer using ast-grep for structural code searches. It uses Abstract Syntax Tree patterns to match code based on structure rather than text, making it more precise for finding specific code constructs like function definitions, class patterns, or method calls with particular signatures.
+When exploring the codebase or searching for code patterns, prefer using the `ast-grep` skill for structural code searches. ast-grep uses Abstract Syntax Tree patterns to match code based on structure rather than text, making it more precise for finding specific code constructs like function definitions, class patterns, or method calls with particular signatures.
+
+**When to use ast-grep:**
+- Finding all usages of a specific function or method
+- Locating class definitions with certain patterns (e.g., classes inheriting from a base)
+- Searching for specific code constructs (e.g., all `@property` decorators, all `async def` functions)
+- Refactoring tasks that require structural awareness
+
+**Usage:** Invoke the skill with `Skill(ast-grep)` to get guidance on writing ast-grep rules for your search.

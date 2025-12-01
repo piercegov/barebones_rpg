@@ -64,10 +64,13 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 - **Status**: Fixed - All type hints now use `typing` module (`List`, `Dict`, `Tuple`) consistently
 - **Changes**: Standardized 9 files to use `from typing import ...` syntax instead of Python 3.10+ builtin lowercase syntax
 
-### 9. Inconsistent Event Publishing Order
-- **Issue**: Some systems publish events before state changes, others after
-- **Impact**: Event handlers may see inconsistent state
-- **Fix**: Document and enforce consistent event publishing order
+### ~~9. Inconsistent Event Publishing Order~~ (RESOLVED)
+- **Status**: Fixed - Standardized on "publish AFTER state change" pattern
+- **Changes**:
+  - `Combat._start_next_turn()`: State assignment moved before event publication
+  - `Combat.end_turn()`: Turn advancement now happens before COMBAT_TURN_END event
+  - `World.set_current_location()`: Location change happens before events; LOCATION_EXITED/ENTERED now include origin/destination
+  - Added documentation in CLAUDE.md under "Event Publishing Order"
 
 ---
 
@@ -148,7 +151,7 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 |----------|-------|-----------|
 | High | 0 | All resolved |
 | Medium | 4 | Test coverage, input handling, custom exceptions, StatusEffect |
-| Architecture | 2 | Mixed patterns, event ordering |
+| Architecture | 1 | Mixed patterns |
 | Missing Features | 4 | Dialog state machine, equipment, party resources, event cleanup |
 | Code Quality | 3 | Validation, error context, callback edge cases |
 
@@ -158,6 +161,7 @@ This document tracks known gaps, issues, and areas for improvement in the Barebo
 - ~~Silent loot failures~~ - Now logs warnings for invalid loot entries in `loot.py`
 - ~~Data loader tests~~ - 13 tests covering all loader classes in `tests/test_loaders.py`
 - ~~Type hint inconsistency~~ - Standardized on `typing` module throughout codebase
+- ~~Event publishing order~~ - Standardized on "publish AFTER state change" pattern in combat and world systems
 
 ---
 

@@ -244,6 +244,13 @@ class Combat:
             # No one left, shouldn't happen but handle it
             return
 
+        # Determine turn type FIRST (before publishing event)
+        if current in self.players.members:
+            self.state = CombatState.PLAYER_TURN
+        else:
+            self.state = CombatState.ENEMY_TURN
+
+        # THEN publish event (handlers see correct state)
         self.events.publish(
             Event(
                 EventType.COMBAT_TURN_START,
@@ -254,12 +261,8 @@ class Combat:
             )
         )
 
-        # Determine if it's player or enemy turn
-        if current in self.players.members:
-            self.state = CombatState.PLAYER_TURN
-        else:
-            self.state = CombatState.ENEMY_TURN
-            # Auto-execute enemy turn
+        # Auto-execute enemy turn if applicable
+        if self.state == CombatState.ENEMY_TURN:
             self._execute_enemy_ai(current)
 
     def execute_action(
@@ -349,21 +352,24 @@ class Combat:
 
     def end_turn(self) -> None:
         """End the current turn and move to next."""
-        current = self.turn_order.get_current()
+        # Capture who's ending BEFORE state change
+        ended_combatant = self.turn_order.get_current()
+        ended_turn_number = self.turn_number
 
-        self.events.publish(
-            Event(
-                EventType.COMBAT_TURN_END,
-                {"turn": self.turn_number, "combatant": current},
-            )
-        )
-
-        # Move to next combatant
+        # Advance turn state
         next_combatant = self.turn_order.next_turn()
 
         # Check if we wrapped around (new round)
         if self.turn_order.current_index == 0:
             self.turn_number += 1
+
+        # THEN publish event (handlers see updated state, event data has ended info)
+        self.events.publish(
+            Event(
+                EventType.COMBAT_TURN_END,
+                {"turn": ended_turn_number, "combatant": ended_combatant},
+            )
+        )
 
         # Start next turn
         self._start_next_turn()
